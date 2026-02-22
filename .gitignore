@@ -1,0 +1,27 @@
+# ─── Environment ─────────────────────
+.env
+
+# ─── IDE / Editor ────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── OS Files ────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Dependencies ────────────────────
+/vendor/
+node_modules/
+
+# ─── Storage & Logs ─────────────────
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+
+# ─── Compiled / Build ───────────────
+*.compiled.php
