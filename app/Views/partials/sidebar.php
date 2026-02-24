@@ -1,12 +1,19 @@
 <!-- Sidebar Navigation -->
 <?php use App\Core\Auth; ?>
-<nav id="sidebar" class="sidebar bg-dark">
-    <!-- Brand -->
-    <div class="sidebar-brand">
+<nav id="sidebar" class="offcanvas-lg offcanvas-start sidebar" tabindex="-1" aria-labelledby="sidebarLabel">
+    <!-- Offcanvas Header (visible only on mobile) -->
+    <div class="offcanvas-header d-lg-none border-bottom border-secondary border-opacity-25 px-3 py-2">
+        <a href="/" class="d-flex align-items-center text-decoration-none gap-2">
+            <img src="/assets/images/logo/kodigo.jpg" alt="Kodigo Logo" class="brand-logo rounded" width="36" height="36">
+            <span class="text-white fw-semibold fs-5" id="sidebarLabel">Cohort Monitor</span>
+        </a>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
+    </div>
+
+    <!-- Brand (Desktop only) -->
+    <div class="sidebar-brand d-none d-lg-flex">
         <a href="/" class="d-flex align-items-center text-decoration-none">
-            <div class="brand-icon">
-                <i class="bi bi-graph-up-arrow"></i>
-            </div>
+            <img src="/assets/images/logo/kodigo.jpg" alt="Kodigo Logo" class="brand-logo rounded" width="40" height="40">
             <span class="brand-text">Cohort Monitor</span>
         </a>
     </div>
@@ -29,6 +36,16 @@
                     <span>Cohortes</span>
                 </a>
             </li>
+
+            <!-- Import Cohorts — admin only -->
+            <?php if (Auth::isAdmin()): ?>
+            <li class="nav-item">
+                <a href="/cohorts/import" class="nav-link <?= ($activePage ?? '') === 'import' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Importar Cohortes">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <span>Importar</span>
+                </a>
+            </li>
+            <?php endif; ?>
 
             <!-- Marketing — admin + marketing -->
             <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
@@ -63,6 +80,14 @@
             <!-- Divider -->
             <li class="nav-divider"></li>
 
+            <!-- Mi Cuenta — all authenticated users -->
+            <li class="nav-item">
+                <a href="/account" class="nav-link <?= ($activePage ?? '') === 'account' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Mi Cuenta">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Mi Cuenta</span>
+                </a>
+            </li>
+
             <!-- Coming Soon -->
             <li class="nav-item">
                 <a href="#" class="nav-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Próximamente">
@@ -72,10 +97,9 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Próximamente">
+                <a href="/reports" class="nav-link <?= ($activePage ?? '') === 'reports' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
-                    <span class="badge-soon">Pronto</span>
                 </a>
             </li>
         </ul>

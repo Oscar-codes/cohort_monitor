@@ -24,11 +24,13 @@ function formatDate(?string $date): string {
     <div>
         <p class="text-muted mb-0">Gestiona y monitorea todas las cohortes del sistema.</p>
     </div>
+    <?php if ($canCreate ?? false): ?>
     <a href="/cohorts/create" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>
         <span class="d-none d-sm-inline">Nueva Cohorte</span>
         <span class="d-sm-none">Nueva</span>
     </a>
+    <?php endif; ?>
 </div>
 
 <?php if (!empty($cohorts)): ?>
@@ -77,8 +79,10 @@ function formatDate(?string $date): string {
                     <th style="width: 50px;">ID</th>
                     <th>Cohorte</th>
                     <th class="d-none d-md-table-cell">Tipo</th>
+                    <th class="d-none d-md-table-cell">Proyecto</th>
                     <th class="d-none d-lg-table-cell">Fechas</th>
                     <th class="d-none d-xl-table-cell text-center">Admisiones</th>
+                    <th class="d-none d-lg-table-cell text-center">Formación</th>
                     <th class="text-center">Estado</th>
                     <th class="text-end" style="width: 130px;">Acciones</th>
                 </tr>
@@ -117,6 +121,15 @@ function formatDate(?string $date): string {
                             <?php endif; ?>
                         </td>
                         
+                        <!-- Related Project -->
+                        <td class="d-none d-md-table-cell">
+                            <?php if (!empty($cohort['related_project'])): ?>
+                                <span class="badge bg-info-subtle text-info border"><?= htmlspecialchars($cohort['related_project']) ?></span>
+                            <?php else: ?>
+                                <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        
                         <!-- Dates -->
                         <td class="d-none d-lg-table-cell">
                             <div class="small">
@@ -143,6 +156,23 @@ function formatDate(?string $date): string {
                             </div>
                         </td>
                         
+                        <!-- Formación (calculated) -->
+                        <td class="d-none d-lg-table-cell text-center">
+                            <?php
+                                $hasB2B = !empty($cohort['b2b_admission_target']) && (int) $cohort['b2b_admission_target'] > 0;
+                                $hasB2C = !empty($cohort['b2c_admissions']) && (int) $cohort['b2c_admissions'] > 0;
+                                if ($hasB2B && $hasB2C) {
+                                    echo '<span class="badge bg-warning-subtle text-warning"><i class="bi bi-diagram-3 me-1"></i>Mixta</span>';
+                                } elseif ($hasB2B) {
+                                    echo '<span class="badge bg-info-subtle text-info"><i class="bi bi-building me-1"></i>B2B</span>';
+                                } elseif ($hasB2C) {
+                                    echo '<span class="badge bg-primary-subtle text-primary"><i class="bi bi-person-check me-1"></i>B2C</span>';
+                                } else {
+                                    echo '<span class="text-muted">—</span>';
+                                }
+                            ?>
+                        </td>
+                        
                         <!-- Status -->
                         <td class="text-center">
                             <?= statusBadge($cohort['training_status'] ?? 'not_started') ?>
@@ -157,12 +187,14 @@ function formatDate(?string $date): string {
                                 <a href="/cohorts/<?= $cohort['id'] ?>/edit" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                <?php if ($canDelete ?? false): ?>
                                 <form method="POST" action="/cohorts/<?= $cohort['id'] ?>" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">
                                     <input type="hidden" name="_method" value="DELETE">
                                     <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -182,9 +214,13 @@ function formatDate(?string $date): string {
             </div>
             <h5 class="empty-state-title">No hay cohortes aún</h5>
             <p class="empty-state-text">Comienza creando tu primera cohorte para gestionar estudiantes y programas.</p>
+            <?php if ($canCreate ?? false): ?>
             <a href="/cohorts/create" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-1"></i> Crear Primera Cohorte
             </a>
+            <?php else: ?>
+            <p class="text-muted small">Contacta a un administrador para crear cohortes.</p>
+            <?php endif; ?>
         </div>
     </div>
 </div>

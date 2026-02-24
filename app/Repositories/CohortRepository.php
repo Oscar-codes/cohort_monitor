@@ -72,16 +72,16 @@ class CohortRepository
         $this->db->execute(
             'INSERT INTO cohorts (
                 cohort_code, name, correlative_number,
-                total_admission_target, b2b_admission_target, b2c_admissions,
+                total_admission_target, b2b_admission_target, b2b_admissions, b2c_admissions,
                 admission_deadline_date, start_date, end_date,
-                related_project, assigned_coach, bootcamp_type,
+                related_project, assigned_coach, bootcamp_type, area,
                 assigned_class_schedule, training_status,
                 created_at, updated_at
             ) VALUES (
                 :cohort_code, :name, :correlative_number,
-                :total_admission_target, :b2b_admission_target, :b2c_admissions,
+                :total_admission_target, :b2b_admission_target, :b2b_admissions, :b2c_admissions,
                 :admission_deadline_date, :start_date, :end_date,
-                :related_project, :assigned_coach, :bootcamp_type,
+                :related_project, :assigned_coach, :bootcamp_type, :area,
                 :assigned_class_schedule, :training_status,
                 NOW(), NOW()
             )',
@@ -91,6 +91,7 @@ class CohortRepository
                 'correlative_number'       => $data['correlative_number'] ?? 0,
                 'total_admission_target'   => $data['total_admission_target'] ?? 0,
                 'b2b_admission_target'     => $data['b2b_admission_target'] ?? 0,
+                'b2b_admissions'           => $data['b2b_admissions'] ?? 0,
                 'b2c_admissions'           => $data['b2c_admissions'] ?? 0,
                 'admission_deadline_date'  => $data['admission_deadline_date'] ?? null,
                 'start_date'               => $data['start_date'] ?? null,
@@ -98,6 +99,7 @@ class CohortRepository
                 'related_project'          => $data['related_project'] ?? null,
                 'assigned_coach'           => $data['assigned_coach'] ?? null,
                 'bootcamp_type'            => $data['bootcamp_type'] ?? null,
+                'area'                     => $data['area'] ?? null,
                 'assigned_class_schedule'  => $data['assigned_class_schedule'] ?? null,
                 'training_status'          => $data['training_status'] ?? 'not_started',
             ]
@@ -118,6 +120,7 @@ class CohortRepository
                  correlative_number       = :correlative_number,
                  total_admission_target   = :total_admission_target,
                  b2b_admission_target     = :b2b_admission_target,
+                 b2b_admissions           = :b2b_admissions,
                  b2c_admissions           = :b2c_admissions,
                  admission_deadline_date  = :admission_deadline_date,
                  start_date               = :start_date,
@@ -125,6 +128,7 @@ class CohortRepository
                  related_project          = :related_project,
                  assigned_coach           = :assigned_coach,
                  bootcamp_type            = :bootcamp_type,
+                 area                     = :area,
                  assigned_class_schedule  = :assigned_class_schedule,
                  training_status          = :training_status,
                  updated_at               = NOW()
@@ -136,6 +140,7 @@ class CohortRepository
                 'correlative_number'       => $data['correlative_number'] ?? 0,
                 'total_admission_target'   => $data['total_admission_target'] ?? 0,
                 'b2b_admission_target'     => $data['b2b_admission_target'] ?? 0,
+                'b2b_admissions'           => $data['b2b_admissions'] ?? 0,
                 'b2c_admissions'           => $data['b2c_admissions'] ?? 0,
                 'admission_deadline_date'  => $data['admission_deadline_date'] ?? null,
                 'start_date'               => $data['start_date'] ?? null,
@@ -143,11 +148,42 @@ class CohortRepository
                 'related_project'          => $data['related_project'] ?? null,
                 'assigned_coach'           => $data['assigned_coach'] ?? null,
                 'bootcamp_type'            => $data['bootcamp_type'] ?? null,
+                'area'                     => $data['area'] ?? null,
                 'assigned_class_schedule'  => $data['assigned_class_schedule'] ?? null,
                 'training_status'          => $data['training_status'] ?? 'not_started',
             ]
         );
 
+        return $rows > 0;
+    }
+
+    /**
+     * Update only specific fields of a cohort (partial update).
+     * Dynamically builds the SQL query based on provided fields.
+     *
+     * @param int   $id   Cohort ID
+     * @param array $data Associative array of field => value to update
+     * @return bool Success status
+     */
+    public function updatePartial(int $id, array $data): bool
+    {
+        if (empty($data)) {
+            return false;
+        }
+
+        // Build SET clause dynamically
+        $setClauses = [];
+        $params = ['id' => $id];
+
+        foreach ($data as $field => $value) {
+            $setClauses[] = "{$field} = :{$field}";
+            $params[$field] = $value;
+        }
+
+        $setString = implode(', ', $setClauses);
+        $sql = "UPDATE cohorts SET {$setString}, updated_at = NOW() WHERE id = :id";
+
+        $rows = $this->db->execute($sql, $params);
         return $rows > 0;
     }
 

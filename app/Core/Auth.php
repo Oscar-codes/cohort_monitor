@@ -114,6 +114,96 @@ class Auth
         return in_array(self::role(), $roles, true);
     }
 
+    // ─── Cohort Field Permissions ───────────────────────
+
+    /**
+     * All cohort fields that can be edited.
+     */
+    private const ALL_COHORT_FIELDS = [
+        'cohort_code',
+        'name',
+        'correlative_number',
+        'total_admission_target',
+        'b2b_admission_target',
+        'b2b_admissions',
+        'b2c_admissions',
+        'admission_deadline_date',
+        'start_date',
+        'end_date',
+        'related_project',
+        'assigned_coach',
+        'bootcamp_type',
+        'area',
+        'assigned_class_schedule',
+        'training_status',
+    ];
+
+    /**
+     * Fields each role can edit on a cohort.
+     */
+    private const COHORT_EDITABLE_FIELDS = [
+        'admin'          => self::ALL_COHORT_FIELDS,
+        'admissions_b2b' => ['b2b_admissions'],
+        'admissions_b2c' => ['b2c_admissions'],
+        'marketing'      => [], // Marketing edits marketing_stages, not cohort fields
+    ];
+
+    /**
+     * Get the list of cohort fields the current user can edit.
+     *
+     * @return string[]
+     */
+    public static function getEditableCohortFields(): array
+    {
+        $role = self::role();
+        return self::COHORT_EDITABLE_FIELDS[$role] ?? [];
+    }
+
+    /**
+     * Check if the current user can edit a specific cohort field.
+     */
+    public static function canEditCohortField(string $field): bool
+    {
+        return in_array($field, self::getEditableCohortFields(), true);
+    }
+
+    /**
+     * Check if the current user can create new cohorts.
+     */
+    public static function canCreateCohort(): bool
+    {
+        return self::isAdmin();
+    }
+
+    /**
+     * Check if the current user can delete cohorts.
+     */
+    public static function canDeleteCohort(): bool
+    {
+        return self::isAdmin();
+    }
+
+    /**
+     * Check if the current user can edit any cohort field.
+     */
+    public static function canEditCohort(): bool
+    {
+        return count(self::getEditableCohortFields()) > 0;
+    }
+
+    /**
+     * Filter an array of cohort data to only include fields the user can edit.
+     * Returns only the fields that the current role is allowed to modify.
+     *
+     * @param array $data Full cohort data from form
+     * @return array Filtered data with only editable fields
+     */
+    public static function filterEditableCohortData(array $data): array
+    {
+        $editable = self::getEditableCohortFields();
+        return array_intersect_key($data, array_flip($editable));
+    }
+
     // ─── Guards ─────────────────────────────────────────
 
     /** Redirect to /login if not authenticated. */

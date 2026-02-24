@@ -9,17 +9,15 @@
 
 const App = (() => {
     // Cache DOM elements
-    let sidebar, sidebarToggle, sidebarCollapseBtn, sidebarOverlay;
+    let sidebar, sidebarCollapseBtn;
 
     /**
      * Initialize the application.
      */
     function init() {
         // Cache elements
-        sidebar           = document.getElementById('sidebar');
-        sidebarToggle     = document.getElementById('sidebarToggle');
+        sidebar            = document.getElementById('sidebar');
         sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-        sidebarOverlay    = document.getElementById('sidebarOverlay');
 
         initSidebar();
         initTooltips();
@@ -29,26 +27,14 @@ const App = (() => {
     }
 
     /**
-     * Initialize sidebar behavior (mobile toggle + desktop collapse).
+     * Initialize sidebar behavior.
+     * Mobile: Bootstrap offcanvas handles open/close/backdrop via data attributes.
+     * Desktop: Custom collapse toggle with localStorage persistence.
      */
     function initSidebar() {
-        // Mobile toggle
-        if (sidebarToggle && sidebar) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.add('show');
-                sidebarOverlay?.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            });
-        }
-
-        // Close on overlay click
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', closeMobileSidebar);
-        }
-
-        // Desktop collapse toggle
+        // Desktop collapse toggle (shrink/expand sidebar)
         if (sidebarCollapseBtn) {
-            // Load saved state
+            // Restore saved state
             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
             if (isCollapsed) {
                 document.body.classList.add('sidebar-collapsed');
@@ -61,30 +47,17 @@ const App = (() => {
             });
         }
 
-        // Close sidebar on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && sidebar?.classList.contains('show')) {
-                closeMobileSidebar();
-            }
-        });
-
-        // Close sidebar when clicking a link (mobile)
-        sidebar?.querySelectorAll('.nav-link:not(.disabled)').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth < 992) {
-                    closeMobileSidebar();
-                }
+        // Mobile: close offcanvas when clicking a nav link
+        if (sidebar) {
+            sidebar.querySelectorAll('.nav-link:not(.disabled)').forEach(link => {
+                link.addEventListener('click', () => {
+                    const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebar);
+                    if (bsOffcanvas) {
+                        bsOffcanvas.hide();
+                    }
+                });
             });
-        });
-    }
-
-    /**
-     * Close mobile sidebar.
-     */
-    function closeMobileSidebar() {
-        sidebar?.classList.remove('show');
-        sidebarOverlay?.classList.remove('show');
-        document.body.style.overflow = '';
+        }
     }
 
     /**
@@ -144,7 +117,7 @@ const App = (() => {
     }
 
     // Public API
-    return { init, closeMobileSidebar };
+    return { init };
 })();
 
 // Boot when DOM is ready

@@ -42,15 +42,19 @@ function showFormatDate(?string $date): string {
                 </div>
             </div>
             <div class="d-flex gap-2">
+                <?php if ($canEdit ?? false): ?>
                 <a href="/cohorts/<?= $cohort['id'] ?>/edit" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-pencil me-1"></i> Editar
                 </a>
+                <?php endif; ?>
+                <?php if ($canDelete ?? false): ?>
                 <form method="POST" action="/cohorts/<?= $cohort['id'] ?>" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-trash me-1"></i> Eliminar
                     </button>
                 </form>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -106,6 +110,15 @@ function showFormatDate(?string $date): string {
                         <div class="fw-semibold"><?= htmlspecialchars($cohort['bootcamp_type'] ?? '—') ?></div>
                     </div>
                     <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Área</div>
+                        <div class="fw-semibold">
+                            <?php
+                            $areaMap = ['academic' => 'Academic', 'marketing' => 'Marketing', 'admissions' => 'Admissions'];
+                            echo htmlspecialchars($areaMap[$cohort['area'] ?? ''] ?? '—');
+                            ?>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
                         <div class="text-muted small mb-1">Horario Asignado</div>
                         <div class="fw-semibold"><?= htmlspecialchars($cohort['assigned_class_schedule'] ?? '—') ?></div>
                     </div>
@@ -123,13 +136,17 @@ function showFormatDate(?string $date): string {
             </div>
             <div class="card-body">
                 <div class="row g-3 text-center">
-                    <div class="col-6">
+                    <div class="col-4">
                         <div class="fs-4 fw-bold text-primary"><?= htmlspecialchars($cohort['total_admission_target'] ?? 0) ?></div>
                         <small class="text-muted">Meta Total</small>
                     </div>
-                    <div class="col-6">
+                    <div class="col-4">
                         <div class="fs-4 fw-bold text-info"><?= htmlspecialchars($cohort['b2b_admission_target'] ?? 0) ?></div>
                         <small class="text-muted">Meta B2B</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-warning"><?= htmlspecialchars($cohort['b2b_admissions'] ?? 0) ?></div>
+                        <small class="text-muted">B2B Actual</small>
                     </div>
                     <div class="col-6">
                         <div class="fs-4 fw-bold text-success"><?= htmlspecialchars($cohort['b2c_admissions'] ?? 0) ?></div>

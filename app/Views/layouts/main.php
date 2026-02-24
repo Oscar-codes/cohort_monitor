@@ -15,9 +15,6 @@
 </head>
 <body class="bg-body-tertiary">
 
-<!-- Mobile Sidebar Overlay -->
-<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
-
 <div class="d-flex" id="app-wrapper">
     <!-- Sidebar -->
     <?php require APP_ROOT . '/app/Views/partials/sidebar.php'; ?>

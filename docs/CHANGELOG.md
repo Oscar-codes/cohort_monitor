@@ -5,6 +5,108 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.5.0] — 2026-02-23
+
+### 👤 Módulo de Cuenta de Usuario
+
+Se implementó un sistema completo de gestión de cuenta de usuario con self-service para todos los usuarios y funcionalidades avanzadas de administración.
+
+#### Mi Cuenta (Self-Service — Todos los roles)
+- **Vista de perfil** (`/account`): Tarjeta resumen con avatar de iniciales, rol, estado, último acceso, fecha de registro
+- **Editar perfil**: Formulario para actualizar nombre completo y email (username no editable)
+- **Cambiar contraseña**: Formulario con validación de contraseña actual, nueva contraseña (mín. 8 caracteres) y confirmación
+- **Actualización de sesión**: Los cambios de perfil se reflejan inmediatamente en la sesión activa
+
+#### Administración de Usuarios (Admin — Mejoras)
+- **Toggle activar/desactivar**: Botón para cambiar estado activo/inactivo de usuarios con un clic
+- **Restablecer contraseña**: Genera contraseña aleatoria de 12 caracteres y la muestra al admin
+- **Protección último admin**: No se puede eliminar ni desactivar al último administrador activo del sistema
+- **Columna "Último Acceso"**: Nueva columna en la tabla de usuarios con fecha/hora del último login
+- **Acciones expandidas**: Botones de toggle status, reset password y delete por usuario
+
+#### Archivos Nuevos
+| Archivo | Descripción |
+|---------|-------------|
+| `app/Controllers/AccountController.php` | Controlador self-service: `profile()`, `updateProfile()`, `changePassword()` |
+| `app/Views/account/profile.php` | Vista de perfil con tarjeta resumen + formularios de edición |
+
+#### Archivos Modificados
+| Archivo | Cambios |
+|---------|---------|
+| `app/Services/UserService.php` | +5 métodos: `updateProfile()`, `changePassword()`, `toggleStatus()`, `resetPassword()`, `generateRandomPassword()`. Protección último admin |
+| `app/Controllers/UserController.php` | +2 métodos: `toggleStatus()`, `resetPassword()` |
+| `app/Views/users/index.php` | +columna "Último Acceso", botones toggle/reset, flash HTML para contraseñas |
+| `app/Views/partials/sidebar.php` | +enlace "Mi Cuenta" visible para todos los roles |
+| `routes/web.php` | +5 rutas: `GET/POST /account`, `POST /account/password`, `POST /users/{id}/toggle-status`, `POST /users/{id}/reset-password` |
+
+---
+
+## [1.4.0] — 2026-02-23
+
+### 📥 Módulo de Importación Masiva de Cohortes
+
+Se implementó un sistema completo de importación bulk desde archivos Excel/CSV.
+
+#### Funcionalidades
+- **Carga de archivos**: Drag & drop + selector de archivos para `.xlsx`, `.xls`, `.csv`
+- **Validación por fila**: Verifica campos obligatorios, formatos de fecha, valores de ENUM, rangos numéricos
+- **Detección de duplicados**: Compara por nombre + fecha de inicio contra cohortes existentes
+- **Bulk insert con transacciones**: Inserta todas las filas validadas o revierte ante error fatal
+- **Plantilla descargable**: Genera archivo Excel con headers, validaciones de datos y ejemplos
+
+#### Archivos Nuevos
+| Archivo | Descripción |
+|---------|-------------|
+| `app/Controllers/ImportCohortController.php` | `showForm()`, `handleImport()`, `downloadTemplate()` |
+| `app/Services/CohortImportService.php` | Lectura de archivos, validación, normalización, bulk insert, generación de plantilla |
+| `app/Views/cohorts/import.php` | Zona de upload drag & drop, instrucciones, resumen de resultados, tabla de errores |
+
+#### Rutas Añadidas
+- `GET /cohorts/import` — Formulario de importación
+- `POST /cohorts/import` — Procesar archivo
+- `GET /cohorts/import/template` — Descargar plantilla Excel
+
+---
+
+## [1.3.0] — 2026-02-23
+
+### 📊 Mejoras en Tabla de Cohortes + Reportes
+
+#### Nuevas Columnas en Tabla de Cohortes
+- **Columna "Proyecto"**: Muestra `related_project` después de "Tipo", oculta en móvil (`d-none d-md-table-cell`)
+- **Columna "Formación"**: Campo calculado después de "Admisiones":
+  - B2B > 0 && B2C > 0 → **Mixta** (badge warning)
+  - Solo B2B > 0 → **B2B** (badge info)
+  - Solo B2C > 0 → **B2C** (badge primary)
+  - Ambos 0 → "—"
+
+#### Módulo de Reportes (v1.2.1)
+- **Vista de reportes** (`/reports`): Filtros por tipo, estado, rango de fechas
+- **Exportar a Excel**: PhpSpreadsheet con formato, colores y anchos automáticos
+- **Exportar a PDF**: Dompdf con diseño de tabla y logo
+
+---
+
+## [1.2.1] — 2026-02-23
+
+### 🎨 Mejoras de UI: Sidebar Responsive + Branding
+
+#### Sidebar Responsive con Bootstrap Offcanvas
+- Reemplazado sidebar custom CSS/JS por Bootstrap 5 `offcanvas-lg`
+- En mobile: slide-in desde la izquierda con backdrop
+- En desktop: sidebar fijo colapsable con persistencia `localStorage`
+- Eliminado overlay custom, simplificado `app.js`
+
+#### Branding
+- **Logo**: Imagen `kodigo.jpg` integrada en headers mobile y desktop del sidebar
+- **Footer**: Actualizado a "Desarrollado con ❤️ por tu equipo (Engineer Manager + unas cuantas AI)"
+
+#### Corrección de Color del Sidebar
+- Fix: Sidebar aparecía blanco tras conversión a offcanvas
+- Añadido `--bs-offcanvas-bg: var(--sidebar-bg)` y `background: var(--sidebar-bg) !important` en `.sidebar`
+
+---
+
 ## [1.2.0] — 2026-02-23
 
 ### 🎨 Rediseño Completo de UI/UX

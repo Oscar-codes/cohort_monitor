@@ -4,8 +4,10 @@
     <div class="header-content">
         <!-- Left: Mobile Toggle + Page Title -->
         <div class="header-left">
-            <!-- Mobile Menu Toggle -->
-            <button type="button" class="btn btn-link text-dark d-lg-none me-2 p-0" id="sidebarToggle" aria-label="Abrir menú">
+            <!-- Mobile Menu Toggle (drives Bootstrap offcanvas) -->
+            <button type="button" class="btn btn-link text-dark d-lg-none me-2 p-0"
+                    data-bs-toggle="offcanvas" data-bs-target="#sidebar"
+                    aria-controls="sidebar" aria-label="Abrir menú">
                 <i class="bi bi-list fs-4"></i>
             </button>
 

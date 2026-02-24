@@ -12,6 +12,12 @@
  *  4. Error reporting configuration
  */
 
+// ─── 0. Composer autoloader (for vendor packages) ───────────
+$composerAutoload = APP_ROOT . '/vendor/autoload.php';
+if (file_exists($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 // ─── 1. Load environment variables ──────────────────────────
 loadEnv(APP_ROOT . '/.env');
 

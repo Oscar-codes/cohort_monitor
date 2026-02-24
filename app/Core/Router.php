@@ -123,7 +123,9 @@ class Router
             throw new \RuntimeException("Method [{$method}] not found in [{$controllerClass}].");
         }
 
-        call_user_func_array([$controller, $method], $params);
+        // Use array_values to pass positional parameters instead of named ones.
+        // This ensures compatibility regardless of controller parameter names.
+        call_user_func_array([$controller, $method], array_values($params));
     }
 
     /**

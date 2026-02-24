@@ -1,5 +1,5 @@
 # PRD — Product Requirements Document
-## Cohort Monitor v1.2
+## Cohort Monitor v1.5
 
 ---
 
@@ -8,11 +8,12 @@
 | Campo              | Detalle                                                        |
 |--------------------|----------------------------------------------------------------|
 | **Nombre**         | Cohort Monitor                                                 |
-| **Versión**        | 1.2.0                                                          |
+| **Versión**        | 1.5.0                                                          |
 | **Tipo**           | Aplicación web de gestión interna                              |
 | **Stack**          | PHP 8.2 · MySQL · Bootstrap 5 · JavaScript ES6                |
 | **Framework**      | MVC custom (sin frameworks de terceros)                        |
-| **Estado**         | ✅ Producción — Auth + Marketing + UI Responsive               |
+| **Composer**       | PhpSpreadsheet 5.4 · Dompdf 3.1                               |
+| **Estado**         | ✅ Producción — Auth + Marketing + Cuenta + Import + Reports   |
 
 ### Propósito
 Cohort Monitor es una plataforma web para **crear, monitorear y administrar cohortes educativas** (grupos de estudiantes organizados por programa y periodo). Permite a administradores tener visibilidad en tiempo real del estado de cada cohorte a través de un dashboard centralizado.
@@ -38,6 +39,10 @@ Cohort Monitor es una plataforma web para **crear, monitorear y administrar coho
 | O8 | API REST para integraciones externas            | 🔲 Futuro   |
 | O9 | Workflow de Marketing con etapas                | ✅ Completo |
 | O10| UI/UX Responsive moderna tipo Dashboard         | ✅ Completo |
+| O11| Importación masiva de cohortes desde Excel/CSV  | ✅ Completo |
+| O12| Reportes con exportación Excel y PDF            | ✅ Completo |
+| O13| Módulo Mi Cuenta (self-service todos los roles) | ✅ Completo |
+| O14| Admin: Toggle status, reset password, protección| ✅ Completo |
 
 ---
 
@@ -140,6 +145,42 @@ Cohort Monitor es una plataforma web para **crear, monitorear y administrar coho
 | Filtros por estado                  | Todos, at_risk, pending, completed           |
 | Comentarios                         | Sistema de comentarios categorizados         |
 | Categorías                          | general, risk, admission, marketing          |
+
+### 3.8 Importación Masiva de Cohortes (`/cohorts/import`)
+| Funcionalidad                       | Detalle                                      |
+|-------------------------------------|----------------------------------------------|
+| Upload de archivos                  | Drag & drop + selector: `.xlsx`, `.xls`, `.csv` |
+| Validación por fila                 | Campos obligatorios, formatos, ENUMs, rangos |
+| Detección de duplicados             | Por nombre + fecha de inicio                 |
+| Bulk insert transaccional           | Todo o nada — rollback ante error fatal      |
+| Plantilla descargable               | Excel con headers, validaciones y ejemplos   |
+| Acceso                              | Solo admin                                   |
+
+### 3.9 Reportes (`/reports`)
+| Funcionalidad                       | Detalle                                      |
+|-------------------------------------|----------------------------------------------|
+| Vista de reportes                   | Filtros por tipo, estado, rango de fechas    |
+| Exportar a Excel                    | PhpSpreadsheet: formato, colores, anchos     |
+| Exportar a PDF                      | Dompdf: tabla formateada con logo            |
+| Acceso                              | Todos los roles autenticados                 |
+
+### 3.10 Módulo Mi Cuenta (`/account`)
+| Funcionalidad                       | Detalle                                      |
+|-------------------------------------|----------------------------------------------|
+| Vista de perfil                     | Tarjeta con avatar de iniciales, rol, estado, último acceso, fecha registro |
+| Editar perfil                       | Nombre completo + email (username no editable) |
+| Cambiar contraseña                  | Valida contraseña actual, nueva (mín. 8 chars) + confirmación |
+| Sesión actualizada                  | Cambios reflejados inmediatamente en sesión  |
+| Acceso                              | Todos los roles autenticados                 |
+
+### 3.11 Administración de Usuarios (Mejoras Admin)
+| Funcionalidad                       | Detalle                                      |
+|-------------------------------------|----------------------------------------------|
+| Toggle activar/desactivar           | Cambio de estado con un clic                 |
+| Restablecer contraseña              | Genera clave aleatoria 12 chars, muestra al admin |
+| Protección último admin             | No permite eliminar/desactivar al último admin activo |
+| Columna "Último Acceso"             | Fecha/hora del último login en tabla de usuarios |
+| Acciones expandidas                 | Toggle, reset password, edit, delete por usuario |
 
 ---
 
@@ -422,15 +463,19 @@ cohort-monitor/                          ~65 archivos
 │   ├── Controllers/                     Capa HTTP (request → response)
 │   │   ├── DashboardController.php      Renderiza dashboard con stats
 │   │   ├── CohortController.php         CRUD completo: index/create/store/show/edit/update/destroy
-│   │   ├── UserController.php           CRUD usuarios (solo admin)
+│   │   ├── UserController.php           CRUD usuarios + toggle status + reset password (admin)
+│   │   ├── AccountController.php        Perfil self-service: profile/updateProfile/changePassword
 │   │   ├── AuthController.php           Login/logout HTTP
+│   │   ├── ImportCohortController.php   Importación masiva: showForm/handleImport/downloadTemplate
+│   │   ├── ReportController.php         Reportes: index/exportExcel/exportPdf
 │   │   ├── MarketingController.php      Workflow de marketing por cohorte
 │   │   └── AlertController.php          Dashboard de alertas y riesgos
 │   │
 │   ├── Services/                        Lógica de negocio
 │   │   ├── DashboardService.php         Agrega stats: totalCohorts, activeCohorts, etc.
 │   │   ├── CohortService.php            Validación + cálculo fechas + orquestación CRUD
-│   │   ├── UserService.php              Lógica de usuarios y roles
+│   │   ├── CohortImportService.php      Lectura Excel/CSV, validación, normalización, bulk insert
+│   │   ├── UserService.php              Usuarios: CRUD + profile + password + toggle + reset
 │   │   ├── AuthService.php              Login, logout, validación de sesiones
 │   │   ├── MarketingService.php         Gestión de etapas de marketing
 │   │   └── AlertService.php             Detección de riesgos y alertas
@@ -461,9 +506,13 @@ cohort-monitor/                          ~65 archivos
 │       │   ├── show.php                 Layout 2 columnas con cards
 │       │   └── edit.php                 Breadcrumbs + form sections
 │       ├── users/
-│       │   ├── index.php                Stats + tabla simplificada
+│       │   ├── index.php                Stats + tabla con toggle/reset/último acceso
 │       │   ├── create.php               Secciones: Cuenta, Rol, Seguridad
 │       │   └── edit.php                 Form sections con roles
+│       ├── account/
+│       │   └── profile.php              Mi Cuenta: tarjeta resumen + editar perfil + cambiar contraseña
+│       ├── cohorts/
+│       │   └── import.php               Importación masiva: drag & drop + resultados
 │       ├── marketing/
 │       │   ├── index.php                Cards con hover + grid responsive
 │       │   └── show.php                 Header card + modales de etapas
@@ -479,7 +528,7 @@ cohort-monitor/                          ~65 archivos
 │   └── database.php                     Config DB: host, port, database, username, password
 │
 ├── routes/
-│   └── web.php                          ~25 rutas (dashboard + cohorts + users + auth + marketing + alerts)
+│   └── web.php                          ~35 rutas (dashboard + cohorts + import + users + account + auth + marketing + reports + alerts)
 │
 ├── database/
 │   ├── schema.sql                       DDL: CREATE DATABASE + 7 tablas + índices + FK
@@ -515,6 +564,8 @@ cohort-monitor/                          ~65 archivos
 | Frontend CSS  | Bootstrap       | 5.3.2   | Grid, componentes, responsive design   |
 | Iconos        | Bootstrap Icons | 1.11.3  | Iconografía consistente UI             |
 | Frontend JS   | Vanilla ES6+    | —       | Interacciones (modular, sin jQuery)    |
+| Excel Export  | PhpSpreadsheet  | 5.4.0   | Lectura/escritura archivos Excel/CSV   |
+| PDF Export    | Dompdf          | 3.1.4   | Generación de reportes en PDF          |
 | Servidor dev  | PHP built-in    | —       | `php -S localhost:8000 -t public`      |
 | Servidor prod | Apache          | 2.4+    | Con mod_rewrite (.htaccess)            |
 
@@ -566,15 +617,38 @@ Controller → Service → Repository → Database → MySQL
 | cohorts.update  | PUT    | `/cohorts/{id}`      | CohortController            | update    |
 | cohorts.destroy | DELETE | `/cohorts/{id}`      | CohortController            | destroy   |
 
+### Account (Todos los roles)
+| Nombre          | Método | URI                  | Controller                  | Acción         |
+|-----------------|--------|----------------------|-----------------------------|----------------|
+| account.profile | GET    | `/account`           | AccountController           | profile        |
+| account.update  | POST   | `/account`           | AccountController           | updateProfile  |
+| account.password| POST   | `/account/password`  | AccountController           | changePassword |
+
 ### Users (solo Admin)
-| Nombre          | Método | URI                  | Controller                  | Acción    |
-|-----------------|--------|----------------------|-----------------------------|-----------|
-| users.index     | GET    | `/users`             | UserController              | index     |
-| users.create    | GET    | `/users/create`      | UserController              | create    |
-| users.store     | POST   | `/users`             | UserController              | store     |
-| users.edit      | GET    | `/users/{id}/edit`   | UserController              | edit      |
-| users.update    | PUT    | `/users/{id}`        | UserController              | update    |
-| users.destroy   | DELETE | `/users/{id}`        | UserController              | destroy   |
+| Nombre          | Método | URI                          | Controller                  | Acción         |
+|-----------------|--------|------------------------------|-----------------------------|----------------|
+| users.index     | GET    | `/users`                     | UserController              | index          |
+| users.create    | GET    | `/users/create`              | UserController              | create         |
+| users.store     | POST   | `/users`                     | UserController              | store          |
+| users.edit      | GET    | `/users/{id}/edit`           | UserController              | edit           |
+| users.update    | PUT    | `/users/{id}`                | UserController              | update         |
+| users.destroy   | DELETE | `/users/{id}`                | UserController              | destroy        |
+| users.toggle    | POST   | `/users/{id}/toggle-status`  | UserController              | toggleStatus   |
+| users.reset     | POST   | `/users/{id}/reset-password` | UserController              | resetPassword  |
+
+### Import (solo Admin)
+| Nombre              | Método | URI                        | Controller                  | Acción           |
+|---------------------|--------|----------------------------|-----------------------------|------------------|
+| cohorts.import      | GET    | `/cohorts/import`          | ImportCohortController      | showForm         |
+| cohorts.import.post | POST   | `/cohorts/import`          | ImportCohortController      | handleImport     |
+| cohorts.import.tmpl | GET    | `/cohorts/import/template` | ImportCohortController      | downloadTemplate |
+
+### Reports (Todos los roles)
+| Nombre              | Método | URI                        | Controller                  | Acción       |
+|---------------------|--------|----------------------------|-----------------------------|------------|
+| reports.index       | GET    | `/reports`                 | ReportController            | index        |
+| reports.excel       | GET    | `/reports/export/excel`    | ReportController            | exportExcel  |
+| reports.pdf         | GET    | `/reports/export/pdf`      | ReportController            | exportPdf    |
 
 ### Marketing
 | Nombre              | Método | URI                        | Controller                  | Acción      |
@@ -627,10 +701,13 @@ Controller → Service → Repository → Database → MySQL
 | P1        | CRUD de Students           | Modelo `Student.php`, tabla `students`, FK lista  |
 | P1        | Autenticación              | ✅ COMPLETADO v1.1 — 4 roles implementados        |
 | P1        | Workflow Marketing         | ✅ COMPLETADO v1.1 — 7 etapas con tracking        |
-| P1        | UI/UX Responsive           | ✅ COMPLETADO v1.2 — Diseño dashboard moderno    |
+| P1        | UI/UX Responsive           | ✅ COMPLETADO v1.2 — Diseño dashboard moderno      |
+| P1        | Sidebar Responsive         | ✅ COMPLETADO v1.2.1 — Bootstrap offcanvas-lg      |
+| P1        | Reportes y exports         | ✅ COMPLETADO v1.3 — Excel (PhpSpreadsheet) + PDF (Dompdf) |
+| P1        | Importación masiva         | ✅ COMPLETADO v1.4 — Excel/CSV con validación y duplicados |
+| P1        | Módulo Mi Cuenta           | ✅ COMPLETADO v1.5 — Self-service + admin enhancements |
 | P2        | API REST `/api/v1/*`       | Controller base soporta `$this->json()`, ruta api.php por crear |
 | P2        | Paginación                 | Repository::count() ya existe, falta limit/offset |
-| P3        | Reportes y exports         | Service layer listo para agregar ReportService    |
 | P3        | Búsqueda y filtros         | Repository::findByStatus() ya existe como ejemplo |
 | P3        | Dashboard de métricas      | Gráficos y estadísticas avanzadas                 |
 | P3        | Notificaciones             | Sistema de notificaciones en tiempo real          |
@@ -661,4 +738,4 @@ php -S localhost:8000 -t public
 ---
 
 *Documento actualizado el 23 de febrero de 2026.*
-*Versión del documento: 1.2*
+*Versión del documento: 1.5*

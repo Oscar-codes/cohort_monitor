@@ -55,11 +55,18 @@
                                        min="0" value="0">
                             </div>
                             <div class="col-sm-6 col-md-3">
+                                <label for="b2b_admissions" class="form-label">Admisiones B2B</label>
+                                <input type="number" class="form-control" id="b2b_admissions" name="b2b_admissions"
+                                       min="0" value="0">
+                            </div>
+                            <div class="col-sm-6 col-md-3">
                                 <label for="b2c_admissions" class="form-label">Admisiones B2C</label>
                                 <input type="number" class="form-control" id="b2c_admissions" name="b2c_admissions"
                                        min="0" value="0">
                             </div>
-                            <div class="col-sm-6 col-md-3">
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-sm-6 col-md-4">
                                 <label for="admission_deadline_date" class="form-label">Límite Admisión</label>
                                 <input type="date" class="form-control" id="admission_deadline_date" name="admission_deadline_date">
                             </div>
@@ -107,6 +114,15 @@
                                 <label for="bootcamp_type" class="form-label">Tipo de Bootcamp</label>
                                 <input type="text" class="form-control" id="bootcamp_type" name="bootcamp_type"
                                        placeholder="ej. Full Stack, Data Science, UX/UI">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="area" class="form-label">Área</label>
+                                <select class="form-select" id="area" name="area">
+                                    <option value="">Seleccionar área...</option>
+                                    <option value="academic">Academic</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="admissions">Admissions</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="assigned_class_schedule" class="form-label">Horario Asignado</label>

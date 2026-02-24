@@ -34,17 +34,26 @@ class CohortController extends Controller
         $cohorts = $this->cohortService->getAllCohorts();
 
         $this->view('cohorts.index', [
-            'pageTitle'  => 'Cohortes',
-            'activePage' => 'cohorts',
-            'cohorts'    => $cohorts,
+            'pageTitle'       => 'Cohortes',
+            'activePage'      => 'cohorts',
+            'cohorts'         => $cohorts,
+            'canCreate'       => Auth::canCreateCohort(),
+            'canDelete'       => Auth::canDeleteCohort(),
         ]);
     }
 
     /**
      * Show form to create a new cohort.
+     * Only Admin can create.
      */
     public function create(): void
     {
+        if (!Auth::canCreateCohort()) {
+            http_response_code(403);
+            $this->view('errors.403', ['pageTitle' => 'Acceso Denegado'], null);
+            return;
+        }
+
         $this->view('cohorts.create', [
             'pageTitle'  => 'Nueva Cohorte',
             'activePage' => 'cohorts',
@@ -53,9 +62,16 @@ class CohortController extends Controller
 
     /**
      * Store a newly created cohort.
+     * Only Admin can create.
      */
     public function store(): void
     {
+        if (!Auth::canCreateCohort()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No tienes permiso para crear cohortes.']);
+            return;
+        }
+
         $data = $this->collectFormData();
         $this->cohortService->createCohort($data);
         $this->redirect('/cohorts');
@@ -77,10 +93,13 @@ class CohortController extends Controller
         $comments = $this->alertService->getCommentsForCohort((int) $id);
 
         $this->view('cohorts.show', [
-            'pageTitle'  => $cohort['name'],
-            'activePage' => 'cohorts',
-            'cohort'     => $cohort,
-            'comments'   => $comments,
+            'pageTitle'       => $cohort['name'],
+            'activePage'      => 'cohorts',
+            'cohort'          => $cohort,
+            'comments'        => $comments,
+            'canEdit'         => Auth::canEditCohort(),
+            'canDelete'       => Auth::canDeleteCohort(),
+            'editableFields'  => Auth::getEditableCohortFields(),
         ]);
     }
 
@@ -89,6 +108,12 @@ class CohortController extends Controller
      */
     public function edit(string $id): void
     {
+        if (!Auth::canEditCohort()) {
+            http_response_code(403);
+            $this->view('errors.403', ['pageTitle' => 'Acceso Denegado'], null);
+            return;
+        }
+
         $cohort = $this->cohortService->getCohortById((int) $id);
 
         if (!$cohort) {
@@ -98,27 +123,53 @@ class CohortController extends Controller
         }
 
         $this->view('cohorts.edit', [
-            'pageTitle'  => 'Editar: ' . $cohort['name'],
-            'activePage' => 'cohorts',
-            'cohort'     => $cohort,
+            'pageTitle'       => 'Editar: ' . $cohort['name'],
+            'activePage'      => 'cohorts',
+            'cohort'          => $cohort,
+            'editableFields'  => Auth::getEditableCohortFields(),
+            'isAdmin'         => Auth::isAdmin(),
         ]);
     }
 
     /**
      * Update an existing cohort.
+     * Each role can only update their permitted fields.
      */
     public function update(string $id): void
     {
-        $data = $this->collectFormData();
-        $this->cohortService->updateCohort((int) $id, $data);
+        if (!Auth::canEditCohort()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No tienes permiso para editar cohortes.']);
+            return;
+        }
+
+        $allData = $this->collectFormData();
+        
+        // Filter to only editable fields for this role (backend validation)
+        $filteredData = Auth::filterEditableCohortData($allData);
+        
+        if (empty($filteredData)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No tienes permiso para modificar estos campos.']);
+            return;
+        }
+
+        $this->cohortService->updateCohortPartial((int) $id, $filteredData);
         $this->redirect('/cohorts/' . $id);
     }
 
     /**
      * Delete a cohort.
+     * Only Admin can delete.
      */
     public function destroy(string $id): void
     {
+        if (!Auth::canDeleteCohort()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No tienes permiso para eliminar cohortes.']);
+            return;
+        }
+
         $this->cohortService->deleteCohort((int) $id);
         $this->redirect('/cohorts');
     }
@@ -136,6 +187,7 @@ class CohortController extends Controller
             'correlative_number'       => (int) $this->input('correlative_number', '0'),
             'total_admission_target'   => (int) $this->input('total_admission_target', '0'),
             'b2b_admission_target'     => (int) $this->input('b2b_admission_target', '0'),
+            'b2b_admissions'           => (int) $this->input('b2b_admissions', '0'),
             'b2c_admissions'           => (int) $this->input('b2c_admissions', '0'),
             'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
             'start_date'               => $this->input('start_date') ?: null,
@@ -143,6 +195,7 @@ class CohortController extends Controller
             'related_project'          => $this->input('related_project') ?: null,
             'assigned_coach'           => $this->input('assigned_coach') ?: null,
             'bootcamp_type'            => $this->input('bootcamp_type') ?: null,
+            'area'                     => $this->input('area') ?: null,
             'assigned_class_schedule'  => $this->input('assigned_class_schedule') ?: null,
             'training_status'          => $this->input('training_status', 'not_started'),
         ];

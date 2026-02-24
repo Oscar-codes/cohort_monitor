@@ -3,7 +3,7 @@
 
 <?php if ($msg = Auth::getFlash('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-1"></i> <?= htmlspecialchars($msg) ?>
+        <i class="bi bi-check-circle me-1"></i> <?= $msg ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 <?php endif; ?>
@@ -83,7 +83,8 @@ $roleLabels = [
                     <th class="d-none d-md-table-cell">Email</th>
                     <th class="text-center">Rol</th>
                     <th class="text-center d-none d-sm-table-cell">Estado</th>
-                    <th class="text-end" style="width: 100px;">Acciones</th>
+                    <th class="text-center d-none d-lg-table-cell">Último Acceso</th>
+                    <th class="text-end" style="width: 160px;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -121,6 +122,13 @@ $roleLabels = [
                                 <span class="badge badge-status bg-secondary-subtle text-secondary">Inactivo</span>
                             <?php endif; ?>
                         </td>
+
+                        <!-- Last Login -->
+                        <td class="text-center d-none d-lg-table-cell">
+                            <small class="text-muted">
+                                <?= !empty($u['last_login_at']) ? date('d/m/Y H:i', strtotime($u['last_login_at'])) : '—' ?>
+                            </small>
+                        </td>
                         
                         <!-- Actions -->
                         <td class="text-end">
@@ -129,6 +137,16 @@ $roleLabels = [
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <?php if ((int)$u['id'] !== Auth::id()): ?>
+                                <form method="POST" action="/users/<?= $u['id'] ?>/toggle-status" class="d-inline">
+                                    <button type="submit" class="btn btn-icon btn-sm btn-outline-<?= $u['is_active'] ? 'warning' : 'success' ?>" data-bs-toggle="tooltip" title="<?= $u['is_active'] ? 'Desactivar' : 'Activar' ?>">
+                                        <i class="bi bi-<?= $u['is_active'] ? 'pause-circle' : 'play-circle' ?>"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="/users/<?= $u['id'] ?>/reset-password" class="d-inline" data-confirm="¿Restablecer la contraseña de este usuario?">
+                                    <button type="submit" class="btn btn-icon btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Restablecer Contraseña">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </form>
                                 <form method="POST" action="/users/<?= $u['id'] ?>" class="d-inline" data-confirm="¿Eliminar este usuario?">
                                     <input type="hidden" name="_method" value="DELETE">
                                     <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">

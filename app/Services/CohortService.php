@@ -71,6 +71,18 @@ class CohortService
     }
 
     /**
+     * Update only specific fields of a cohort (partial update).
+     * Used when non-admin users edit only their permitted fields.
+     * Skips full validation since only specific fields are being updated.
+     */
+    public function updateCohortPartial(int $id, array $data): bool
+    {
+        // Validate only the fields that are being updated
+        $this->validatePartial($data);
+        return $this->cohortRepo->updatePartial($id, $data);
+    }
+
+    /**
      * Delete a cohort.
      */
     public function deleteCohort(int $id): bool
@@ -159,6 +171,51 @@ class CohortService
         $validStatuses = ['not_started', 'in_progress', 'completed', 'cancelled'];
         if (!empty($data['training_status']) && !in_array($data['training_status'], $validStatuses, true)) {
             throw new \InvalidArgumentException('Estado de entrenamiento no válido.');
+        }
+    }
+
+    /**
+     * Validate partial cohort data (for role-limited updates).
+     * Only validates the fields that are present in the data array.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validatePartial(array $data): void
+    {
+        // Validate numeric admission fields if present
+        $numericFields = [
+            'total_admission_target',
+            'b2b_admission_target',
+            'b2b_admissions',
+            'b2c_admissions',
+            'correlative_number',
+        ];
+
+        foreach ($numericFields as $field) {
+            if (array_key_exists($field, $data)) {
+                if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
+                    throw new \InvalidArgumentException("El campo {$field} debe ser un número positivo.");
+                }
+            }
+        }
+
+        // Validate date fields if present
+        $dateFields = ['start_date', 'end_date', 'admission_deadline_date'];
+        foreach ($dateFields as $field) {
+            if (!empty($data[$field])) {
+                $date = \DateTime::createFromFormat('Y-m-d', $data[$field]);
+                if (!$date) {
+                    throw new \InvalidArgumentException("El campo {$field} debe ser una fecha válida (YYYY-MM-DD).");
+                }
+            }
+        }
+
+        // Validate training status if present
+        if (array_key_exists('training_status', $data) && !empty($data['training_status'])) {
+            $validStatuses = ['not_started', 'in_progress', 'completed', 'cancelled'];
+            if (!in_array($data['training_status'], $validStatuses, true)) {
+                throw new \InvalidArgumentException('Estado de entrenamiento no válido.');
+            }
         }
     }
 }

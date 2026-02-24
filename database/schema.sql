@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS cohorts (
     correlative_number       INT UNSIGNED    NOT NULL DEFAULT 0,
     total_admission_target   INT UNSIGNED    NOT NULL DEFAULT 0,
     b2b_admission_target     INT UNSIGNED    NOT NULL DEFAULT 0,
+    b2b_admissions           INT UNSIGNED    NOT NULL DEFAULT 0,
     b2c_admissions           INT UNSIGNED    NOT NULL DEFAULT 0,
     admission_deadline_date  DATE            NULL,
     start_date               DATE            NULL,
@@ -69,28 +70,28 @@ CREATE TABLE IF NOT EXISTS students (
 
 INSERT INTO cohorts (
     cohort_code, name, correlative_number,
-    total_admission_target, b2b_admission_target, b2c_admissions,
+    total_admission_target, b2b_admission_target, b2b_admissions, b2c_admissions,
     admission_deadline_date, start_date, end_date,
     related_project, assigned_coach, bootcamp_type,
     assigned_class_schedule, training_status
 ) VALUES
 (
     'COH-2026-001', 'Spring 2026 — Full Stack Web Dev', 1,
-    30, 15, 12,
+    30, 15, 8, 12,
     '2026-02-15', '2026-03-01', '2026-08-31',
     'Tech Talent Pipeline', 'Maria Garcia', 'Full Stack',
     'Mon-Wed-Fri 09:00-13:00', 'in_progress'
 ),
 (
     'COH-2025-002', 'Winter 2025 — Data Science', 2,
-    25, 10, 8,
+    25, 10, 5, 8,
     '2025-10-15', '2025-11-01', '2026-04-30',
     'Data Analytics Initiative', 'Carlos Rodriguez', 'Data Science',
     'Tue-Thu 14:00-18:00', 'in_progress'
 ),
 (
     'COH-2025-003', 'Fall 2025 — UX/UI Design', 3,
-    20, 8, 15,
+    20, 8, 8, 15,
     '2025-08-15', '2025-09-01', '2026-02-28',
     'Digital Skills Program', 'Ana Martinez', 'UX/UI Design',
     'Mon-Wed 18:00-21:00', 'completed'

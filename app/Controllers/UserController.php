@@ -109,4 +109,29 @@ class UserController extends Controller
         }
         $this->redirect('/users');
     }
+
+    /** Toggle user active/inactive status. */
+    public function toggleStatus(string $id): void
+    {
+        try {
+            $isActive = $this->userService->toggleStatus((int) $id);
+            $label = $isActive ? 'activado' : 'desactivado';
+            Auth::flash('success', "Usuario {$label} exitosamente.");
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+        }
+        $this->redirect('/users');
+    }
+
+    /** Reset a user's password to a random string. */
+    public function resetPassword(string $id): void
+    {
+        try {
+            $newPassword = $this->userService->resetPassword((int) $id);
+            Auth::flash('success', "Contraseña restablecida. Nueva contraseña temporal: <code>{$newPassword}</code>");
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+        }
+        $this->redirect('/users');
+    }
 }
