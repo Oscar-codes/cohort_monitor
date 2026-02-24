@@ -28,7 +28,7 @@ class DashboardService
         $cohorts = $this->cohortRepo->findAll();
 
         $totalCohorts  = count($cohorts);
-        $activeCohorts = count(array_filter($cohorts, fn($c) => ($c['status'] ?? '') === 'active'));
+        $activeCohorts = count(array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'in_progress'));
 
         // Placeholder — student count would come from a StudentRepository
         $totalStudents = 0;

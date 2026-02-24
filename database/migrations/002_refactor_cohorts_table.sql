@@ -1,24 +1,30 @@
 -- ============================================================
---  Cohort Monitor — Database Schema
+--  Migration: Refactor cohorts table with new fields
+--  Date: 2026-02-22
 -- ============================================================
---  Run this script to initialize the database.
+--  This migration transforms the original cohorts table to
+--  support the full set of cohort management fields.
+--
+--  50% and 75% Training Dates are calculated in the Service
+--  layer — they are NOT stored in the database.
 --
 --  Usage:
---    mysql -u root -p < database/schema.sql
---
---  NOTE: 50% and 75% Training Dates are NOT stored in the DB.
---        They are dynamically calculated in the Service layer.
+--    mysql -u root -p cohort_monitor < database/migrations/002_refactor_cohorts_table.sql
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS cohort_monitor
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
 
 USE cohort_monitor;
 
--- ─── Cohorts Table ──────────────────────────────────────────
+-- ─── Drop the old cohorts table and recreate ────────────────
+-- WARNING: This will lose existing data. Back up first if needed.
 
-CREATE TABLE IF NOT EXISTS cohorts (
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS cohorts;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ─── Recreate cohorts table with new structure ──────────────
+
+CREATE TABLE cohorts (
     id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     cohort_code              VARCHAR(50)     NOT NULL UNIQUE,
     name                     VARCHAR(255)    NOT NULL,
@@ -43,9 +49,9 @@ CREATE TABLE IF NOT EXISTS cohorts (
     INDEX idx_cohorts_bootcamp_type    (bootcamp_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ─── Students Table (prepared for future use) ───────────────
+-- ─── Recreate students table ────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE students (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     first_name  VARCHAR(100)    NOT NULL,
     last_name   VARCHAR(100)    NOT NULL,

@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Auth;
 use App\Services\DashboardService;
 
 /**
@@ -16,6 +17,7 @@ class DashboardController extends Controller
 
     public function __construct()
     {
+        Auth::requireLogin();
         $this->dashboardService = new DashboardService();
     }
 

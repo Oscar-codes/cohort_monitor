@@ -3,21 +3,27 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Auth;
 use App\Services\CohortService;
+use App\Services\AlertService;
 
 /**
  * CohortController
  *
  * Manages CRUD operations for cohorts.
  * Delegates business logic to CohortService.
+ * Auth-protected: all users may view, but edit/create/delete depends on role.
  */
 class CohortController extends Controller
 {
     private CohortService $cohortService;
+    private AlertService  $alertService;
 
     public function __construct()
     {
+        Auth::requireLogin();
         $this->cohortService = new CohortService();
+        $this->alertService  = new AlertService();
     }
 
     /**
@@ -28,7 +34,7 @@ class CohortController extends Controller
         $cohorts = $this->cohortService->getAllCohorts();
 
         $this->view('cohorts.index', [
-            'pageTitle'  => 'Cohorts',
+            'pageTitle'  => 'Cohortes',
             'activePage' => 'cohorts',
             'cohorts'    => $cohorts,
         ]);
@@ -40,7 +46,7 @@ class CohortController extends Controller
     public function create(): void
     {
         $this->view('cohorts.create', [
-            'pageTitle'  => 'Create Cohort',
+            'pageTitle'  => 'Nueva Cohorte',
             'activePage' => 'cohorts',
         ]);
     }
@@ -50,14 +56,7 @@ class CohortController extends Controller
      */
     public function store(): void
     {
-        $data = [
-            'name'        => $this->input('name'),
-            'description' => $this->input('description'),
-            'start_date'  => $this->input('start_date'),
-            'end_date'    => $this->input('end_date'),
-            'status'      => $this->input('status', 'active'),
-        ];
-
+        $data = $this->collectFormData();
         $this->cohortService->createCohort($data);
         $this->redirect('/cohorts');
     }
@@ -75,10 +74,13 @@ class CohortController extends Controller
             return;
         }
 
+        $comments = $this->alertService->getCommentsForCohort((int) $id);
+
         $this->view('cohorts.show', [
             'pageTitle'  => $cohort['name'],
             'activePage' => 'cohorts',
             'cohort'     => $cohort,
+            'comments'   => $comments,
         ]);
     }
 
@@ -96,7 +98,7 @@ class CohortController extends Controller
         }
 
         $this->view('cohorts.edit', [
-            'pageTitle'  => 'Edit: ' . $cohort['name'],
+            'pageTitle'  => 'Editar: ' . $cohort['name'],
             'activePage' => 'cohorts',
             'cohort'     => $cohort,
         ]);
@@ -107,14 +109,7 @@ class CohortController extends Controller
      */
     public function update(string $id): void
     {
-        $data = [
-            'name'        => $this->input('name'),
-            'description' => $this->input('description'),
-            'start_date'  => $this->input('start_date'),
-            'end_date'    => $this->input('end_date'),
-            'status'      => $this->input('status'),
-        ];
-
+        $data = $this->collectFormData();
         $this->cohortService->updateCohort((int) $id, $data);
         $this->redirect('/cohorts/' . $id);
     }
@@ -126,5 +121,30 @@ class CohortController extends Controller
     {
         $this->cohortService->deleteCohort((int) $id);
         $this->redirect('/cohorts');
+    }
+
+    // ─── Private helpers ─────────────────────────────────
+
+    /**
+     * Collect all cohort form fields from the request.
+     */
+    private function collectFormData(): array
+    {
+        return [
+            'cohort_code'              => $this->input('cohort_code'),
+            'name'                     => $this->input('name'),
+            'correlative_number'       => (int) $this->input('correlative_number', '0'),
+            'total_admission_target'   => (int) $this->input('total_admission_target', '0'),
+            'b2b_admission_target'     => (int) $this->input('b2b_admission_target', '0'),
+            'b2c_admissions'           => (int) $this->input('b2c_admissions', '0'),
+            'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
+            'start_date'               => $this->input('start_date') ?: null,
+            'end_date'                 => $this->input('end_date') ?: null,
+            'related_project'          => $this->input('related_project') ?: null,
+            'assigned_coach'           => $this->input('assigned_coach') ?: null,
+            'bootcamp_type'            => $this->input('bootcamp_type') ?: null,
+            'assigned_class_schedule'  => $this->input('assigned_class_schedule') ?: null,
+            'training_status'          => $this->input('training_status', 'not_started'),
+        ];
     }
 }

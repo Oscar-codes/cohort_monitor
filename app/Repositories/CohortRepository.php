@@ -43,13 +43,24 @@ class CohortRepository
     }
 
     /**
-     * Find cohorts by status.
+     * Find cohorts by training status.
      */
-    public function findByStatus(string $status): array
+    public function findByTrainingStatus(string $status): array
     {
         return $this->db->query(
-            'SELECT * FROM cohorts WHERE status = :status ORDER BY created_at DESC',
+            'SELECT * FROM cohorts WHERE training_status = :status ORDER BY created_at DESC',
             ['status' => $status]
+        );
+    }
+
+    /**
+     * Find cohorts by bootcamp type.
+     */
+    public function findByBootcampType(string $type): array
+    {
+        return $this->db->query(
+            'SELECT * FROM cohorts WHERE bootcamp_type = :type ORDER BY created_at DESC',
+            ['type' => $type]
         );
     }
 
@@ -59,14 +70,36 @@ class CohortRepository
     public function create(array $data): int
     {
         $this->db->execute(
-            'INSERT INTO cohorts (name, description, start_date, end_date, status, created_at, updated_at)
-             VALUES (:name, :description, :start_date, :end_date, :status, NOW(), NOW())',
+            'INSERT INTO cohorts (
+                cohort_code, name, correlative_number,
+                total_admission_target, b2b_admission_target, b2c_admissions,
+                admission_deadline_date, start_date, end_date,
+                related_project, assigned_coach, bootcamp_type,
+                assigned_class_schedule, training_status,
+                created_at, updated_at
+            ) VALUES (
+                :cohort_code, :name, :correlative_number,
+                :total_admission_target, :b2b_admission_target, :b2c_admissions,
+                :admission_deadline_date, :start_date, :end_date,
+                :related_project, :assigned_coach, :bootcamp_type,
+                :assigned_class_schedule, :training_status,
+                NOW(), NOW()
+            )',
             [
-                'name'        => $data['name'],
-                'description' => $data['description'] ?? null,
-                'start_date'  => $data['start_date'] ?? null,
-                'end_date'    => $data['end_date'] ?? null,
-                'status'      => $data['status'] ?? 'active',
+                'cohort_code'              => $data['cohort_code'],
+                'name'                     => $data['name'],
+                'correlative_number'       => $data['correlative_number'] ?? 0,
+                'total_admission_target'   => $data['total_admission_target'] ?? 0,
+                'b2b_admission_target'     => $data['b2b_admission_target'] ?? 0,
+                'b2c_admissions'           => $data['b2c_admissions'] ?? 0,
+                'admission_deadline_date'  => $data['admission_deadline_date'] ?? null,
+                'start_date'               => $data['start_date'] ?? null,
+                'end_date'                 => $data['end_date'] ?? null,
+                'related_project'          => $data['related_project'] ?? null,
+                'assigned_coach'           => $data['assigned_coach'] ?? null,
+                'bootcamp_type'            => $data['bootcamp_type'] ?? null,
+                'assigned_class_schedule'  => $data['assigned_class_schedule'] ?? null,
+                'training_status'          => $data['training_status'] ?? 'not_started',
             ]
         );
 
@@ -80,20 +113,38 @@ class CohortRepository
     {
         $rows = $this->db->execute(
             'UPDATE cohorts
-             SET name = :name,
-                 description = :description,
-                 start_date = :start_date,
-                 end_date = :end_date,
-                 status = :status,
-                 updated_at = NOW()
+             SET cohort_code              = :cohort_code,
+                 name                     = :name,
+                 correlative_number       = :correlative_number,
+                 total_admission_target   = :total_admission_target,
+                 b2b_admission_target     = :b2b_admission_target,
+                 b2c_admissions           = :b2c_admissions,
+                 admission_deadline_date  = :admission_deadline_date,
+                 start_date               = :start_date,
+                 end_date                 = :end_date,
+                 related_project          = :related_project,
+                 assigned_coach           = :assigned_coach,
+                 bootcamp_type            = :bootcamp_type,
+                 assigned_class_schedule  = :assigned_class_schedule,
+                 training_status          = :training_status,
+                 updated_at               = NOW()
              WHERE id = :id',
             [
-                'id'          => $id,
-                'name'        => $data['name'],
-                'description' => $data['description'] ?? null,
-                'start_date'  => $data['start_date'] ?? null,
-                'end_date'    => $data['end_date'] ?? null,
-                'status'      => $data['status'] ?? 'active',
+                'id'                       => $id,
+                'cohort_code'              => $data['cohort_code'],
+                'name'                     => $data['name'],
+                'correlative_number'       => $data['correlative_number'] ?? 0,
+                'total_admission_target'   => $data['total_admission_target'] ?? 0,
+                'b2b_admission_target'     => $data['b2b_admission_target'] ?? 0,
+                'b2c_admissions'           => $data['b2c_admissions'] ?? 0,
+                'admission_deadline_date'  => $data['admission_deadline_date'] ?? null,
+                'start_date'               => $data['start_date'] ?? null,
+                'end_date'                 => $data['end_date'] ?? null,
+                'related_project'          => $data['related_project'] ?? null,
+                'assigned_coach'           => $data['assigned_coach'] ?? null,
+                'bootcamp_type'            => $data['bootcamp_type'] ?? null,
+                'assigned_class_schedule'  => $data['assigned_class_schedule'] ?? null,
+                'training_status'          => $data['training_status'] ?? 'not_started',
             ]
         );
 
@@ -114,14 +165,14 @@ class CohortRepository
     }
 
     /**
-     * Count cohorts, optionally filtered by status.
+     * Count cohorts, optionally filtered by training status.
      */
-    public function count(?string $status = null): int
+    public function count(?string $trainingStatus = null): int
     {
-        if ($status) {
+        if ($trainingStatus) {
             $result = $this->db->query(
-                'SELECT COUNT(*) as total FROM cohorts WHERE status = :status',
-                ['status' => $status]
+                'SELECT COUNT(*) as total FROM cohorts WHERE training_status = :status',
+                ['status' => $trainingStatus]
             );
         } else {
             $result = $this->db->query('SELECT COUNT(*) as total FROM cohorts');

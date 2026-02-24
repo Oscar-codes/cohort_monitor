@@ -51,6 +51,9 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
+// ─── 5. Boot authentication / session ───────────────────────
+\App\Core\Auth::boot();
+
 // ═══════════════════════════════════════════════════════════════
 //  GLOBAL HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
