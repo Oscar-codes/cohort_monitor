@@ -5,6 +5,32 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.5.1] — 2026-02-24
+
+### 🖥️ Tarjeta de Sistema en Mi Cuenta
+- **Info del sistema** en la vista de perfil: versión de PHP (`PHP_VERSION`), fecha y hora en tiempo real (reloj JavaScript), rol del usuario
+- Reloj se ejecuta inmediatamente al cargar la página y se actualiza cada segundo
+- Fecha y hora tomadas del sistema del cliente (no del servidor) para mostrar la hora local correcta
+
+### 📊 Carga de Datos Reales de Cohortes
+- **27 cohortes** insertadas desde el spreadsheet operativo real
+- Eliminados los 2/3 registros de prueba (COH-2026-001, COH-2025-002, COH-2025-003)
+- Mapeo de campos: Cohort→`cohort_code`, Familia→`name`, Bootcamp→`bootcamp_type`, Proyecto→`related_project`, Coach→`assigned_coach`, Días+Horas→`assigned_class_schedule`, B2B/B2C/Estud.→admissions
+- Estados asignados por fecha: 1 completed, 7 in_progress, 19 not_started
+- Totales: 645 B2B + 191 B2C = 881 estudiantes
+
+#### Archivos Nuevos
+| Archivo | Descripción |
+|---------|-------------|
+| `database/migrations/006_seed_cohorts_feb2026.sql` | Migración con INSERT de 27 cohortes reales |
+
+#### Archivos Modificados
+| Archivo | Cambios |
+|---------|---------||
+| `app/Views/account/profile.php` | +Tarjeta "Sistema" con PHP version, reloj en vivo, rol |
+
+---
+
 ## [1.5.0] — 2026-02-23
 
 ### 👤 Módulo de Cuenta de Usuario

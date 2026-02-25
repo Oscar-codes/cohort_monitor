@@ -60,6 +60,43 @@ $roleLabels = [
                 </li>
             </ul>
         </div>
+
+        <!-- System Info Card -->
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-transparent border-bottom">
+                <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Sistema</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-filetype-php me-2"></i>PHP</span>
+                    <span class="badge bg-primary-subtle text-primary"><?= PHP_VERSION ?></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-calendar-date me-2"></i>Fecha</span>
+                    <span id="systemDate">--/--/----</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Hora</span>
+                    <span id="systemTime">--:--:--</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-shield me-2"></i>Rol</span>
+                    <span class="badge <?= $roleClass ?>"><?= $roleLabel ?></span>
+                </li>
+            </ul>
+        </div>
+        <script>
+        // Live system clock — runs immediately and updates every second
+        (function updateClock() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('systemDate').textContent =
+                pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear();
+            document.getElementById('systemTime').textContent =
+                pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            setTimeout(updateClock, 1000);
+        })();
+        </script>
     </div>
 
     <!-- Right Column: Edit Forms -->

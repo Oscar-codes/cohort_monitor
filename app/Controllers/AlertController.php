@@ -7,7 +7,7 @@ use App\Core\Auth;
 use App\Services\AlertService;
 
 /**
- * AlertController — Admin-only alerts / risk dashboard.
+ * AlertController — Alerts / risk dashboard (all authenticated roles).
  */
 class AlertController extends Controller
 {
@@ -15,7 +15,7 @@ class AlertController extends Controller
 
     public function __construct()
     {
-        Auth::requireRole('admin');
+        Auth::requireLogin();
         $this->alertService = new AlertService();
     }
 

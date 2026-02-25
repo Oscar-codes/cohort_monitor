@@ -81,9 +81,7 @@
     <div class="card login-card shadow-lg">
         <div class="card-body p-4 p-sm-5">
             <div class="text-center mb-4">
-                <div class="login-brand">
-                    <i class="bi bi-graph-up-arrow"></i>
-                </div>
+                <img src="/assets/images/logo/kodigo.jpg" alt="Kodigo" style="height: 60px;" class="mb-3">
                 <h4 class="fw-bold mb-1">Cohort Monitor</h4>
                 <p class="text-muted small">Inicia sesión para continuar</p>
             </div>

@@ -57,15 +57,13 @@
             </li>
             <?php endif; ?>
 
-            <!-- Alerts — admin only -->
-            <?php if (Auth::isAdmin()): ?>
+            <!-- Alerts — all authenticated users -->
             <li class="nav-item">
                 <a href="/alerts" class="nav-link <?= ($activePage ?? '') === 'alerts' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
                     <i class="bi bi-exclamation-triangle"></i>
                     <span>Alertas</span>
                 </a>
             </li>
-            <?php endif; ?>
 
             <!-- Users — admin only -->
             <?php if (Auth::isAdmin()): ?>

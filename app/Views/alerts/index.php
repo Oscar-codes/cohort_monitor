@@ -1,4 +1,4 @@
-<!-- Alerts Dashboard (Admin only) -->
+<!-- Alerts Dashboard (All roles) -->
 <?php use App\Core\Auth; ?>
 <?php use App\Services\MarketingService; ?>
 

@@ -155,13 +155,13 @@
                         <span class="text-muted">
                             <i class="bi bi-calendar3 me-2"></i>Fecha
                         </span>
-                        <span class="fw-medium"><?= date('d/m/Y') ?></span>
+                        <span class="fw-medium" id="dash-date">--/--/----</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                         <span class="text-muted">
                             <i class="bi bi-clock me-2"></i>Hora
                         </span>
-                        <span class="fw-medium"><?= date('H:i') ?></span>
+                        <span class="fw-medium" id="dash-time">--:--:--</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
                         <span class="text-muted">
@@ -184,3 +184,22 @@
         </div>
     </div>
 </div>
+<script>
+(function updateDashClock() {
+    var now  = new Date();
+    var pad  = function(n) { return String(n).padStart(2, '0'); };
+    var day  = pad(now.getDate());
+    var mon  = pad(now.getMonth() + 1);
+    var year = now.getFullYear();
+    var h    = pad(now.getHours());
+    var m    = pad(now.getMinutes());
+    var s    = pad(now.getSeconds());
+
+    var dateEl = document.getElementById('dash-date');
+    var timeEl = document.getElementById('dash-time');
+    if (dateEl) dateEl.textContent = day + '/' + mon + '/' + year;
+    if (timeEl) timeEl.textContent = h + ':' + m + ':' + s;
+
+    setTimeout(updateDashClock, 1000);
+})();
+</script>

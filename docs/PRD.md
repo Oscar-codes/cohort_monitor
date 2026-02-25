@@ -8,12 +8,12 @@
 | Campo              | Detalle                                                        |
 |--------------------|----------------------------------------------------------------|
 | **Nombre**         | Cohort Monitor                                                 |
-| **Versión**        | 1.5.0                                                          |
+| **Versión**        | 1.5.1                                                          |
 | **Tipo**           | Aplicación web de gestión interna                              |
 | **Stack**          | PHP 8.2 · MySQL · Bootstrap 5 · JavaScript ES6                |
 | **Framework**      | MVC custom (sin frameworks de terceros)                        |
 | **Composer**       | PhpSpreadsheet 5.4 · Dompdf 3.1                               |
-| **Estado**         | ✅ Producción — Auth + Marketing + Cuenta + Import + Reports   |
+| **Estado**         | ✅ Producción — Auth + Marketing + Cuenta + Import + Reports + Datos Reales |
 
 ### Propósito
 Cohort Monitor es una plataforma web para **crear, monitorear y administrar cohortes educativas** (grupos de estudiantes organizados por programa y periodo). Permite a administradores tener visibilidad en tiempo real del estado de cada cohorte a través de un dashboard centralizado.
@@ -168,6 +168,7 @@ Cohort Monitor es una plataforma web para **crear, monitorear y administrar coho
 | Funcionalidad                       | Detalle                                      |
 |-------------------------------------|----------------------------------------------|
 | Vista de perfil                     | Tarjeta con avatar de iniciales, rol, estado, último acceso, fecha registro |
+| Tarjeta de Sistema                  | Versión PHP, fecha/hora en tiempo real (reloj JS local), rol del usuario |
 | Editar perfil                       | Nombre completo + email (username no editable) |
 | Cambiar contraseña                  | Valida contraseña actual, nueva (mín. 8 chars) + confirmación |
 | Sesión actualizada                  | Cambios reflejados inmediatamente en sesión  |
@@ -535,7 +536,10 @@ cohort-monitor/                          ~65 archivos
 │   └── migrations/
 │       ├── 001_initial_schema.sql       Cohorts + Students
 │       ├── 002_cohort_extended_fields.sql  16 columnas adicionales
-│       └── 003_auth_system.sql          Users, Sessions, Marketing, Comments, Audit
+│       ├── 003_auth_system.sql          Users, Sessions, Marketing, Comments, Audit
+│       ├── 004_add_b2b_admissions.sql   Columna b2b_admissions
+│       ├── 005_add_area_to_cohorts.sql  Columna area ENUM para reportes
+│       └── 006_seed_cohorts_feb2026.sql 27 cohortes reales del spreadsheet operativo
 │
 ├── docs/
 │   ├── PRD.md                           Este documento
@@ -706,6 +710,7 @@ Controller → Service → Repository → Database → MySQL
 | P1        | Reportes y exports         | ✅ COMPLETADO v1.3 — Excel (PhpSpreadsheet) + PDF (Dompdf) |
 | P1        | Importación masiva         | ✅ COMPLETADO v1.4 — Excel/CSV con validación y duplicados |
 | P1        | Módulo Mi Cuenta           | ✅ COMPLETADO v1.5 — Self-service + admin enhancements |
+| P1        | Datos reales de cohortes   | ✅ COMPLETADO v1.5.1 — 27 cohortes del spreadsheet operativo |
 | P2        | API REST `/api/v1/*`       | Controller base soporta `$this->json()`, ruta api.php por crear |
 | P2        | Paginación                 | Repository::count() ya existe, falta limit/offset |
 | P3        | Búsqueda y filtros         | Repository::findByStatus() ya existe como ejemplo |
@@ -737,5 +742,5 @@ php -S localhost:8000 -t public
 
 ---
 
-*Documento actualizado el 23 de febrero de 2026.*
-*Versión del documento: 1.5*
+*Documento actualizado el 24 de febrero de 2026.*
+*Versión del documento: 1.5.1*

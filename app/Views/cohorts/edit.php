@@ -1,10 +1,66 @@
 <!-- Cohort Edit View with Role-Based Field Permissions -->
 <?php
-// Helper function to check if field is editable
-$canEdit = fn(string $field): bool => in_array($field, $editableFields ?? [], true);
-$disabled = fn(string $field): string => $canEdit($field) ? '' : 'disabled readonly';
-$fieldClass = fn(string $field): string => $canEdit($field) ? 'form-control' : 'form-control bg-light text-muted';
+// ── Access control: marketing role cannot edit cohorts ─────────────────────
+$currentRole = $_SESSION['role'] ?? '';
+$isMarketingBlocked = ($currentRole === 'marketing');
+
+// Helper functions (only needed when user has access)
+if (!$isMarketingBlocked) {
+    $canEdit    = fn(string $field): bool   => in_array($field, $editableFields ?? [], true);
+    $disabled   = fn(string $field): string => $canEdit($field) ? '' : 'disabled readonly';
+    $fieldClass = fn(string $field): string => $canEdit($field) ? 'form-control' : 'form-control bg-light text-muted';
+}
 ?>
+
+<?php if ($isMarketingBlocked): ?>
+<!-- ── 403 Modal (marketing role) ───────────────────────────────────────── -->
+<div class="modal fade" id="accessDeniedModal" tabindex="-1"
+     aria-labelledby="accessDeniedModalLabel" aria-modal="true" role="dialog"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold" id="accessDeniedModalLabel">
+                    <i class="bi bi-shield-x me-2"></i>403 – Acceso Denegado
+                </h5>
+            </div>
+
+            <div class="modal-body py-4">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-circle-fill text-danger fs-2 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <p class="mb-1 fw-semibold text-dark">No tienes los permisos necesarios para acceder a esta sección.</p>
+                        <p class="mb-0 text-muted small">Contacta al administrador si crees que deberías tener acceso.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 gap-2 justify-content-end">
+                <button type="button" class="btn btn-outline-secondary"
+                        onclick="history.back()">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </button>
+                <a href="/" class="btn btn-primary">
+                    <i class="bi bi-house me-1"></i>Ir al Inicio
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = new bootstrap.Modal(document.getElementById('accessDeniedModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+        modal.show();
+    });
+</script>
+
+<?php else: ?>
 
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb mb-0">
@@ -268,3 +324,4 @@ document.querySelector('form').addEventListener('submit', function(e) {
     });
 });
 </script>
+<?php endif; // end marketing access block ?>
