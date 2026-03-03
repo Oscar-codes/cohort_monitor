@@ -31,8 +31,11 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN chmod -R 775 storage 2>/dev/null || true
 RUN mkdir -p storage/logs storage/cache
 
+# Hacer ejecutable el script de inicio
+RUN chmod +x start.sh
+
 # Exponer puerto (Railway inyecta $PORT automáticamente)
 EXPOSE ${PORT:-8000}
 
-# Usar router PHP para manejar todas las URLs correctamente
-CMD php -S 0.0.0.0:${PORT:-8000} -t public public/index.php
+# Usar script que genera .env desde variables de Railway y arranca PHP
+CMD ["bash", "start.sh"]
