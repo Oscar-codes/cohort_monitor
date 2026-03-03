@@ -7,7 +7,7 @@ use App\Repositories\AuditRepository;
 use App\Core\Auth;
 
 /**
- * AlertService — Aggregates risk data for the admin alerts dashboard.
+ * AlertService — Aggregates risk data for the alerts dashboard (all roles).
  */
 class AlertService
 {
@@ -21,7 +21,7 @@ class AlertService
     }
 
     /**
-     * Get all alert data for the admin dashboard.
+     * Get all alert data for the alerts dashboard (all roles).
      */
     public function getAlertsSummary(): array
     {

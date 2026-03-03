@@ -28,12 +28,9 @@ class DashboardController extends Controller
     {
         $stats = $this->dashboardService->getSummaryStats();
 
-        $this->view('dashboard.index', [
-            'pageTitle'    => 'Dashboard',
-            'activePage'   => 'dashboard',
-            'totalCohorts' => $stats['totalCohorts'],
-            'totalStudents'=> $stats['totalStudents'],
-            'activeCohorts'=> $stats['activeCohorts'],
-        ]);
+        $this->view('dashboard.index', array_merge(
+            ['pageTitle' => 'Dashboard', 'activePage' => 'dashboard'],
+            $stats
+        ));
     }
 }

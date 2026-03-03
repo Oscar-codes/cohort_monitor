@@ -70,8 +70,20 @@ function formatDate(?string $date): string {
     </div>
 </div>
 
-<!-- Cohorts Table -->
-<div class="card table-card">
+<?php
+    // Group cohorts by training status
+    $notStarted  = array_filter($cohorts, fn($c) => ($c['training_status'] ?? 'not_started') === 'not_started');
+    $inProgress   = array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'in_progress');
+    $completed    = array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'completed');
+    $cancelled    = array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'cancelled');
+
+    /** Render a cohort table for a given list */
+    function renderCohortTable(array $list, bool $canDelete): void {
+        if (empty($list)) {
+            echo '<div class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i>No hay cohortes en esta categoría.</div>';
+            return;
+        }
+?>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -88,14 +100,9 @@ function formatDate(?string $date): string {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($cohorts as $cohort): ?>
+                <?php foreach ($list as $cohort): ?>
                     <tr>
-                        <!-- ID -->
-                        <td>
-                            <span class="text-muted">#<?= htmlspecialchars($cohort['id']) ?></span>
-                        </td>
-                        
-                        <!-- Cohort Info -->
+                        <td><span class="text-muted">#<?= htmlspecialchars($cohort['id']) ?></span></td>
                         <td>
                             <div class="d-flex flex-column">
                                 <a href="/cohorts/<?= $cohort['id'] ?>" class="text-decoration-none fw-semibold text-dark">
@@ -111,8 +118,6 @@ function formatDate(?string $date): string {
                                 </div>
                             </div>
                         </td>
-                        
-                        <!-- Bootcamp Type -->
                         <td class="d-none d-md-table-cell">
                             <?php if (!empty($cohort['bootcamp_type'])): ?>
                                 <span class="badge bg-light text-dark border"><?= htmlspecialchars($cohort['bootcamp_type']) ?></span>
@@ -120,8 +125,6 @@ function formatDate(?string $date): string {
                                 <span class="text-muted">—</span>
                             <?php endif; ?>
                         </td>
-                        
-                        <!-- Related Project -->
                         <td class="d-none d-md-table-cell">
                             <?php if (!empty($cohort['related_project'])): ?>
                                 <span class="badge bg-info-subtle text-info border"><?= htmlspecialchars($cohort['related_project']) ?></span>
@@ -129,16 +132,12 @@ function formatDate(?string $date): string {
                                 <span class="text-muted">—</span>
                             <?php endif; ?>
                         </td>
-                        
-                        <!-- Dates -->
                         <td class="d-none d-lg-table-cell">
                             <div class="small">
                                 <div><i class="bi bi-calendar-event text-muted me-1"></i><?= formatDate($cohort['start_date'] ?? null) ?></div>
                                 <div class="text-muted"><i class="bi bi-calendar-check me-1"></i><?= formatDate($cohort['end_date'] ?? null) ?></div>
                             </div>
                         </td>
-                        
-                        <!-- Admissions -->
                         <td class="d-none d-xl-table-cell text-center">
                             <div class="d-flex justify-content-center gap-3">
                                 <div class="text-center">
@@ -155,8 +154,6 @@ function formatDate(?string $date): string {
                                 </div>
                             </div>
                         </td>
-                        
-                        <!-- Formación (calculated) -->
                         <td class="d-none d-lg-table-cell text-center">
                             <?php
                                 $hasB2B = !empty($cohort['b2b_admission_target']) && (int) $cohort['b2b_admission_target'] > 0;
@@ -172,13 +169,9 @@ function formatDate(?string $date): string {
                                 }
                             ?>
                         </td>
-                        
-                        <!-- Status -->
                         <td class="text-center">
                             <?= statusBadge($cohort['training_status'] ?? 'not_started') ?>
                         </td>
-                        
-                        <!-- Actions -->
                         <td class="text-end">
                             <div class="action-buttons justify-content-end">
                                 <a href="/cohorts/<?= $cohort['id'] ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles">
@@ -187,7 +180,7 @@ function formatDate(?string $date): string {
                                 <a href="/cohorts/<?= $cohort['id'] ?>/edit" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <?php if ($canDelete ?? false): ?>
+                                <?php if ($canDelete): ?>
                                 <form method="POST" action="/cohorts/<?= $cohort['id'] ?>" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">
                                     <input type="hidden" name="_method" value="DELETE">
                                     <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
@@ -202,7 +195,87 @@ function formatDate(?string $date): string {
             </tbody>
         </table>
     </div>
+<?php } ?>
+
+<!-- ===================== Sin Iniciar (visible por defecto) ===================== -->
+<div class="card table-card mb-4">
+    <div class="card-header bg-secondary-subtle d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-hourglass me-1 text-secondary"></i>
+            Sin Iniciar
+            <span class="badge bg-secondary ms-2"><?= count($notStarted) ?></span>
+        </h6>
+    </div>
+    <?php renderCohortTable($notStarted, $canDelete ?? false); ?>
 </div>
+
+<!-- ===================== En Progreso (collapse) ===================== -->
+<div class="card table-card mb-4">
+    <div class="card-header bg-primary-subtle d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-play-circle me-1 text-primary"></i>
+            En Progreso
+            <span class="badge bg-primary ms-2"><?= count($inProgress) ?></span>
+        </h6>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInProgress" aria-expanded="false" aria-controls="collapseInProgress">
+            <i class="bi bi-chevron-down me-1"></i>Mostrar
+        </button>
+    </div>
+    <div class="collapse" id="collapseInProgress">
+        <?php renderCohortTable($inProgress, $canDelete ?? false); ?>
+    </div>
+</div>
+
+<!-- ===================== Completados (collapse) ===================== -->
+<div class="card table-card mb-4">
+    <div class="card-header bg-success-subtle d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-check-circle me-1 text-success"></i>
+            Completados
+            <span class="badge bg-success ms-2"><?= count($completed) ?></span>
+        </h6>
+        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompleted" aria-expanded="false" aria-controls="collapseCompleted">
+            <i class="bi bi-chevron-down me-1"></i>Mostrar
+        </button>
+    </div>
+    <div class="collapse" id="collapseCompleted">
+        <?php renderCohortTable($completed, $canDelete ?? false); ?>
+    </div>
+</div>
+
+<?php if (!empty($cancelled)): ?>
+<!-- ===================== Cancelados (collapse) ===================== -->
+<div class="card table-card mb-4">
+    <div class="card-header bg-danger-subtle d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-x-circle me-1 text-danger"></i>
+            Cancelados
+            <span class="badge bg-danger ms-2"><?= count($cancelled) ?></span>
+        </h6>
+        <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCancelled" aria-expanded="false" aria-controls="collapseCancelled">
+            <i class="bi bi-chevron-down me-1"></i>Mostrar
+        </button>
+    </div>
+    <div class="collapse" id="collapseCancelled">
+        <?php renderCohortTable($cancelled, $canDelete ?? false); ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Toggle button text JS -->
+<script>
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
+    const targetId = btn.getAttribute('data-bs-target');
+    const target = document.querySelector(targetId);
+    if (!target) return;
+    target.addEventListener('show.bs.collapse', () => {
+        btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar';
+    });
+    target.addEventListener('hide.bs.collapse', () => {
+        btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Mostrar';
+    });
+});
+</script>
 
 <?php else: ?>
 <!-- Empty State -->

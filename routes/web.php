@@ -71,5 +71,5 @@ $router->get('/reports',              [ReportController::class, 'index'],       
 $router->get('/reports/export/excel', [ReportController::class, 'exportExcel'], 'reports.export.excel');
 $router->get('/reports/export/pdf',   [ReportController::class, 'exportPdf'],   'reports.export.pdf');
 
-// ─── Alerts (admin) ─────────────────────────────────────────
+// ─── Alerts (all authenticated) ─────────────────────────────
 $router->get('/alerts', [AlertController::class, 'index'], 'alerts.index');
