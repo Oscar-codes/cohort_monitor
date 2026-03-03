@@ -73,7 +73,9 @@ spl_autoload_register(function (string $class): void {
  */
 function env(string $key, mixed $default = null): mixed
 {
-    $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+    // System env vars (Railway, Docker) take priority over .env file
+    $sysVal = getenv($key);
+    $value = ($sysVal !== false) ? $sysVal : ($_ENV[$key] ?? $_SERVER[$key] ?? false);
 
     if ($value === false) {
         return $default;
