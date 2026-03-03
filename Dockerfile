@@ -37,6 +37,10 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Permisos para storage
 RUN chmod -R 775 storage 2>/dev/null || true
+RUN mkdir -p storage/logs storage/cache
 
-# Railway inyecta $PORT automáticamente (default 8000 para local)
-CMD php -S 0.0.0.0:${PORT:-8000} -t public
+# Exponer puerto (Railway inyecta $PORT automáticamente)
+EXPOSE ${PORT:-8000}
+
+# Usar router PHP para manejar todas las URLs correctamente
+CMD php -S 0.0.0.0:${PORT:-8000} -t public public/index.php
