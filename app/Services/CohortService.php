@@ -54,6 +54,14 @@ class CohortService
     }
 
     /**
+     * Get distinct project names for filtering.
+     */
+    public function getProjectNames(): array
+    {
+        return $this->cohortRepo->findProjectNames();
+    }
+
+    /**
      * Get a single cohort by ID with calculated milestone dates.
      */
     public function getCohortById(int $id): ?array
@@ -237,15 +245,20 @@ class CohortService
     private function normalizeFilters(array $filters): array
     {
         $normalized = [
-            'bootcamp_type'  => null,
-            'start_date'     => null,
-            'end_date'       => null,
-            'business_model' => null,
-            'cohort_status'  => null,
+            'bootcamp_type'   => null,
+            'related_project' => null,
+            'start_date'      => null,
+            'end_date'        => null,
+            'business_model'  => null,
+            'cohort_status'   => null,
         ];
 
         if (!empty($filters['bootcamp_type'])) {
             $normalized['bootcamp_type'] = trim((string) $filters['bootcamp_type']);
+        }
+
+        if (!empty($filters['related_project'])) {
+            $normalized['related_project'] = trim((string) $filters['related_project']);
         }
 
         // Validate date format (YYYY-MM-DD) before passing to repository

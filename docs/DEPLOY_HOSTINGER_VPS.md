@@ -235,13 +235,13 @@ Contenido mínimo del `.env`:
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://tudominio.com
+APP_URL=https://cohort_monitor.com
 
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=cohort_monitor
 DB_USERNAME=cohort_user
-DB_PASSWORD=TU_PASSWORD_SEGURA
+DB_PASSWORD=oscar503
 
 DB_CHARSET=utf8mb4
 ```

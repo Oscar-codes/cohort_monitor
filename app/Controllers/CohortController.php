@@ -32,15 +32,17 @@ class CohortController extends Controller
     public function index(): void
     {
         $filters = [
-            'bootcamp_type'  => (string) $this->input('bootcamp_type', ''),
-            'start_date'     => (string) $this->input('start_date', ''),
-            'end_date'       => (string) $this->input('end_date', ''),
-            'business_model' => (string) $this->input('business_model', ''),
-            'cohort_status'  => (string) $this->input('cohort_status', ''),
+            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+            'related_project' => (string) $this->input('related_project', ''),
+            'start_date'      => (string) $this->input('start_date', ''),
+            'end_date'        => (string) $this->input('end_date', ''),
+            'business_model'  => (string) $this->input('business_model', ''),
+            'cohort_status'   => (string) $this->input('cohort_status', ''),
         ];
 
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
         $bootcampTypes = $this->cohortService->getBootcampTypes();
+        $projectNames = $this->cohortService->getProjectNames();
 
         // Keep only active filter values for link/query persistence.
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
@@ -52,6 +54,7 @@ class CohortController extends Controller
             'filters'         => $filters,
             'activeFilters'   => $activeFilters,
             'bootcampTypes'   => $bootcampTypes,
+            'projectNames'    => $projectNames,
             'canCreate'       => Auth::canCreateCohort(),
             'canDelete'       => Auth::canDeleteCohort(),
         ]);

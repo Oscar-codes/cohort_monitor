@@ -50,6 +50,11 @@ class CohortRepository
             $params['bootcamp_type'] = $filters['bootcamp_type'];
         }
 
+        if (!empty($filters['related_project'])) {
+            $where[] = 'related_project = :related_project';
+            $params['related_project'] = $filters['related_project'];
+        }
+
         // Date range overlap: show cohorts active during [start_date, end_date]
         if (!empty($filters['start_date'])) {
             // Exclude cohorts that ended before the filter's start date
@@ -112,6 +117,26 @@ class CohortRepository
 
         return array_values(array_map(
             static fn(array $row): string => (string) $row['bootcamp_type'],
+            $rows
+        ));
+    }
+
+    /**
+     * Return all available project names for filtering.
+     *
+     * @return string[]
+     */
+    public function findProjectNames(): array
+    {
+        $rows = $this->db->query(
+            'SELECT DISTINCT related_project
+             FROM cohorts
+               WHERE related_project IS NOT NULL AND related_project <> \'\'
+             ORDER BY related_project ASC'
+        );
+
+        return array_values(array_map(
+            static fn(array $row): string => (string) $row['related_project'],
             $rows
         ));
     }

@@ -54,6 +54,26 @@ function lifecycleBadge(array $cohort): string
     return '<span class="badge ' . $class . '">' . htmlspecialchars($label) . '</span>';
 }
 
+/** Helper: render project badge with color coding */
+function projectBadge(string $project): string
+{
+    if ($project === '—' || $project === '') {
+        return '<span class="text-muted">—</span>';
+    }
+
+    $colors = [
+        'kodigo' => 'bg-primary-subtle text-primary',
+        'lamar'  => 'bg-success-subtle text-success',
+        'incaf'  => 'bg-warning-subtle text-warning',
+        'aldea'  => 'bg-info-subtle text-info',
+    ];
+
+    $key = strtolower(trim($project));
+    $class = $colors[$key] ?? 'bg-light text-dark border';
+
+    return '<span class="badge ' . $class . '">' . htmlspecialchars($project) . '</span>';
+}
+
 /** Helper: detect business model */
 function businessModelBadge(array $cohort): string
 {
@@ -109,6 +129,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): s
             . '<div class="small text-muted mt-1">' . $code . '</div>'
         . '</div></td>'
         . '<td class="d-none d-md-table-cell">' . $typeCell . '</td>'
+        . '<td class="d-none d-md-table-cell">' . projectBadge($project) . '</td>'
         . '<td class="d-none d-lg-table-cell"><div class="small">'
             . '<div><i class="bi bi-calendar-event text-muted me-1"></i>' . $startLabel . '</div>'
             . '<div class="text-muted"><i class="bi bi-calendar-check me-1"></i>' . $endLabel . '</div>'
@@ -216,6 +237,18 @@ $statusConfig = [
                     <?php foreach (($bootcampTypes ?? []) as $type): ?>
                         <option value="<?= htmlspecialchars($type) ?>" <?= (($filters['bootcamp_type'] ?? '') === $type) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($type) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-2">
+                <label for="related_project" class="form-label">Proyecto</label>
+                <select class="form-select" id="related_project" name="related_project">
+                    <option value="">Todos</option>
+                    <?php foreach (($projectNames ?? []) as $pName): ?>
+                        <option value="<?= htmlspecialchars($pName) ?>" <?= (($filters['related_project'] ?? '') === $pName) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($pName) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -331,6 +364,7 @@ $statusConfig = [
                                     <th style="width:56px;">ID</th>
                                     <th>Cohorte</th>
                                     <th class="d-none d-md-table-cell">Bootcamp</th>
+                                    <th class="d-none d-md-table-cell">Proyecto</th>
                                     <th class="d-none d-lg-table-cell">Fechas</th>
                                     <th class="d-none d-xl-table-cell">Coach</th>
                                     <th class="d-none d-xl-table-cell">Horario</th>
