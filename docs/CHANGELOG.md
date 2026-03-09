@@ -5,6 +5,16 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.5.4] — 2026-03-09
+
+### 📊 Carga completa de datos de cohortes
+- Nueva migración `009_seed_cohorts_march2026.sql` con **112 cohortes** del spreadsheet de operaciones (Ene–Dic 2026).
+- Reemplaza toda la data anterior de cohortes con información actualizada de bootcamps, coaches, horarios, fechas, y metas B2B/B2C.
+- Incluye nuevos tipos de bootcamp: `ASD`, `AISCA`, `AIMLF`, `AIMLT`, `AIDSR`, `AIDJR`, `NETDV`, `WDFRT`, `DATTR`, `BIANL`.
+- Proyectos cubiertos: KODIGO, MINEDUCYT, INCAF 3.1, INCAF 3.2, KEY INSTITUTE, ALDEA, LAMAR.
+
+---
+
 ## [1.5.3] — 2026-03-09
 
 ### 🔤 Corrección de tildes en Cohortes
