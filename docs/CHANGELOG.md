@@ -5,6 +5,15 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.5.3] — 2026-03-09
+
+### 🔤 Corrección de tildes en Cohortes
+- Se refuerza la conexion MySQL en UTF-8 (`utf8mb4`) para evitar problemas de codificacion.
+- El guardado de cohortes normaliza texto de entrada para conservar acentos y caracteres como `ñ`.
+- Nueva migracion `008_fix_cohort_text_encoding.sql` para corregir datos existentes con textos corruptos (`??` y mojibake en nombres/horarios/coaches).
+
+---
+
 ## [1.5.2] — 2026-03-09
 
 ### 🔎 Cohorts: Filtros combinables + orden por fecha de inicio

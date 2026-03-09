@@ -197,8 +197,8 @@ class CohortController extends Controller
     private function collectFormData(): array
     {
         return [
-            'cohort_code'              => $this->input('cohort_code'),
-            'name'                     => $this->input('name'),
+            'cohort_code'              => $this->normalizeTextInput($this->input('cohort_code')),
+            'name'                     => $this->normalizeTextInput($this->input('name')),
             'correlative_number'       => (int) $this->input('correlative_number', '0'),
             'total_admission_target'   => (int) $this->input('total_admission_target', '0'),
             'b2b_admission_target'     => (int) $this->input('b2b_admission_target', '0'),
@@ -207,12 +207,40 @@ class CohortController extends Controller
             'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
             'start_date'               => $this->input('start_date') ?: null,
             'end_date'                 => $this->input('end_date') ?: null,
-            'related_project'          => $this->input('related_project') ?: null,
-            'assigned_coach'           => $this->input('assigned_coach') ?: null,
-            'bootcamp_type'            => $this->input('bootcamp_type') ?: null,
+            'related_project'          => $this->normalizeTextInput($this->input('related_project')),
+            'assigned_coach'           => $this->normalizeTextInput($this->input('assigned_coach')),
+            'bootcamp_type'            => $this->normalizeTextInput($this->input('bootcamp_type')),
             'area'                     => $this->input('area') ?: null,
-            'assigned_class_schedule'  => $this->input('assigned_class_schedule') ?: null,
+            'assigned_class_schedule'  => $this->normalizeTextInput($this->input('assigned_class_schedule')),
             'training_status'          => $this->input('training_status', 'not_started'),
         ];
+    }
+
+    /**
+     * Normalize text input to UTF-8 and repair common mojibake sequences.
+     */
+    private function normalizeTextInput(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return null;
+        }
+
+        if (function_exists('mb_convert_encoding')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
+        }
+
+        $replacements = [
+            'Ã¡' => 'á', 'Ã©' => 'é', 'Ã­' => 'í', 'Ã³' => 'ó', 'Ãº' => 'ú',
+            'Ã' => 'Á', 'Ã‰' => 'É', 'Ã' => 'Í', 'Ã“' => 'Ó', 'Ãš' => 'Ú',
+            'Ã±' => 'ñ', 'Ã‘' => 'Ñ',
+            'Â' => '',
+        ];
+
+        return strtr($text, $replacements);
     }
 }
