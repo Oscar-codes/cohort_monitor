@@ -5,6 +5,28 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.5.2] — 2026-03-09
+
+### 🔎 Cohorts: Filtros combinables + orden por fecha de inicio
+- La vista `Cohorts` ahora ordena por `start_date` ascendente por defecto
+- Nuevo panel de filtros (combinables entre si) con:
+    - `bootcamp_type`
+    - `start_date`
+    - `end_date`
+    - `business_model` (`b2b` / `b2c`)
+    - `cohort_status` (`upcoming`, `in_progress`, `completed`)
+- Filtros implementados via query string (`GET`) para persistencia de estado en la navegacion
+- Acciones de tabla (`ver`, `editar`) preservan el contexto de filtros activos
+
+### ⚙️ Backend y rendimiento
+- `CohortController::index()` ahora acepta y pasa filtros al Service
+- `CohortService` agrega normalizacion/whitelist de filtros
+- `CohortRepository` agrega query builder con filtros combinables y prepared statements
+- Nuevo método para obtener tipos de bootcamp distintos para el dropdown
+- Migracion `007_optimize_cohorts_filters.sql` agrega indices para sorting y filtros por fechas/modelo de negocio
+
+---
+
 ## [1.5.1] — 2026-02-24
 
 ### 🖥️ Tarjeta de Sistema en Mi Cuenta

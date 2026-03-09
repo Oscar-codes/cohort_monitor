@@ -20,13 +20,97 @@ class CohortRepository
     }
 
     /**
-     * Get all cohorts ordered by creation date.
+     * Get all cohorts ordered by start date (ascending).
      */
     public function findAll(): array
     {
         return $this->db->query(
-            'SELECT * FROM cohorts ORDER BY created_at DESC'
+            'SELECT * FROM cohorts ORDER BY start_date IS NULL ASC, start_date ASC, id ASC'
         );
+    }
+
+    /**
+     * Find cohorts using combinable filters with default start-date sorting.
+     *
+     * Supported filters:
+     * - bootcamp_type: exact bootcamp type string
+     * - start_date: include cohorts with start_date >= value
+     * - end_date: include cohorts with end_date <= value
+     * - business_model: b2b | b2c
+     * - cohort_status: upcoming | in_progress | completed
+     */
+    public function findByFilters(array $filters): array
+    {
+        $sql = 'SELECT * FROM cohorts';
+        $where = [];
+        $params = [];
+
+        if (!empty($filters['bootcamp_type'])) {
+            $where[] = 'bootcamp_type = :bootcamp_type';
+            $params['bootcamp_type'] = $filters['bootcamp_type'];
+        }
+
+        if (!empty($filters['start_date'])) {
+            $where[] = 'start_date >= :start_date';
+            $params['start_date'] = $filters['start_date'];
+        }
+
+        if (!empty($filters['end_date'])) {
+            $where[] = 'end_date <= :end_date';
+            $params['end_date'] = $filters['end_date'];
+        }
+
+        if (!empty($filters['business_model'])) {
+            if ($filters['business_model'] === 'b2b') {
+                $where[] = '(b2b_admission_target > 0 OR b2b_admissions > 0)';
+            }
+
+            if ($filters['business_model'] === 'b2c') {
+                $where[] = 'b2c_admissions > 0';
+            }
+        }
+
+        if (!empty($filters['cohort_status'])) {
+            if ($filters['cohort_status'] === 'upcoming') {
+                $where[] = 'start_date IS NOT NULL AND start_date > CURDATE()';
+            }
+
+            if ($filters['cohort_status'] === 'in_progress') {
+                $where[] = 'start_date IS NOT NULL AND start_date <= CURDATE() AND (end_date IS NULL OR end_date >= CURDATE())';
+            }
+
+            if ($filters['cohort_status'] === 'completed') {
+                $where[] = 'end_date IS NOT NULL AND end_date < CURDATE()';
+            }
+        }
+
+        if (!empty($where)) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' ORDER BY start_date IS NULL ASC, start_date ASC, id ASC';
+
+        return $this->db->query($sql, $params);
+    }
+
+    /**
+     * Return all available bootcamp types for filtering.
+     *
+     * @return string[]
+     */
+    public function findBootcampTypes(): array
+    {
+        $rows = $this->db->query(
+            'SELECT DISTINCT bootcamp_type
+             FROM cohorts
+               WHERE bootcamp_type IS NOT NULL AND bootcamp_type <> \'\'
+             ORDER BY bootcamp_type ASC'
+        );
+
+        return array_values(array_map(
+            static fn(array $row): string => (string) $row['bootcamp_type'],
+            $rows
+        ));
     }
 
     /**

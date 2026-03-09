@@ -33,6 +33,27 @@ class CohortService
     }
 
     /**
+     * Get cohorts using combinable filters.
+     */
+    public function getFilteredCohorts(array $filters): array
+    {
+        $normalizedFilters = $this->normalizeFilters($filters);
+        $rows = $this->cohortRepo->findByFilters($normalizedFilters);
+
+        return array_map(fn(array $row) => $this->enrichWithMilestones($row), $rows);
+    }
+
+    /**
+     * Get all available bootcamp types for filter dropdown.
+     *
+     * @return string[]
+     */
+    public function getBootcampTypes(): array
+    {
+        return $this->cohortRepo->findBootcampTypes();
+    }
+
+    /**
      * Get a single cohort by ID with calculated milestone dates.
      */
     public function getCohortById(int $id): ?array
@@ -217,5 +238,43 @@ class CohortService
                 throw new \InvalidArgumentException('Estado de entrenamiento no válido.');
             }
         }
+    }
+
+    /**
+     * Normalize and whitelist filter values accepted by repository queries.
+     */
+    private function normalizeFilters(array $filters): array
+    {
+        $normalized = [
+            'bootcamp_type'  => null,
+            'start_date'     => null,
+            'end_date'       => null,
+            'business_model' => null,
+            'cohort_status'  => null,
+        ];
+
+        if (!empty($filters['bootcamp_type'])) {
+            $normalized['bootcamp_type'] = trim((string) $filters['bootcamp_type']);
+        }
+
+        if (!empty($filters['start_date'])) {
+            $normalized['start_date'] = (string) $filters['start_date'];
+        }
+
+        if (!empty($filters['end_date'])) {
+            $normalized['end_date'] = (string) $filters['end_date'];
+        }
+
+        $validBusinessModels = ['b2b', 'b2c'];
+        if (!empty($filters['business_model']) && in_array($filters['business_model'], $validBusinessModels, true)) {
+            $normalized['business_model'] = $filters['business_model'];
+        }
+
+        $validStatuses = ['upcoming', 'in_progress', 'completed'];
+        if (!empty($filters['cohort_status']) && in_array($filters['cohort_status'], $validStatuses, true)) {
+            $normalized['cohort_status'] = $filters['cohort_status'];
+        }
+
+        return $normalized;
     }
 }
