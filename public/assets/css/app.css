@@ -743,3 +743,161 @@ body.sidebar-collapsed .sidebar-nav .nav-link {
         display: none;
     }
 }
+
+/* ─── Status Accordion (ClickUp-style) ───────────────────── */
+.status-accordion {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+}
+
+.status-accordion-header {
+    display: flex;
+    align-items: center;
+    padding: 0.65rem 1rem;
+    background: #f8f9fa;
+    cursor: pointer;
+    user-select: none;
+    border-left: 4px solid var(--status-color, #6c757d);
+    transition: background 0.15s ease;
+}
+
+.status-accordion-header:hover {
+    background: #e9ecef;
+}
+
+.status-accordion-arrow {
+    transition: transform 0.25s ease;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.status-accordion-header[aria-expanded="true"] .status-accordion-arrow {
+    transform: rotate(90deg);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* ─── Gantt Timeline ─────────────────────────────────────── */
+.gantt-wrapper {
+    overflow-x: auto;
+    min-width: 100%;
+}
+
+.gantt-header,
+.gantt-row {
+    display: flex;
+    min-width: 800px;
+}
+
+.gantt-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.75rem;
+}
+
+.gantt-label-col {
+    width: 180px;
+    min-width: 180px;
+    padding: 0.5rem 0.75rem;
+    border-right: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.gantt-timeline-col {
+    flex: 1;
+    min-height: 36px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gantt-month {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid #dee2e6;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.gantt-row {
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    transition: background 0.1s;
+}
+
+.gantt-row:hover {
+    background: #f8f9fa;
+}
+
+.gantt-row .gantt-timeline-col {
+    padding: 0.35rem 0;
+}
+
+.gantt-bar {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    background: linear-gradient(135deg, #4f8cff 0%, #2563eb 100%);
+    border-radius: 6px;
+    min-width: 18px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    cursor: pointer;
+    transition: filter 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.gantt-bar:hover {
+    filter: brightness(1.1);
+}
+
+.gantt-bar-label {
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dc3545;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.gantt-today-line::before {
+    content: 'Hoy';
+    position: absolute;
+    top: -14px;
+    left: -10px;
+    font-size: 0.55rem;
+    color: #dc3545;
+    font-weight: 700;
+}
+
+/* Gantt responsive */
+@media (max-width: 767.98px) {
+    .gantt-label-col {
+        width: 120px;
+        min-width: 120px;
+    }
+}

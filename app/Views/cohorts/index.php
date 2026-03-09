@@ -2,8 +2,8 @@
 /**
  * Cohorts Index View
  *
- * Filters are URL-driven (GET), so state persists naturally with browser
- * navigation and when users open/edit cohorts then return.
+ * Two views: Accordion (grouped by status) and Gantt Timeline (upcoming 60 days).
+ * Filters are URL-driven (GET), so state persists with browser navigation.
  */
 
 /** Helper: format date safely */
@@ -75,20 +75,117 @@ function businessModelBadge(array $cohort): string
     return '<span class="text-muted">—</span>';
 }
 
+/** Helper: render a single cohort row */
+function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): string
+{
+    $id = (int) $cohort['id'];
+    $name = htmlspecialchars($cohort['name']);
+    $code = htmlspecialchars($cohort['cohort_code'] ?? 'N/A');
+    $type = htmlspecialchars($cohort['bootcamp_type'] ?? '');
+    $startLabel = htmlspecialchars(formatDateLabel($cohort['start_date'] ?? null));
+    $endLabel = htmlspecialchars(formatDateLabel($cohort['end_date'] ?? null));
+    $bModel = businessModelBadge($cohort);
+    $badge = lifecycleBadge($cohort);
+    $coach = htmlspecialchars($cohort['assigned_coach'] ?? '—');
+    $schedule = htmlspecialchars($cohort['assigned_class_schedule'] ?? '—');
+    $project = htmlspecialchars($cohort['related_project'] ?? '—');
+    $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
+    $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
+
+    $typeCell = $type ? '<span class="badge bg-light text-dark border">' . $type . '</span>' : '<span class="text-muted">—</span>';
+
+    $deleteBtn = '';
+    if ($canDelete) {
+        $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
+            . '<input type="hidden" name="_method" value="DELETE">'
+            . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash"></i></button>'
+            . '</form>';
+    }
+
+    return '<tr>'
+        . '<td><span class="text-muted">#' . $id . '</span></td>'
+        . '<td><div class="d-flex flex-column">'
+            . '<a href="/cohorts/' . $id . $querySuffix . '" class="text-decoration-none fw-semibold text-dark">' . $name . '</a>'
+            . '<div class="small text-muted mt-1">' . $code . '</div>'
+        . '</div></td>'
+        . '<td class="d-none d-md-table-cell">' . $typeCell . '</td>'
+        . '<td class="d-none d-lg-table-cell"><div class="small">'
+            . '<div><i class="bi bi-calendar-event text-muted me-1"></i>' . $startLabel . '</div>'
+            . '<div class="text-muted"><i class="bi bi-calendar-check me-1"></i>' . $endLabel . '</div>'
+        . '</div></td>'
+        . '<td class="d-none d-xl-table-cell"><small>' . $coach . '</small></td>'
+        . '<td class="d-none d-xl-table-cell"><small>' . $schedule . '</small></td>'
+        . '<td class="d-none d-xl-table-cell text-center"><small>' . $b2b . ' / ' . $b2c . '</small></td>'
+        . '<td class="d-none d-lg-table-cell text-center">' . $bModel . '</td>'
+        . '<td class="text-end"><div class="action-buttons justify-content-end">'
+            . '<a href="/cohorts/' . $id . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles"><i class="bi bi-eye"></i></a>'
+            . '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil"></i></a>'
+            . $deleteBtn
+        . '</div></td>'
+        . '</tr>';
+}
+
 $filters = $filters ?? [];
 $activeFilters = $activeFilters ?? [];
 $querySuffix = !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '';
+$canDeleteVal = $canDelete ?? false;
 
-$upcomingCount = count(array_filter($cohorts, static fn(array $c): bool => cohortLifecycleStatus($c) === 'upcoming'));
-$inProgressCount = count(array_filter($cohorts, static fn(array $c): bool => cohortLifecycleStatus($c) === 'in_progress'));
-$completedCount = count(array_filter($cohorts, static fn(array $c): bool => cohortLifecycleStatus($c) === 'completed'));
+// Group cohorts by lifecycle status
+$grouped = ['upcoming' => [], 'in_progress' => [], 'completed' => []];
+foreach ($cohorts as $c) {
+    $grouped[cohortLifecycleStatus($c)][] = $c;
+}
+$upcomingCount   = count($grouped['upcoming']);
+$inProgressCount = count($grouped['in_progress']);
+$completedCount  = count($grouped['completed']);
+
+// Upcoming cohorts starting within 60 days (for Gantt view)
+$today60 = date('Y-m-d', strtotime('+60 days'));
+$todayStr = date('Y-m-d');
+$ganttCohorts = array_filter($grouped['upcoming'], function (array $c) use ($todayStr, $today60) {
+    $sd = $c['start_date'] ?? null;
+    return $sd && $sd >= $todayStr && $sd <= $today60;
+});
+$ganttCohorts = array_values($ganttCohorts);
+
+// Gantt timeline range
+$ganttMin = $todayStr;
+$ganttMax = $today60;
+if (!empty($ganttCohorts)) {
+    $ends = array_map(fn($c) => $c['end_date'] ?? $c['start_date'], $ganttCohorts);
+    $maxEnd = max($ends);
+    if ($maxEnd > $ganttMax) {
+        $ganttMax = $maxEnd;
+    }
+}
+$ganttStartTs = strtotime($ganttMin);
+$ganttEndTs   = strtotime($ganttMax);
+$ganttSpanDays = max(1, (int) round(($ganttEndTs - $ganttStartTs) / 86400));
+
+// Status config for accordion
+$statusConfig = [
+    'upcoming'    => ['label' => 'Upcoming',    'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
+    'in_progress' => ['label' => 'In Progress', 'color' => '#0d6efd', 'icon' => 'bi-play-circle',    'defaultOpen' => false],
+    'completed'   => ['label' => 'Completed',   'color' => '#198754', 'icon' => 'bi-check-circle',   'defaultOpen' => false],
+];
 ?>
 
+<!-- ── Toolbar: filtros + toggle vista ──────────────────── -->
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
     <div>
         <p class="text-muted mb-0">Gestiona cohortes con filtros combinables por tipo, fechas, modelo de negocio y estado.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+        <!-- View toggle -->
+        <div class="btn-group" role="group" aria-label="Cambiar vista">
+            <button type="button" class="btn btn-outline-primary active" id="btn-view-list" data-view="list">
+                <i class="bi bi-list-ul me-1"></i><span class="d-none d-sm-inline">Lista</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="btn-view-gantt" data-view="gantt">
+                <i class="bi bi-bar-chart-steps me-1"></i><span class="d-none d-sm-inline">Timeline</span>
+            </button>
+        </div>
+
         <?php if (!empty($activeFilters)): ?>
             <a href="/cohorts" class="btn btn-outline-secondary">
                 <i class="bi bi-x-circle me-1"></i>Limpiar filtros
@@ -105,6 +202,7 @@ $completedCount = count(array_filter($cohorts, static fn(array $c): bool => coho
     </div>
 </div>
 
+<!-- ── Filtros ──────────────────────────────────────────── -->
 <div class="card mb-4" id="cohort-filters">
     <div class="card-header">
         <h6 class="mb-0"><i class="bi bi-funnel me-1"></i>Filtros</h6>
@@ -162,6 +260,7 @@ $completedCount = count(array_filter($cohorts, static fn(array $c): bool => coho
     </div>
 </div>
 
+<!-- ── Summary cards ───────────────────────────────────── -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="card bg-body-secondary border-0 h-100">
@@ -197,89 +296,66 @@ $completedCount = count(array_filter($cohorts, static fn(array $c): bool => coho
     </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════
+     VIEW 1: Accordion List (grouped by status)
+     ════════════════════════════════════════════════════════ -->
+<div id="view-list">
 <?php if (!empty($cohorts)): ?>
-    <div class="card table-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0">Listado de Cohortes</h6>
-            <small class="text-muted">Orden por Start Date ascendente</small>
+
+    <?php foreach (['upcoming' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount] as $status => $count): ?>
+        <?php if ($count === 0) continue; ?>
+        <?php
+            $cfg = $statusConfig[$status];
+            $isOpen = $cfg['defaultOpen'];
+            $collapseId = 'accordion-' . $status;
+        ?>
+        <div class="status-accordion mb-3">
+            <!-- Accordion header -->
+            <div class="status-accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="<?= $isOpen ? 'true' : 'false' ?>" aria-controls="<?= $collapseId ?>" style="--status-color: <?= $cfg['color'] ?>;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-chevron-right status-accordion-arrow"></i>
+                    <span class="status-dot" style="background: <?= $cfg['color'] ?>;"></span>
+                    <i class="bi <?= $cfg['icon'] ?>" style="color: <?= $cfg['color'] ?>;"></i>
+                    <span class="fw-semibold"><?= $cfg['label'] ?></span>
+                    <span class="badge rounded-pill text-bg-dark ms-1"><?= $count ?></span>
+                </div>
+            </div>
+
+            <!-- Accordion body -->
+            <div class="collapse <?= $isOpen ? 'show' : '' ?>" id="<?= $collapseId ?>">
+                <div class="card table-card border-top-0" style="border-top-left-radius:0;border-top-right-radius:0;">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:56px;">ID</th>
+                                    <th>Cohorte</th>
+                                    <th class="d-none d-md-table-cell">Bootcamp</th>
+                                    <th class="d-none d-lg-table-cell">Fechas</th>
+                                    <th class="d-none d-xl-table-cell">Coach</th>
+                                    <th class="d-none d-xl-table-cell">Horario</th>
+                                    <th class="d-none d-xl-table-cell text-center">B2B/B2C</th>
+                                    <th class="d-none d-lg-table-cell text-center">Business Model</th>
+                                    <th class="text-end" style="width:120px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($grouped[$status] as $cohort): ?>
+                                    <?= renderCohortRow($cohort, $querySuffix, $canDeleteVal) ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 56px;">ID</th>
-                        <th>Cohorte</th>
-                        <th class="d-none d-md-table-cell">Bootcamp</th>
-                        <th class="d-none d-lg-table-cell">Fechas</th>
-                        <th class="d-none d-lg-table-cell text-center">Business Model</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-end" style="width: 130px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cohorts as $cohort): ?>
-                        <tr>
-                            <td><span class="text-muted">#<?= (int) $cohort['id'] ?></span></td>
-                            <td>
-                                <div class="d-flex flex-column">
-                                    <a href="/cohorts/<?= (int) $cohort['id'] ?><?= $querySuffix ?>" class="text-decoration-none fw-semibold text-dark">
-                                        <?= htmlspecialchars($cohort['name']) ?>
-                                    </a>
-                                    <div class="small text-muted mt-1">
-                                        <?= htmlspecialchars($cohort['cohort_code'] ?? 'N/A') ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="d-none d-md-table-cell">
-                                <?php if (!empty($cohort['bootcamp_type'])): ?>
-                                    <span class="badge bg-light text-dark border"><?= htmlspecialchars($cohort['bootcamp_type']) ?></span>
-                                <?php else: ?>
-                                    <span class="text-muted">—</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="d-none d-lg-table-cell">
-                                <div class="small">
-                                    <div><i class="bi bi-calendar-event text-muted me-1"></i><?= htmlspecialchars(formatDateLabel($cohort['start_date'] ?? null)) ?></div>
-                                    <div class="text-muted"><i class="bi bi-calendar-check me-1"></i><?= htmlspecialchars(formatDateLabel($cohort['end_date'] ?? null)) ?></div>
-                                </div>
-                            </td>
-                            <td class="d-none d-lg-table-cell text-center">
-                                <?= businessModelBadge($cohort) ?>
-                            </td>
-                            <td class="text-center">
-                                <?= lifecycleBadge($cohort) ?>
-                            </td>
-                            <td class="text-end">
-                                <div class="action-buttons justify-content-end">
-                                    <a href="/cohorts/<?= (int) $cohort['id'] ?><?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="/cohorts/<?= (int) $cohort['id'] ?>/edit<?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <?php if ($canDelete ?? false): ?>
-                                        <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">
-                                            <input type="hidden" name="_method" value="DELETE">
-                                            <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <?php endforeach; ?>
+
 <?php else: ?>
     <div class="card">
         <div class="card-body">
             <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="bi bi-funnel"></i>
-                </div>
+                <div class="empty-state-icon"><i class="bi bi-funnel"></i></div>
                 <h5 class="empty-state-title">No hay resultados para los filtros aplicados</h5>
                 <p class="empty-state-text">Ajusta o limpia los filtros para ver más cohortes.</p>
                 <a href="/cohorts" class="btn btn-outline-secondary">Limpiar filtros</a>
@@ -287,3 +363,119 @@ $completedCount = count(array_filter($cohorts, static fn(array $c): bool => coho
         </div>
     </div>
 <?php endif; ?>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     VIEW 2: Gantt Timeline (Upcoming — next 60 days)
+     ════════════════════════════════════════════════════════ -->
+<div id="view-gantt" class="d-none">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Upcoming Timeline — próximos 60 días</h6>
+            <small class="text-muted"><?= count($ganttCohorts) ?> bootcamps</small>
+        </div>
+        <div class="card-body p-0">
+            <?php if (empty($ganttCohorts)): ?>
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
+                    <h5 class="empty-state-title">Sin bootcamps próximos</h5>
+                    <p class="empty-state-text">No hay bootcamps que inicien en los próximos 60 días.</p>
+                </div>
+            <?php else: ?>
+                <div class="gantt-wrapper" id="gantt-wrapper">
+                    <!-- Month headers -->
+                    <?php
+                        $months = [];
+                        $cursor = strtotime(date('Y-m-01', $ganttStartTs));
+                        while ($cursor <= $ganttEndTs) {
+                            $mKey = date('Y-m', $cursor);
+                            $mLabel = ucfirst(strftime('%b %Y', $cursor) ?: date('M Y', $cursor));
+                            $mStart = max($ganttStartTs, $cursor);
+                            $mEnd   = min($ganttEndTs, strtotime(date('Y-m-t', $cursor)));
+                            $mLeft  = (($mStart - $ganttStartTs) / 86400) / $ganttSpanDays * 100;
+                            $mWidth = max(0, (($mEnd - $mStart) / 86400 + 1) / $ganttSpanDays * 100);
+                            $months[] = ['label' => $mLabel, 'left' => $mLeft, 'width' => $mWidth];
+                            $cursor = strtotime('+1 month', strtotime(date('Y-m-01', $cursor)));
+                        }
+                    ?>
+                    <div class="gantt-header">
+                        <div class="gantt-label-col"><small class="fw-semibold text-muted">Cohorte</small></div>
+                        <div class="gantt-timeline-col position-relative">
+                            <?php foreach ($months as $m): ?>
+                                <div class="gantt-month" style="left:<?= $m['left'] ?>%;width:<?= $m['width'] ?>%;"><?= htmlspecialchars($m['label']) ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Today marker -->
+                    <?php
+                        $todayOffset = max(0, (strtotime($todayStr) - $ganttStartTs) / 86400) / $ganttSpanDays * 100;
+                    ?>
+
+                    <!-- Rows -->
+                    <?php foreach ($ganttCohorts as $gc): ?>
+                        <?php
+                            $gcStart = strtotime($gc['start_date']);
+                            $gcEnd   = strtotime($gc['end_date'] ?? $gc['start_date']);
+                            $barLeft = max(0, ($gcStart - $ganttStartTs) / 86400) / $ganttSpanDays * 100;
+                            $barWidth = max(1, ($gcEnd - $gcStart) / 86400) / $ganttSpanDays * 100;
+                            $barWidth = min($barWidth, 100 - $barLeft);
+                            $gcId = (int) $gc['id'];
+                        ?>
+                        <div class="gantt-row">
+                            <div class="gantt-label-col">
+                                <a href="/cohorts/<?= $gcId ?><?= $querySuffix ?>" class="text-decoration-none text-dark small fw-semibold">
+                                    <?= htmlspecialchars($gc['cohort_code']) ?>
+                                </a>
+                                <div class="text-muted" style="font-size:.7rem;"><?= htmlspecialchars($gc['name']) ?></div>
+                            </div>
+                            <div class="gantt-timeline-col position-relative">
+                                <div class="gantt-today-line" style="left:<?= $todayOffset ?>%;"></div>
+                                <div class="gantt-bar" style="left:<?= $barLeft ?>%;width:<?= $barWidth ?>%;"
+                                     data-bs-toggle="tooltip" data-bs-html="true"
+                                     title="<strong><?= htmlspecialchars($gc['cohort_code']) ?></strong><br><?= htmlspecialchars(formatDateLabel($gc['start_date'])) ?> → <?= htmlspecialchars(formatDateLabel($gc['end_date'] ?? null)) ?><br>Coach: <?= htmlspecialchars($gc['assigned_coach'] ?? '—') ?>">
+                                    <span class="gantt-bar-label"><?= htmlspecialchars($gc['cohort_code']) ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- ── View toggle script ──────────────────────────────── -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnList  = document.getElementById('btn-view-list');
+    const btnGantt = document.getElementById('btn-view-gantt');
+    const viewList = document.getElementById('view-list');
+    const viewGantt = document.getElementById('view-gantt');
+
+    if (!btnList || !btnGantt || !viewList || !viewGantt) return;
+
+    const saved = localStorage.getItem('cohorts-view') || 'list';
+    if (saved === 'gantt') switchTo('gantt');
+
+    btnList.addEventListener('click', function () { switchTo('list'); });
+    btnGantt.addEventListener('click', function () { switchTo('gantt'); });
+
+    function switchTo(view) {
+        const isList = view === 'list';
+        viewList.classList.toggle('d-none', !isList);
+        viewGantt.classList.toggle('d-none', isList);
+        btnList.classList.toggle('active', isList);
+        btnGantt.classList.toggle('active', !isList);
+        localStorage.setItem('cohorts-view', view);
+
+        // Reinitialize tooltips for the visible view
+        const target = isList ? viewList : viewGantt;
+        target.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el, { trigger: 'hover', container: 'body' });
+            }
+        });
+    }
+});
+</script>

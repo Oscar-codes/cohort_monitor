@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## [1.6.0] — 2026-03-09
+
+### 🎯 Acordeón de estados tipo ClickUp
+- Los cohorts se agrupan en tres bloques colapsables: **Upcoming** (expandido por defecto), **In Progress** y **Completed**.
+- Header de cada grupo muestra icono, nombre del estado, dot de color y contador de bootcamps.
+- Animación de flecha al expandir/colapsar usando Bootstrap Collapse.
+- Tabla enriquecida con columnas de Coach, Horario y B2B/B2C.
+
+### 📊 Vista Gantt / Timeline
+- Nuevo botón **Lista / Timeline** en la barra de herramientas para alternar vistas.
+- Vista timeline muestra solo bootcamps **Upcoming** que inician en los próximos **60 días**.
+- Barras horizontales proporcionales según fecha de inicio y fin de cada cohort.
+- Headers de meses, línea vertical "Hoy" (roja), y tooltips con detalle de cada bootcamp.
+- Estado de vista persistido en `localStorage`.
+
+### 🎨 Estilos
+- Nuevos estilos CSS para `.status-accordion`, `.gantt-wrapper`, barras de timeline y `today-line`.
+- Responsive: label column se reduce en pantallas pequeñas.
+
+---
+
 ## [1.5.4] — 2026-03-09
 
 ### 📊 Carga completa de datos de cohortes
