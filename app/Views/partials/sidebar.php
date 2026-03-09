@@ -65,6 +65,16 @@
                 </a>
             </li>
 
+            <!-- Coach Calendar — admin only -->
+            <?php if (Auth::isAdmin()): ?>
+            <li class="nav-item">
+                <a href="/coaches" class="nav-link <?= ($activePage ?? '') === 'coaches' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
+                    <i class="bi bi-calendar-range"></i>
+                    <span>Coaches</span>
+                </a>
+            </li>
+            <?php endif; ?>
+
             <!-- Users — admin only -->
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">

@@ -333,4 +333,66 @@ class CohortRepository
             ORDER BY total DESC
         ");
     }
+
+    /**
+     * Get cohorts with active coaches (in-progress: started but not ended).
+     *
+     * Filters for cohorts where:
+     * - assigned_coach is not empty
+     * - start_date <= today (already started)
+     * - end_date >= today (not yet finished)
+     * This yields % completion between 1-99%.
+     *
+     * Optional filters: coach name, bootcamp_type.
+     */
+    public function findActiveCoaches(array $filters = []): array
+    {
+        $sql = "
+            SELECT *
+            FROM cohorts
+            WHERE assigned_coach IS NOT NULL
+              AND assigned_coach <> ''
+              AND start_date IS NOT NULL
+              AND end_date IS NOT NULL
+              AND start_date <= CURDATE()
+              AND end_date >= CURDATE()
+        ";
+        $params = [];
+
+        if (!empty($filters['coach'])) {
+            $sql .= " AND assigned_coach = :coach";
+            $params['coach'] = $filters['coach'];
+        }
+
+        if (!empty($filters['bootcamp_type'])) {
+            $sql .= " AND bootcamp_type = :bootcamp_type";
+            $params['bootcamp_type'] = $filters['bootcamp_type'];
+        }
+
+        $sql .= " ORDER BY assigned_coach ASC, start_date ASC";
+
+        return $this->db->query($sql, $params);
+    }
+
+    /**
+     * Get distinct active coach names from in-progress cohorts.
+     *
+     * @return string[]
+     */
+    public function findActiveCoachNames(): array
+    {
+        $rows = $this->db->query("
+            SELECT DISTINCT assigned_coach
+            FROM cohorts
+            WHERE assigned_coach IS NOT NULL
+              AND assigned_coach <> ''
+              AND start_date IS NOT NULL
+              AND end_date IS NOT NULL
+              AND start_date <= CURDATE()
+              AND end_date >= CURDATE()
+            ORDER BY assigned_coach ASC
+        ");
+
+        return array_map(fn(array $row) => $row['assigned_coach'], $rows);
+    }
 }

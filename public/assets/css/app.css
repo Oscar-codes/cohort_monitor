@@ -901,3 +901,90 @@ body.sidebar-collapsed .sidebar-nav .nav-link {
         min-width: 120px;
     }
 }
+
+/* ─── Coach Calendar ─────────────────────────────────────── */
+.coach-gantt-label {
+    width: 220px;
+    min-width: 220px;
+}
+
+.coach-gantt-group-header {
+    display: flex;
+    min-width: 800px;
+    background: #f0f4ff;
+    border-bottom: 2px solid #d0d7e6;
+    border-top: 1px solid #dee2e6;
+}
+
+.coach-gantt-group-header .gantt-label-col {
+    padding: 0.5rem 0.75rem;
+}
+
+.coach-avatar-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f8cff, #2563eb);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.coach-gantt-bar {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 6px;
+    min-width: 18px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    cursor: pointer;
+    transition: filter 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    overflow: hidden;
+}
+
+.coach-gantt-bar:hover {
+    filter: brightness(1.1);
+}
+
+.coach-gantt-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px 0 0 6px;
+    pointer-events: none;
+}
+
+.coach-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.coach-legend-line {
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    background: #dc3545;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+@media (max-width: 767.98px) {
+    .coach-gantt-label {
+        width: 140px;
+        min-width: 140px;
+    }
+}

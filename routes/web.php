@@ -22,6 +22,7 @@ use App\Controllers\CommentController;
 use App\Controllers\ReportController;
 use App\Controllers\ImportCohortController;
 use App\Controllers\AccountController;
+use App\Controllers\CoachCalendarController;
 
 // ─── Auth (public) ───────────────────────────────────────────
 $router->get('/login',  [AuthController::class, 'showLogin'], 'auth.login');
@@ -73,3 +74,6 @@ $router->get('/reports/export/pdf',   [ReportController::class, 'exportPdf'],   
 
 // ─── Alerts (all authenticated) ─────────────────────────────
 $router->get('/alerts', [AlertController::class, 'index'], 'alerts.index');
+
+// ─── Coach Calendar (admin) ──────────────────────────────────
+$router->get('/coaches', [CoachCalendarController::class, 'index'], 'coaches.index');
