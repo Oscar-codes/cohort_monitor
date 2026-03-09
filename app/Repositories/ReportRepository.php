@@ -45,12 +45,12 @@ class ReportRepository
         }
 
         if (!empty($filters['date_from'])) {
-            $sql .= " AND c.start_date >= :date_from";
+            $sql .= " AND (c.end_date IS NULL OR c.end_date >= :date_from)";
             $params['date_from'] = $filters['date_from'];
         }
 
         if (!empty($filters['date_to'])) {
-            $sql .= " AND c.end_date <= :date_to";
+            $sql .= " AND (c.start_date IS NULL OR c.start_date <= :date_to)";
             $params['date_to'] = $filters['date_to'];
         }
 
@@ -89,12 +89,12 @@ class ReportRepository
         }
 
         if (!empty($filters['date_from'])) {
-            $sql .= " AND c.start_date >= :date_from";
+            $sql .= " AND (c.end_date IS NULL OR c.end_date >= :date_from)";
             $params['date_from'] = $filters['date_from'];
         }
 
         if (!empty($filters['date_to'])) {
-            $sql .= " AND c.end_date <= :date_to";
+            $sql .= " AND (c.start_date IS NULL OR c.start_date <= :date_to)";
             $params['date_to'] = $filters['date_to'];
         }
 
@@ -137,12 +137,12 @@ class ReportRepository
         }
 
         if (!empty($filters['date_from'])) {
-            $sql .= " AND c.start_date >= :date_from";
+            $sql .= " AND (c.end_date IS NULL OR c.end_date >= :date_from)";
             $params['date_from'] = $filters['date_from'];
         }
 
         if (!empty($filters['date_to'])) {
-            $sql .= " AND c.end_date <= :date_to";
+            $sql .= " AND (c.start_date IS NULL OR c.start_date <= :date_to)";
             $params['date_to'] = $filters['date_to'];
         }
 

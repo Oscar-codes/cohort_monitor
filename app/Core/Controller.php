@@ -87,11 +87,4 @@ abstract class Controller
         return $_REQUEST;
     }
 
-    /**
-     * Set shared view data available to all views rendered by this controller.
-     */
-    protected function share(string $key, mixed $value): void
-    {
-        $this->viewData[$key] = $value;
-    }
 }

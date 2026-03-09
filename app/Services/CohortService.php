@@ -62,15 +62,6 @@ class CohortService
         return $row ? $this->enrichWithMilestones($row) : null;
     }
 
-    /**
-     * Get cohorts filtered by training status.
-     */
-    public function getCohortsByTrainingStatus(string $status): array
-    {
-        $rows = $this->cohortRepo->findByTrainingStatus($status);
-        return array_map(fn(array $row) => $this->enrichWithMilestones($row), $rows);
-    }
-
     // ─── Writes ──────────────────────────────────────────
 
     /**
@@ -257,12 +248,25 @@ class CohortService
             $normalized['bootcamp_type'] = trim((string) $filters['bootcamp_type']);
         }
 
+        // Validate date format (YYYY-MM-DD) before passing to repository
         if (!empty($filters['start_date'])) {
-            $normalized['start_date'] = (string) $filters['start_date'];
+            $date = \DateTime::createFromFormat('Y-m-d', (string) $filters['start_date']);
+            if ($date && $date->format('Y-m-d') === (string) $filters['start_date']) {
+                $normalized['start_date'] = (string) $filters['start_date'];
+            }
         }
 
         if (!empty($filters['end_date'])) {
-            $normalized['end_date'] = (string) $filters['end_date'];
+            $date = \DateTime::createFromFormat('Y-m-d', (string) $filters['end_date']);
+            if ($date && $date->format('Y-m-d') === (string) $filters['end_date']) {
+                $normalized['end_date'] = (string) $filters['end_date'];
+            }
+        }
+
+        // Cross-validate: start must be <= end
+        if ($normalized['start_date'] && $normalized['end_date'] && $normalized['start_date'] > $normalized['end_date']) {
+            $normalized['start_date'] = null;
+            $normalized['end_date']   = null;
         }
 
         $validBusinessModels = ['b2b', 'b2c'];

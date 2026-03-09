@@ -222,12 +222,12 @@ $statusConfig = [
             </div>
 
             <div class="col-12 col-md-6 col-xl-2">
-                <label for="start_date" class="form-label">Start Date</label>
+                <label for="start_date" class="form-label">Desde</label>
                 <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars($filters['start_date'] ?? '') ?>">
             </div>
 
             <div class="col-12 col-md-6 col-xl-2">
-                <label for="end_date" class="form-label">End Date</label>
+                <label for="end_date" class="form-label">Hasta</label>
                 <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars($filters['end_date'] ?? '') ?>">
             </div>
 

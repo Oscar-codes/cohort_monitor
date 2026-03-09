@@ -34,8 +34,8 @@ class CohortRepository
      *
      * Supported filters:
      * - bootcamp_type: exact bootcamp type string
-     * - start_date: include cohorts with start_date >= value
-     * - end_date: include cohorts with end_date <= value
+     * - start_date: "from" date — excludes cohorts that ended before this date (overlap)
+     * - end_date: "to" date — excludes cohorts that start after this date (overlap)
      * - business_model: b2b | b2c
      * - cohort_status: upcoming | in_progress | completed
      */
@@ -50,13 +50,16 @@ class CohortRepository
             $params['bootcamp_type'] = $filters['bootcamp_type'];
         }
 
+        // Date range overlap: show cohorts active during [start_date, end_date]
         if (!empty($filters['start_date'])) {
-            $where[] = 'start_date >= :start_date';
+            // Exclude cohorts that ended before the filter's start date
+            $where[] = '(end_date IS NULL OR end_date >= :start_date)';
             $params['start_date'] = $filters['start_date'];
         }
 
         if (!empty($filters['end_date'])) {
-            $where[] = 'end_date <= :end_date';
+            // Exclude cohorts that start after the filter's end date
+            $where[] = '(start_date IS NULL OR start_date <= :end_date)';
             $params['end_date'] = $filters['end_date'];
         }
 
@@ -124,28 +127,6 @@ class CohortRepository
         );
 
         return $results[0] ?? null;
-    }
-
-    /**
-     * Find cohorts by training status.
-     */
-    public function findByTrainingStatus(string $status): array
-    {
-        return $this->db->query(
-            'SELECT * FROM cohorts WHERE training_status = :status ORDER BY created_at DESC',
-            ['status' => $status]
-        );
-    }
-
-    /**
-     * Find cohorts by bootcamp type.
-     */
-    public function findByBootcampType(string $type): array
-    {
-        return $this->db->query(
-            'SELECT * FROM cohorts WHERE bootcamp_type = :type ORDER BY created_at DESC',
-            ['type' => $type]
-        );
     }
 
     /**
@@ -299,5 +280,57 @@ class CohortRepository
         }
 
         return (int) ($result[0]['total'] ?? 0);
+    }
+
+    /**
+     * Get aggregated dashboard stats in a single query.
+     *
+     * @return array{total: int, in_progress: int, completed: int, not_started: int, total_target: int, total_b2b: int, total_b2c: int}
+     */
+    public function getDashboardStats(): array
+    {
+        $rows = $this->db->query("
+            SELECT
+                COUNT(*)                                                              AS total,
+                SUM(CASE WHEN training_status = 'in_progress' THEN 1 ELSE 0 END)     AS in_progress,
+                SUM(CASE WHEN training_status = 'completed'   THEN 1 ELSE 0 END)     AS completed,
+                SUM(CASE WHEN training_status = 'not_started' THEN 1 ELSE 0 END)     AS not_started,
+                COALESCE(SUM(total_admission_target), 0)                              AS total_target,
+                COALESCE(SUM(b2b_admissions), 0)                                      AS total_b2b,
+                COALESCE(SUM(b2c_admissions), 0)                                      AS total_b2c
+            FROM cohorts
+        ");
+
+        return $rows[0] ?? [
+            'total' => 0, 'in_progress' => 0, 'completed' => 0, 'not_started' => 0,
+            'total_target' => 0, 'total_b2b' => 0, 'total_b2c' => 0,
+        ];
+    }
+
+    /**
+     * Get upcoming cohorts starting within the next N days.
+     */
+    public function findUpcoming(int $days = 30, int $limit = 10): array
+    {
+        return $this->db->query(
+            'SELECT * FROM cohorts
+             WHERE start_date IS NOT NULL AND start_date >= CURDATE() AND start_date <= DATE_ADD(CURDATE(), INTERVAL :days DAY)
+             ORDER BY start_date ASC
+             LIMIT ' . (int) $limit,
+            ['days' => $days]
+        );
+    }
+
+    /**
+     * Get cohort counts grouped by bootcamp type.
+     */
+    public function countByBootcampType(): array
+    {
+        return $this->db->query("
+            SELECT COALESCE(bootcamp_type, 'Sin tipo') AS bootcamp_type, COUNT(*) AS total
+            FROM cohorts
+            GROUP BY bootcamp_type
+            ORDER BY total DESC
+        ");
     }
 }

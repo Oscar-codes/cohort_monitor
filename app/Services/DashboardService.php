@@ -28,46 +28,36 @@ class DashboardService
      */
     public function getSummaryStats(): array
     {
-        $cohorts = $this->cohortRepo->findAll();
+        // Single aggregation query instead of loading all cohorts
+        $stats = $this->cohortRepo->getDashboardStats();
 
-        $totalCohorts   = count($cohorts);
-        $activeCohorts  = count(array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'in_progress'));
-        $completedCohorts = count(array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'completed'));
-        $notStarted     = count(array_filter($cohorts, fn($c) => ($c['training_status'] ?? '') === 'not_started'));
-
-        // Admission totals
-        $totalTarget     = 0;
-        $totalAdmissions = 0;
-        foreach ($cohorts as $c) {
-            $totalTarget     += (int) ($c['total_admission_target'] ?? 0);
-            $totalAdmissions += (int) ($c['b2b_admissions'] ?? 0) + (int) ($c['b2c_admissions'] ?? 0);
-        }
-        $admissionPct = $totalTarget > 0 ? round(($totalAdmissions / $totalTarget) * 100, 1) : 0;
+        $totalTarget     = (int) $stats['total_target'];
+        $totalAdmissions = (int) $stats['total_b2b'] + (int) $stats['total_b2c'];
+        $admissionPct    = $totalTarget > 0 ? round(($totalAdmissions / $totalTarget) * 100, 1) : 0;
 
         // Risk alerts
-        $riskComments  = $this->commentRepo->findAllRisks();
-        $atRiskStages  = $this->marketingService->getAtRiskStages();
-        $totalAlerts   = count($riskComments) + count($atRiskStages);
+        $riskComments = $this->commentRepo->findAllRisks();
+        $atRiskStages = $this->marketingService->getAtRiskStages();
+        $totalAlerts  = count($riskComments) + count($atRiskStages);
 
-        // Upcoming cohorts (starting within next 30 days)
-        $today     = date('Y-m-d');
-        $in30days  = date('Y-m-d', strtotime('+30 days'));
-        $upcoming  = array_filter($cohorts, function ($c) use ($today, $in30days) {
-            $start = $c['start_date'] ?? null;
-            return $start && $start >= $today && $start <= $in30days;
-        });
+        // Upcoming cohorts (next 30 days) — dedicated query with LIMIT
+        $upcoming = $this->cohortRepo->findUpcoming(30, 10);
 
         // Recent 5 cohorts
-        $recentCohorts = array_slice($cohorts, 0, 5);
+        $recentCohorts = $this->cohortRepo->findAll();
+        $recentCohorts = array_slice($recentCohorts, 0, 5);
 
-        // Cohorts by bootcamp type
+        // Cohorts by bootcamp type — aggregated in SQL
+        $typeRows = $this->cohortRepo->countByBootcampType();
         $byType = [];
-        foreach ($cohorts as $c) {
-            $type = $c['bootcamp_type'] ?? 'Sin tipo';
-            $byType[$type] = ($byType[$type] ?? 0) + 1;
+        foreach ($typeRows as $row) {
+            $byType[$row['bootcamp_type']] = (int) $row['total'];
         }
 
-        // Status breakdown for chart
+        $activeCohorts  = (int) $stats['in_progress'];
+        $completedCohorts = (int) $stats['completed'];
+        $notStarted     = (int) $stats['not_started'];
+
         $statusBreakdown = [
             'in_progress' => $activeCohorts,
             'completed'   => $completedCohorts,
@@ -75,8 +65,8 @@ class DashboardService
         ];
 
         return [
-            'totalCohorts'      => $totalCohorts,
-            'totalStudents'     => 0, // placeholder
+            'totalCohorts'      => (int) $stats['total'],
+            'totalStudents'     => 0,
             'activeCohorts'     => $activeCohorts,
             'completedCohorts'  => $completedCohorts,
             'notStartedCohorts' => $notStarted,
@@ -86,7 +76,7 @@ class DashboardService
             'totalAlerts'       => $totalAlerts,
             'riskComments'      => array_slice($riskComments, 0, 5),
             'atRiskStages'      => array_slice($atRiskStages, 0, 5),
-            'upcomingCohorts'   => array_values($upcoming),
+            'upcomingCohorts'   => $upcoming,
             'recentCohorts'     => $recentCohorts,
             'byType'            => $byType,
             'statusBreakdown'   => $statusBreakdown,
