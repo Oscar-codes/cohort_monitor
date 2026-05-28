@@ -83,6 +83,14 @@ if (!function_exists('moneyFmt')) {
                     <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
                     <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo.</p>
                 </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="financeForecastHorizon" class="form-label mb-0 small text-muted">Proyeccion</label>
+                    <select id="financeForecastHorizon" class="form-select form-select-sm" style="min-width: 110px;">
+                        <option value="0">Sin proyeccion</option>
+                        <option value="3" selected>+3 periodos</option>
+                        <option value="6">+6 periodos</option>
+                    </select>
+                </div>
             </div>
             <div id="financeMonthlyChart" style="min-height: 320px;"></div>
         </section>
@@ -93,6 +101,14 @@ if (!function_exists('moneyFmt')) {
                 <div>
                     <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por bootcamp</h3>
                     <p class="app-panel__subtitle">Top de revenue actual con referencia de meta.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="financeTopN" class="form-label mb-0 small text-muted">Top</label>
+                    <select id="financeTopN" class="form-select form-select-sm" style="min-width: 90px;">
+                        <option value="5">Top 5</option>
+                        <option value="10" selected>Top 10</option>
+                        <option value="15">Top 15</option>
+                    </select>
                 </div>
             </div>
             <div id="financeBootcampChart" style="min-height: 320px;"></div>
