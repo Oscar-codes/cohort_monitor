@@ -41,6 +41,9 @@ class MarketingController extends Controller
             'stages'      => $stages,
             'stageLabels' => MarketingService::STAGE_LABELS,
             'statusLabels'=> MarketingService::STATUS_LABELS,
+            'scripts'     => [
+                '/assets/js/marketing-show.js',
+            ],
         ]);
     }
 

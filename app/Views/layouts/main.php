@@ -7,13 +7,21 @@
     <title><?= htmlspecialchars($pageTitle ?? 'Cohort Monitor') ?> — Cohort Monitor</title>
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="/assets/vendor/sweetalert2/sweetalert2.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="/assets/css/app.css" rel="stylesheet">
+    <script src="/assets/js/density-init.js"></script>
+    <?php foreach (($styles ?? []) as $href): ?>
+        <link href="<?= htmlspecialchars($href) ?>" rel="stylesheet">
+    <?php endforeach; ?>
 </head>
 <body class="bg-body-tertiary">
+<a href="#page-content" class="skip-link">Saltar al contenido</a>
+<div id="app-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
 <div class="d-flex" id="app-wrapper">
     <!-- Sidebar -->
@@ -25,7 +33,7 @@
         <?php require APP_ROOT . '/app/Views/partials/header.php'; ?>
 
         <!-- Page Content -->
-        <main class="flex-grow-1 p-3 p-lg-4">
+        <main class="flex-grow-1 p-3 p-lg-4" id="page-content" role="main" tabindex="-1">
             <div class="container-fluid px-0">
                 <?= $content ?? '' ?>
             </div>
@@ -37,8 +45,13 @@
 </div>
 
 <!-- Bootstrap 5 JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/bootstrap.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
 <!-- Custom JS -->
 <script src="/assets/js/app.js"></script>
+<?php foreach (($scripts ?? []) as $src): ?>
+    <script src="<?= htmlspecialchars($src) ?>"></script>
+<?php endforeach; ?>
 </body>
 </html>

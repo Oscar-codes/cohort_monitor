@@ -50,6 +50,9 @@ class ReportController extends Controller
             'areaLabels'   => ReportService::AREA_LABELS,
             'statusLabels' => ReportService::STATUS_LABELS,
             'error'        => $error,
+            'scripts'      => [
+                '/assets/js/reports-index.js',
+            ],
         ]);
     }
 

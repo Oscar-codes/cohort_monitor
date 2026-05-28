@@ -42,6 +42,9 @@ class ImportCohortController extends Controller
                 ['label' => 'Cohortes', 'url' => '/cohorts'],
                 ['label' => 'Importar', 'active' => true],
             ],
+            'scripts'    => [
+                '/assets/js/cohorts-import.js',
+            ],
         ]);
     }
 
@@ -65,6 +68,9 @@ class ImportCohortController extends Controller
                     ['label' => 'Importar', 'active' => true],
                 ],
                 'error' => $validation['error'],
+                'scripts' => [
+                    '/assets/js/cohorts-import.js',
+                ],
             ]);
             return;
         }
@@ -81,6 +87,9 @@ class ImportCohortController extends Controller
                 ['label' => 'Importar', 'active' => true],
             ],
             'summary' => $summary,
+            'scripts' => [
+                '/assets/js/cohorts-import.js',
+            ],
         ]);
     }
 

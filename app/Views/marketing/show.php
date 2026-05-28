@@ -1,5 +1,39 @@
 <!-- Marketing Stages for a Cohort -->
-<?php use App\Core\Auth; ?>
+<?php
+use App\Core\Auth;
+
+/** @var array<string, mixed> $cohort */
+$cohort = isset($cohort) && is_array($cohort) ? $cohort : [];
+
+/** @var array<int, array<string, mixed>> $stages */
+$stages = isset($stages) && is_array($stages) ? $stages : [];
+
+$statusBadge = [
+    'completed' => 'bg-success-subtle text-success',
+    'pending' => 'bg-secondary-subtle text-secondary',
+    'at_risk' => 'bg-danger-subtle text-danger',
+];
+$statusIcon = [
+    'completed' => 'bi-check-circle',
+    'pending' => 'bi-clock',
+    'at_risk' => 'bi-exclamation-triangle',
+];
+
+$completedCount = 0;
+$pendingCount = 0;
+$riskCount = 0;
+foreach ($stages as $stage) {
+    if (($stage['status'] ?? '') === 'completed') {
+        $completedCount++;
+    } elseif (($stage['status'] ?? '') === 'at_risk') {
+        $riskCount++;
+    } else {
+        $pendingCount++;
+    }
+}
+$totalStages = max(1, count($stages));
+$completionPct = (int) round(($completedCount / $totalStages) * 100);
+?>
 
 <?php if ($msg = Auth::getFlash('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -21,132 +55,142 @@
     </ol>
 </nav>
 
-<!-- Header Card -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <h5 class="mb-0"><i class="bi bi-megaphone text-primary me-2"></i>Workflow de Marketing</h5>
-                </div>
-                <p class="text-muted mb-0">
-                    <span class="fw-semibold"><?= htmlspecialchars($cohort['name']) ?></span>
-                    <code class="ms-2"><?= htmlspecialchars($cohort['cohort_code']) ?></code>
-                </p>
-            </div>
-            <a href="/cohorts/<?= $cohort['id'] ?>" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-eye me-1"></i> Ver Cohorte
-            </a>
+<section class="marketing-workflow-hero mb-4">
+    <div>
+        <span class="dashboard-hero__eyebrow">
+            <i class="bi bi-megaphone"></i>
+            Workflow de marketing
+        </span>
+        <h1><?= htmlspecialchars($cohort['name']) ?></h1>
+        <p><?= htmlspecialchars($cohort['cohort_code']) ?> · <?= htmlspecialchars($cohort['bootcamp_type'] ?? 'Sin tipo') ?></p>
+    </div>
+    <div class="marketing-workflow-hero__actions">
+        <a href="/cohorts/<?= (int) $cohort['id'] ?>" class="btn btn-light btn-sm">
+            <i class="bi bi-eye me-1"></i> Ver cohorte
+        </a>
+    </div>
+</section>
+
+<div class="marketing-summary mb-4">
+    <article class="marketing-summary-card">
+        <span class="marketing-summary-card__icon is-primary"><i class="bi bi-list-check"></i></span>
+        <div>
+            <p>Avance</p>
+            <strong><?= $completionPct ?>%</strong>
+            <small><?= $completedCount ?> de <?= count($stages) ?> etapas</small>
+        </div>
+    </article>
+    <article class="marketing-summary-card">
+        <span class="marketing-summary-card__icon is-success"><i class="bi bi-check2-circle"></i></span>
+        <div>
+            <p>Completadas</p>
+            <strong><?= $completedCount ?></strong>
+            <small>Sin bloqueo activo</small>
+        </div>
+    </article>
+    <article class="marketing-summary-card">
+        <span class="marketing-summary-card__icon is-warning"><i class="bi bi-hourglass-split"></i></span>
+        <div>
+            <p>Pendientes</p>
+            <strong><?= $pendingCount ?></strong>
+            <small>Requieren seguimiento</small>
+        </div>
+    </article>
+    <article class="marketing-summary-card">
+        <span class="marketing-summary-card__icon is-danger"><i class="bi bi-exclamation-triangle"></i></span>
+        <div>
+            <p>En riesgo</p>
+            <strong><?= $riskCount ?></strong>
+            <small>Con notas documentadas</small>
+        </div>
+    </article>
+</div>
+
+<section class="app-panel marketing-workflow-board">
+    <div class="app-panel__header">
+        <div>
+            <h2 class="app-panel__title"><i class="bi bi-diagram-3"></i> Etapas del workflow</h2>
+            <p class="app-panel__subtitle">Actualiza el estado de cada etapa y documenta condiciones de riesgo.</p>
+        </div>
+        <div class="marketing-progress-pill">
+            <span><?= $completionPct ?>%</span>
+            <div class="dashboard-mini-progress"><span data-style-width="<?= $completionPct ?>%"></span></div>
         </div>
     </div>
-</div>
 
-<!-- Stages Table -->
-<div class="card table-card">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Etapa</th>
-                    <th class="text-center">Estado</th>
-                    <th class="d-none d-md-table-cell">Notas de Riesgo</th>
-                    <th class="d-none d-lg-table-cell">Actualizado por</th>
-                    <th class="text-end" style="width: 100px;">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="marketing-stage-grid">
+        <?php foreach ($stages as $index => $stage): ?>
             <?php
-            $statusBadge = [
-                'completed' => 'bg-success-subtle text-success',
-                'pending'   => 'bg-secondary-subtle text-secondary',
-                'at_risk'   => 'bg-danger-subtle text-danger',
-            ];
+            $stageName = (string) $stage['stage_name'];
+            $stageStatus = (string) ($stage['status'] ?? 'pending');
+            $modalId = 'modal-' . preg_replace('/[^a-z0-9_-]/i', '-', $stageName);
             ?>
-            <?php foreach ($stages as $stage): ?>
-                <tr>
-                    <td>
-                        <div class="fw-semibold"><?= htmlspecialchars($stageLabels[$stage['stage_name']] ?? $stage['stage_name']) ?></div>
-                        <small class="text-muted d-md-none"><?= htmlspecialchars($stage['risk_notes'] ?? '') ?></small>
-                    </td>
-                    <td class="text-center">
-                        <span class="badge badge-status <?= $statusBadge[$stage['status']] ?? 'bg-info-subtle text-info' ?>">
-                            <?= htmlspecialchars($statusLabels[$stage['status']] ?? $stage['status']) ?>
-                        </span>
-                    </td>
-                    <td class="d-none d-md-table-cell">
-                        <?php if (!empty($stage['risk_notes'])): ?>
-                            <small><?= htmlspecialchars($stage['risk_notes']) ?></small>
-                        <?php else: ?>
-                            <span class="text-muted">—</span>
-                        <?php endif; ?>
-                    </td>
-                    <td class="d-none d-lg-table-cell">
-                        <div class="small">
-                            <div><?= htmlspecialchars($stage['updated_by_name'] ?? '—') ?></div>
-                            <span class="text-muted"><?= !empty($stage['updated_at']) ? date('d/m/Y', strtotime($stage['updated_at'])) : '' ?></span>
-                        </div>
-                    </td>
-                    <td class="text-end">
-                        <button type="button" class="btn btn-icon btn-sm btn-outline-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modal-<?= $stage['stage_name'] ?>">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                    </td>
-                </tr>
+            <article class="marketing-stage-card <?= $stageStatus === 'at_risk' ? 'is-risk' : '' ?>">
+                <div class="marketing-stage-card__top">
+                    <span class="marketing-stage-card__step"><?= $index + 1 ?></span>
+                    <span class="badge badge-status <?= $statusBadge[$stageStatus] ?? 'bg-info-subtle text-info' ?>">
+                        <i class="bi <?= $statusIcon[$stageStatus] ?? 'bi-info-circle' ?> me-1"></i>
+                        <?= htmlspecialchars($statusLabels[$stageStatus] ?? $stageStatus) ?>
+                    </span>
+                </div>
+                <h3><?= htmlspecialchars($stageLabels[$stageName] ?? $stageName) ?></h3>
+                <?php if (!empty($stage['risk_notes'])): ?>
+                    <p class="marketing-stage-card__risk"><?= htmlspecialchars($stage['risk_notes']) ?></p>
+                <?php else: ?>
+                    <p class="marketing-stage-card__muted">Sin notas de riesgo registradas.</p>
+                <?php endif; ?>
+                <div class="marketing-stage-card__footer">
+                    <div>
+                        <span>Actualizado por</span>
+                        <strong><?= htmlspecialchars($stage['updated_by_name'] ?? 'Sistema') ?></strong>
+                        <small><?= !empty($stage['updated_at']) ? htmlspecialchars(date('d/m/Y', strtotime($stage['updated_at']))) : 'Sin fecha' ?></small>
+                    </div>
+                    <button type="button" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#<?= $modalId ?>">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            </article>
 
-                <!-- Modal for editing stage -->
-                <div class="modal fade" id="modal-<?= $stage['stage_name'] ?>" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <form method="POST" action="/cohorts/<?= $cohort['id'] ?>/marketing">
-                                <div class="modal-header">
-                                    <h6 class="modal-title">
-                                        <i class="bi bi-pencil me-2"></i>
-                                        <?= htmlspecialchars($stageLabels[$stage['stage_name']] ?? '') ?>
-                                    </h6>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <input type="hidden" name="stage_name" value="<?= $stage['stage_name'] ?>">
+            <div class="modal fade" id="<?= $modalId ?>" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing">
+                            <div class="modal-header">
+                                <h6 class="modal-title">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    <?= htmlspecialchars($stageLabels[$stageName] ?? '') ?>
+                                </h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="stage_name" value="<?= htmlspecialchars($stageName) ?>">
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Estado</label>
-                                        <select class="form-select" name="status" id="status-<?= $stage['stage_name'] ?>"
-                                                onchange="toggleRisk(this, '<?= $stage['stage_name'] ?>')">
-                                            <option value="completed" <?= $stage['status'] === 'completed' ? 'selected' : '' ?>>Completada</option>
-                                            <option value="pending"   <?= $stage['status'] === 'pending'   ? 'selected' : '' ?>>Pendiente a iniciar</option>
-                                            <option value="at_risk"   <?= $stage['status'] === 'at_risk'   ? 'selected' : '' ?>>En riesgo</option>
-                                        </select>
-                                    </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-select js-risk-status" name="status" id="status-<?= htmlspecialchars($stageName) ?>" data-risk-target="risk-notes-<?= htmlspecialchars($stageName) ?>">
+                                        <option value="completed" <?= $stageStatus === 'completed' ? 'selected' : '' ?>>Completada</option>
+                                        <option value="pending" <?= $stageStatus === 'pending' ? 'selected' : '' ?>>Pendiente a iniciar</option>
+                                        <option value="at_risk" <?= $stageStatus === 'at_risk' ? 'selected' : '' ?>>En riesgo</option>
+                                    </select>
+                                </div>
 
-                                    <div class="mb-3" id="risk-notes-<?= $stage['stage_name'] ?>"
-                                         style="display: <?= $stage['status'] === 'at_risk' ? 'block' : 'none' ?>;">
-                                        <label class="form-label">Documentar condición de riesgo <span class="text-danger">*</span></label>
-                                        <textarea class="form-control" name="risk_notes" rows="3"
-                                                  placeholder="Describa por qué esta etapa está en riesgo..."
-                                        ><?= htmlspecialchars($stage['risk_notes'] ?? '') ?></textarea>
-                                    </div>
+                                <div class="mb-3 <?= $stageStatus === 'at_risk' ? '' : 'd-none' ?>" id="risk-notes-<?= htmlspecialchars($stageName) ?>">
+                                    <label class="form-label">Documentar condicion de riesgo <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="risk_notes" rows="3" placeholder="Describe por que esta etapa esta en riesgo..."><?= htmlspecialchars($stage['risk_notes'] ?? '') ?></textarea>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-lg me-1"></i> Guardar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i> Guardar
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+            </div>
+        <?php endforeach; ?>
     </div>
-</div>
+</section>
 
-<script>
-function toggleRisk(select, stageName) {
-    const div = document.getElementById('risk-notes-' + stageName);
-    div.style.display = select.value === 'at_risk' ? 'block' : 'none';
-}
-</script>
+

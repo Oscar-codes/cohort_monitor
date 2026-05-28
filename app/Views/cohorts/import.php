@@ -23,35 +23,38 @@
 <?php endif; ?>
 
 <!-- Page Header -->
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
+<section class="form-page-hero import-hero mb-4">
     <div>
-        <h4 class="fw-bold mb-1">
-            <i class="bi bi-cloud-arrow-up text-primary me-2"></i>Importar Cohortes
-        </h4>
-        <p class="text-muted mb-0">Carga masiva de cohortes desde un archivo Excel o CSV.</p>
+        <div class="dashboard-eyebrow">
+            <i class="bi bi-cloud-arrow-up"></i>
+            Carga masiva
+        </div>
+        <h2 class="form-page-hero__title">Importar cohortes</h2>
+        <p class="form-page-hero__copy">Carga archivos Excel o CSV, valida estructura y revisa resultados antes de continuar.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="/cohorts" class="btn btn-outline-secondary btn-sm">
+        <a href="/cohorts" class="btn btn-outline-light btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
-        <a href="/cohorts/import/template" class="btn btn-success btn-sm">
+        <a href="/cohorts/import/template" class="btn btn-light btn-sm">
             <i class="bi bi-file-earmark-spreadsheet me-1"></i> Descargar Plantilla
         </a>
     </div>
-</div>
+</section>
 
 <?php if (empty($summary)): ?>
 <!-- ─── UPLOAD FORM ─────────────────────────────────────────── -->
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <!-- Instructions Card -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0 fw-semibold">
-                    <i class="bi bi-info-circle text-primary me-1"></i> Instrucciones
-                </h6>
+        <div class="app-panel mb-4">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-info-circle text-primary"></i> Instrucciones</h3>
+                    <p class="app-panel__subtitle">Antes de importar, revisa formato, tamano y columnas requeridas.</p>
+                </div>
             </div>
-            <div class="card-body">
+            <div>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <h6 class="fw-semibold text-primary mb-2">
@@ -85,13 +88,14 @@
         </div>
 
         <!-- Upload Card -->
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0 fw-semibold">
-                    <i class="bi bi-upload text-primary me-1"></i> Subir Archivo
-                </h6>
+        <div class="app-panel">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-upload text-primary"></i> Subir archivo</h3>
+                    <p class="app-panel__subtitle">Acepta .xlsx, .xls y .csv hasta 5 MB.</p>
+                </div>
             </div>
-            <div class="card-body">
+            <div>
                 <form method="POST" action="/cohorts/import" enctype="multipart/form-data" id="importForm">
                     <!-- Drag & Drop Zone -->
                     <div class="upload-zone text-center p-5 rounded-3 mb-3" id="dropZone">
@@ -211,8 +215,8 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th style="width: 80px;">Fila</th>
-                    <th style="width: 150px;">Campo</th>
+                    <th class="import-col-row">Fila</th>
+                    <th class="import-col-field">Campo</th>
                     <th>Error</th>
                 </tr>
             </thead>
@@ -252,131 +256,4 @@
 
 <?php endif; ?>
 
-<!-- Inline Styles for Upload Zone -->
-<style>
-.upload-zone {
-    border: 2px dashed #dee2e6;
-    background: #f8f9fa;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-.upload-zone:hover,
-.upload-zone.drag-over {
-    border-color: #0d6efd;
-    background: rgba(13, 110, 253, 0.04);
-}
-.upload-zone-icon {
-    font-size: 3rem;
-    color: #adb5bd;
-}
-.upload-zone:hover .upload-zone-icon,
-.upload-zone.drag-over .upload-zone-icon {
-    color: #0d6efd;
-}
-.btn-close-sm {
-    font-size: 0.6rem;
-    padding: 0.35em;
-}
-</style>
 
-<!-- Import Form Scripts -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dropZone     = document.getElementById('dropZone');
-    const fileInput    = document.getElementById('importFile');
-    const fileInfo     = document.getElementById('fileInfo');
-    const fileName     = document.getElementById('fileName');
-    const fileSize     = document.getElementById('fileSize');
-    const btnSelect    = document.getElementById('btnSelectFile');
-    const btnClear     = document.getElementById('btnClearFile');
-    const btnSubmit    = document.getElementById('btnSubmit');
-    const spinner      = document.getElementById('spinner');
-    const form         = document.getElementById('importForm');
-
-    if (!dropZone) return; // Only run on form view
-
-    // Click to select
-    btnSelect.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('click', (e) => {
-        if (e.target === dropZone || e.target.closest('.upload-zone-icon') || e.target.tagName === 'H6' || e.target.tagName === 'P') {
-            fileInput.click();
-        }
-    });
-
-    // File selected via input
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            showFileInfo(fileInput.files[0]);
-        }
-    });
-
-    // Drag & Drop
-    ['dragenter', 'dragover'].forEach(evt => {
-        dropZone.addEventListener(evt, (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-    });
-
-    ['dragleave', 'drop'].forEach(evt => {
-        dropZone.addEventListener(evt, (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-        });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            fileInput.files = files;
-            showFileInfo(files[0]);
-        }
-    });
-
-    // Clear file
-    btnClear.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.value = '';
-        fileInfo.classList.add('d-none');
-        btnSubmit.disabled = true;
-    });
-
-    // Submit with spinner
-    form.addEventListener('submit', function() {
-        btnSubmit.disabled = true;
-        spinner.classList.remove('d-none');
-        btnSubmit.querySelector('i')?.classList.add('d-none');
-    });
-
-    function showFileInfo(file) {
-        const allowedExts = ['xlsx', 'xls', 'csv'];
-        const ext = file.name.split('.').pop().toLowerCase();
-
-        if (!allowedExts.includes(ext)) {
-            alert('Formato no permitido. Solo se aceptan archivos .xlsx, .xls o .csv');
-            fileInput.value = '';
-            return;
-        }
-
-        const maxSize = 5 * 1024 * 1024;
-        if (file.size > maxSize) {
-            alert('El archivo excede el tamaño máximo de 5 MB.');
-            fileInput.value = '';
-            return;
-        }
-
-        fileName.textContent = file.name;
-        fileSize.textContent = '(' + formatBytes(file.size) + ')';
-        fileInfo.classList.remove('d-none');
-        btnSubmit.disabled = false;
-    }
-
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
-});
-</script>

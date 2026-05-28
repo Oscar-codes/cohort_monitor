@@ -4,9 +4,19 @@
 $currentRole = $_SESSION['role'] ?? '';
 $isMarketingBlocked = ($currentRole === 'marketing');
 
+/** @var array<string, mixed> $cohort */
+$cohort = isset($cohort) && is_array($cohort) ? $cohort : [];
+
+/** @var string[] $editableFields */
+$editableFields = isset($editableFields) && is_array($editableFields) ? $editableFields : [];
+
+$canEdit = static fn(string $field): bool => false;
+$disabled = static fn(string $field): string => 'disabled readonly';
+$fieldClass = static fn(string $field): string => 'form-control bg-light text-muted';
+
 // Helper functions (only needed when user has access)
 if (!$isMarketingBlocked) {
-    $canEdit    = fn(string $field): bool   => in_array($field, $editableFields ?? [], true);
+    $canEdit    = fn(string $field): bool   => in_array($field, $editableFields, true);
     $disabled   = fn(string $field): string => $canEdit($field) ? '' : 'disabled readonly';
     $fieldClass = fn(string $field): string => $canEdit($field) ? 'form-control' : 'form-control bg-light text-muted';
 }
@@ -37,10 +47,9 @@ if (!$isMarketingBlocked) {
             </div>
 
             <div class="modal-footer border-0 gap-2 justify-content-end">
-                <button type="button" class="btn btn-outline-secondary"
-                        onclick="history.back()">
+                <a href="/cohorts" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i>Volver
-                </button>
+                </a>
                 <a href="/" class="btn btn-primary">
                     <i class="bi bi-house me-1"></i>Ir al Inicio
                 </a>
@@ -50,25 +59,28 @@ if (!$isMarketingBlocked) {
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var modal = new bootstrap.Modal(document.getElementById('accessDeniedModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        modal.show();
-    });
-</script>
+
 
 <?php else: ?>
 
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="/cohorts" class="text-decoration-none">Cohortes</a></li>
-        <li class="breadcrumb-item"><a href="/cohorts/<?= $cohort['id'] ?>" class="text-decoration-none"><?= htmlspecialchars($cohort['name']) ?></a></li>
-        <li class="breadcrumb-item active" aria-current="page">Editar</li>
-    </ol>
-</nav>
+<section class="form-page-hero mb-4">
+    <div>
+        <div class="dashboard-eyebrow">
+            <i class="bi bi-pencil-square"></i>
+            Edicion controlada
+        </div>
+        <h2 class="form-page-hero__title"><?= htmlspecialchars($cohort['cohort_code'] ?? 'Cohorte') ?></h2>
+        <p class="form-page-hero__copy"><?= htmlspecialchars($cohort['name']) ?></p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/cohorts/<?= $cohort['id'] ?>" class="btn btn-outline-light">
+            <i class="bi bi-eye me-1"></i> Ver detalle
+        </a>
+        <a href="/cohorts" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i> Cohortes
+        </a>
+    </div>
+</section>
 
 <?php if (!($isAdmin ?? false)): ?>
 <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
@@ -81,8 +93,14 @@ if (!$isMarketingBlocked) {
 
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-8">
-        <div class="card">
-            <div class="card-body p-4">
+        <div class="app-panel form-workbench">
+            <div class="form-workbench__header">
+                <div>
+                    <h3><i class="bi bi-sliders text-primary"></i> Campos editables</h3>
+                    <p>La disponibilidad de campos depende del rol activo.</p>
+                </div>
+            </div>
+            <div class="form-workbench__body">
                 <form method="POST" action="/cohorts/<?= $cohort['id'] ?>" class="needs-validation" novalidate>
                     <input type="hidden" name="_method" value="PUT">
 
@@ -315,13 +333,5 @@ if (!$isMarketingBlocked) {
     </div>
 </div>
 
-<script>
-// Remove disabled fields from form submission to prevent sending old values
-document.querySelector('form').addEventListener('submit', function(e) {
-    const disabledInputs = this.querySelectorAll('input[disabled], select[disabled]');
-    disabledInputs.forEach(input => {
-        input.removeAttribute('name');
-    });
-});
-</script>
+
 <?php endif; // end marketing access block ?>

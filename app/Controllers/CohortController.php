@@ -32,6 +32,7 @@ class CohortController extends Controller
     public function index(): void
     {
         $filters = [
+            'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
             'related_project' => (string) $this->input('related_project', ''),
             'start_date'      => (string) $this->input('start_date', ''),
@@ -57,6 +58,9 @@ class CohortController extends Controller
             'projectNames'    => $projectNames,
             'canCreate'       => Auth::canCreateCohort(),
             'canDelete'       => Auth::canDeleteCohort(),
+            'scripts'         => [
+                '/assets/js/cohorts-index.js',
+            ],
         ]);
     }
 
@@ -146,6 +150,9 @@ class CohortController extends Controller
             'cohort'          => $cohort,
             'editableFields'  => Auth::getEditableCohortFields(),
             'isAdmin'         => Auth::isAdmin(),
+            'scripts'         => [
+                '/assets/js/cohorts-edit.js',
+            ],
         ]);
     }
 

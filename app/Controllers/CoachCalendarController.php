@@ -35,11 +35,29 @@ class CoachCalendarController extends Controller
 
         $activeFilters = array_filter($filters, static fn($v) => $v !== '');
 
-        $entries       = $this->calendarService->getActiveCoaches($activeFilters);
-        $stats         = $this->calendarService->getSummaryStats($entries);
-        $groupedByCoach = $this->calendarService->groupByCoach($entries);
-        $coachNames    = $this->calendarService->getActiveCoachNames();
-        $bootcampTypes = $this->calendarService->getBootcampTypes();
+        try {
+            $entries        = $this->calendarService->getActiveCoaches($activeFilters);
+            $stats          = $this->calendarService->getSummaryStats($entries);
+            $groupedByCoach = $this->calendarService->groupByCoach($entries);
+            $coachNames     = $this->calendarService->getActiveCoachNames();
+            $bootcampTypes  = $this->calendarService->getBootcampTypes();
+            $loadError      = null;
+        } catch (\Throwable $e) {
+            $this->logException($e, 'CoachCalendarController@index');
+            http_response_code(500);
+
+            $entries        = [];
+            $stats          = [
+                'total_coaches'  => 0,
+                'total_cohorts'  => 0,
+                'avg_completion' => 0,
+                'finishing_soon' => 0,
+            ];
+            $groupedByCoach = [];
+            $coachNames     = [];
+            $bootcampTypes  = [];
+            $loadError      = 'No se pudo cargar el calendario de coaches.';
+        }
 
         $this->view('coaches.calendar', [
             'pageTitle'      => 'Calendario de Coaches',
@@ -51,6 +69,7 @@ class CoachCalendarController extends Controller
             'activeFilters'  => $activeFilters,
             'coachNames'     => $coachNames,
             'bootcampTypes'  => $bootcampTypes,
+            'loadError'      => $loadError,
         ]);
     }
 }

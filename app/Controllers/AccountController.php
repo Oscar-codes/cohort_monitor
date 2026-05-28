@@ -29,6 +29,9 @@ class AccountController extends Controller
             'pageTitle'  => 'Mi Cuenta',
             'activePage' => 'account',
             'user'       => $user,
+            'scripts'    => [
+                '/assets/js/account-profile.js',
+            ],
         ]);
     }
 

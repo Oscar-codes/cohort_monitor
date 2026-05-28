@@ -36,6 +36,9 @@ class UserController extends Controller
         $this->view('users.create', [
             'pageTitle'  => 'Nuevo Usuario',
             'activePage' => 'users',
+            'scripts'    => [
+                '/assets/js/users-form.js',
+            ],
         ]);
     }
 
@@ -74,6 +77,9 @@ class UserController extends Controller
             'pageTitle'  => 'Editar: ' . $user['full_name'],
             'activePage' => 'users',
             'user'       => $user,
+            'scripts'    => [
+                '/assets/js/users-form.js',
+            ],
         ]);
     }
 

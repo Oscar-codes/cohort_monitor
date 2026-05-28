@@ -2,331 +2,354 @@
 /**
  * Coach Calendar View
  *
- * Two views: Timeline (Gantt per coach) and List (table grouped by coach).
- * Shows only coaches with in-progress cohorts (1-99% completion).
- * Filters: coach name, bootcamp type. State via GET params.
+ * Timeline and list views for active coaches with cohorts in progress.
  */
 
-/** Phase badge helper */
-function phaseBadge(string $phase): string
-{
-    $map = [
-        'early'     => ['bg-info-subtle text-info',       'Inicio'],
-        'mid'       => ['bg-primary-subtle text-primary', 'Medio'],
-        'advanced'  => ['bg-warning-subtle text-warning', 'Avanzado'],
-        'finishing' => ['bg-danger-subtle text-danger',   'Finalizando'],
-    ];
-    [$class, $label] = $map[$phase] ?? ['bg-secondary-subtle text-secondary', ucfirst($phase)];
-    return '<span class="badge ' . $class . '">' . htmlspecialchars($label) . '</span>';
+if (!function_exists('coachPhaseBadge')) {
+    function coachPhaseBadge(string $phase): string
+    {
+        $map = [
+            'early' => ['bg-info-subtle text-info', 'Inicio'],
+            'mid' => ['bg-primary-subtle text-primary', 'Medio'],
+            'advanced' => ['bg-warning-subtle text-warning', 'Avanzado'],
+            'finishing' => ['bg-danger-subtle text-danger', 'Finalizando'],
+        ];
+        [$class, $label] = $map[$phase] ?? ['bg-secondary-subtle text-secondary', ucfirst($phase)];
+
+        return '<span class="badge badge-status ' . $class . '">' . htmlspecialchars($label) . '</span>';
+    }
 }
 
-/** Progress bar color based on percentage */
-function progressColor(int $pct): string
-{
-    if ($pct <= 25) return 'bg-info';
-    if ($pct <= 50) return 'bg-primary';
-    if ($pct <= 75) return 'bg-warning';
-    return 'bg-danger';
+if (!function_exists('coachProgressColor')) {
+    function coachProgressColor(int $pct): string
+    {
+        if ($pct <= 25) {
+            return 'bg-info';
+        }
+        if ($pct <= 50) {
+            return 'bg-primary';
+        }
+        if ($pct <= 75) {
+            return 'bg-warning';
+        }
+        return 'bg-danger';
+    }
 }
 
-/** Format date for display */
-function calFormatDate(?string $date): string
-{
-    return $date ? date('d M Y', strtotime($date)) : '—';
+if (!function_exists('coachCalendarDate')) {
+    function coachCalendarDate(?string $date): string
+    {
+        return $date ? date('d M Y', strtotime($date)) : 'Sin fecha';
+    }
 }
 
-$filters       = $filters ?? [];
+if (!function_exists('coachInitial')) {
+    function coachInitial(string $name): string
+    {
+        $name = trim($name);
+        return strtoupper(substr($name !== '' ? $name : 'C', 0, 1));
+    }
+}
+
+$filters = $filters ?? [];
 $activeFilters = $activeFilters ?? [];
-$querySuffix   = !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '';
-$stats         = $stats ?? ['total_coaches' => 0, 'total_cohorts' => 0, 'avg_completion' => 0, 'finishing_soon' => 0];
-$entries       = $entries ?? [];
+$querySuffix = !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '';
+$stats = $stats ?? ['total_coaches' => 0, 'total_cohorts' => 0, 'avg_completion' => 0, 'finishing_soon' => 0];
+$entries = $entries ?? [];
 $groupedByCoach = $groupedByCoach ?? [];
 
-// ── Timeline calculations ────────────────────────────────
 $todayStr = date('Y-m-d');
-$todayTs  = strtotime($todayStr);
+$todayTs = strtotime($todayStr);
 
-// Find global min/max for the timeline
 $timelineMin = null;
 $timelineMax = null;
 foreach ($entries as $e) {
     $s = $e['start_date'];
     $d = $e['end_date'];
-    if (!$timelineMin || $s < $timelineMin) $timelineMin = $s;
-    if (!$timelineMax || $d > $timelineMax) $timelineMax = $d;
+    if (!$timelineMin || $s < $timelineMin) {
+        $timelineMin = $s;
+    }
+    if (!$timelineMax || $d > $timelineMax) {
+        $timelineMax = $d;
+    }
 }
-// Fallback to today ± 60 days if no data
-if (!$timelineMin) $timelineMin = date('Y-m-d', strtotime('-30 days'));
-if (!$timelineMax) $timelineMax = date('Y-m-d', strtotime('+30 days'));
 
-$tlStartTs  = strtotime($timelineMin);
-$tlEndTs    = strtotime($timelineMax);
+if (!$timelineMin) {
+    $timelineMin = date('Y-m-d', strtotime('-30 days'));
+}
+if (!$timelineMax) {
+    $timelineMax = date('Y-m-d', strtotime('+30 days'));
+}
+
+$tlStartTs = strtotime($timelineMin);
+$tlEndTs = strtotime($timelineMax);
 $tlSpanDays = max(1, (int) round(($tlEndTs - $tlStartTs) / 86400));
 
-// Month headers
 $months = [];
 $cursor = strtotime(date('Y-m-01', $tlStartTs));
 while ($cursor <= $tlEndTs) {
     $mLabel = ucfirst(date('M Y', $cursor));
     $mStart = max($tlStartTs, $cursor);
-    $mEnd   = min($tlEndTs, strtotime(date('Y-m-t', $cursor)));
-    $mLeft  = (($mStart - $tlStartTs) / 86400) / $tlSpanDays * 100;
+    $mEnd = min($tlEndTs, strtotime(date('Y-m-t', $cursor)));
+    $mLeft = (($mStart - $tlStartTs) / 86400) / $tlSpanDays * 100;
     $mWidth = max(0, (($mEnd - $mStart) / 86400 + 1) / $tlSpanDays * 100);
     $months[] = ['label' => $mLabel, 'left' => $mLeft, 'width' => $mWidth];
     $cursor = strtotime('+1 month', strtotime(date('Y-m-01', $cursor)));
 }
 
-$todayOffset = max(0, ($todayTs - $tlStartTs) / 86400) / $tlSpanDays * 100;
+$todayOffset = min(100, max(0, ($todayTs - $tlStartTs) / 86400) / $tlSpanDays * 100);
 
-// Phase colors for Gantt bars
 $phaseBarColors = [
-    'early'     => 'linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%)',
-    'mid'       => 'linear-gradient(135deg, #4f8cff 0%, #2563eb 100%)',
-    'advanced'  => 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)',
-    'finishing' => 'linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%)',
+    'early' => 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+    'mid' => 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+    'advanced' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    'finishing' => 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
 ];
 ?>
 
-<!-- ── Toolbar ──────────────────────────────────────────── -->
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
-    <div>
-        <h5 class="fw-bold mb-1"><i class="bi bi-calendar-range text-primary me-2"></i>Calendario de Coaches</h5>
-        <p class="text-muted mb-0 small">Coaches activos con cohorts en progreso (1-99% completado). Se actualiza automáticamente.</p>
+<?php if (!empty($loadError)): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i> <?= htmlspecialchars($loadError) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <!-- View toggle -->
+<?php endif; ?>
+
+<section class="coach-calendar-hero mb-4">
+    <div>
+        <span class="dashboard-hero__eyebrow">
+            <i class="bi bi-calendar-range"></i>
+            Calendario operativo
+        </span>
+        <h1>Coaches activos</h1>
+        <p>Seguimiento de carga, avance y cohortes proximas a cierre.</p>
+    </div>
+    <div class="coach-calendar-hero__actions">
         <div class="btn-group" role="group" aria-label="Cambiar vista">
-            <button type="button" class="btn btn-outline-primary active btn-sm" id="btn-view-timeline" data-view="timeline">
-                <i class="bi bi-bar-chart-steps me-1"></i><span class="d-none d-sm-inline">Timeline</span>
+            <button type="button" class="btn btn-light btn-sm active" id="btn-view-timeline" data-view="timeline">
+                <i class="bi bi-bar-chart-steps me-1"></i><span>Timeline</span>
             </button>
-            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-view-list" data-view="list">
-                <i class="bi bi-list-ul me-1"></i><span class="d-none d-sm-inline">Lista</span>
+            <button type="button" class="btn btn-outline-light btn-sm" id="btn-view-list" data-view="list">
+                <i class="bi bi-list-ul me-1"></i><span>Lista</span>
             </button>
         </div>
         <?php if (!empty($activeFilters)): ?>
-            <a href="/coaches" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-x-circle me-1"></i>Limpiar
+            <a href="/coaches" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-x-circle me-1"></i> Limpiar filtros
             </a>
         <?php endif; ?>
     </div>
-</div>
+</section>
 
-<!-- ── Filters ──────────────────────────────────────────── -->
-<div class="card mb-4">
-    <div class="card-header py-2">
-        <h6 class="mb-0 small"><i class="bi bi-funnel me-1"></i>Filtros</h6>
+<section class="app-panel coach-filter-panel mb-4">
+    <div class="app-panel__header">
+        <div>
+            <h2 class="app-panel__title"><i class="bi bi-funnel"></i> Filtros</h2>
+            <p class="app-panel__subtitle">Segmenta por coach o tipo de bootcamp sin perder el modo de vista.</p>
+        </div>
     </div>
-    <div class="card-body py-2">
-        <form method="GET" action="/coaches" class="row g-2 align-items-end">
-            <div class="col-12 col-md-5">
-                <label for="coach" class="form-label small mb-1">Coach</label>
-                <select class="form-select form-select-sm" id="coach" name="coach">
-                    <option value="">Todos los coaches</option>
-                    <?php foreach (($coachNames ?? []) as $name): ?>
-                        <option value="<?= htmlspecialchars($name) ?>" <?= (($filters['coach'] ?? '') === $name) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($name) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-12 col-md-4">
-                <label for="bootcamp_type" class="form-label small mb-1">Bootcamp Type</label>
-                <select class="form-select form-select-sm" id="bootcamp_type" name="bootcamp_type">
-                    <option value="">Todos</option>
-                    <?php foreach (($bootcampTypes ?? []) as $type): ?>
-                        <option value="<?= htmlspecialchars($type) ?>" <?= (($filters['bootcamp_type'] ?? '') === $type) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($type) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-12 col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                    <i class="bi bi-search me-1"></i>Filtrar
-                </button>
-                <a href="/coaches" class="btn btn-outline-secondary btn-sm">Reset</a>
-            </div>
-        </form>
-    </div>
-</div>
+    <form method="GET" action="/coaches" class="row g-3 align-items-end">
+        <div class="col-12 col-md-5">
+            <label for="coach" class="form-label">Coach</label>
+            <select class="form-select" id="coach" name="coach">
+                <option value="">Todos los coaches</option>
+                <?php foreach (($coachNames ?? []) as $name): ?>
+                    <option value="<?= htmlspecialchars($name) ?>" <?= (($filters['coach'] ?? '') === $name) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($name) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-md-4">
+            <label for="bootcamp_type" class="form-label">Bootcamp</label>
+            <select class="form-select" id="bootcamp_type" name="bootcamp_type">
+                <option value="">Todos</option>
+                <?php foreach (($bootcampTypes ?? []) as $type): ?>
+                    <option value="<?= htmlspecialchars($type) ?>" <?= (($filters['bootcamp_type'] ?? '') === $type) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($type) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+                <i class="bi bi-search me-1"></i> Filtrar
+            </button>
+            <a href="/coaches" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</section>
 
-<!-- ── KPI Cards ───────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="card bg-body-secondary border-0 h-100">
-            <div class="card-body py-3 text-center">
-                <div class="fs-4 fw-bold text-primary"><?= $stats['total_coaches'] ?></div>
-                <small class="text-muted">Coaches Activos</small>
-            </div>
+<div class="coach-calendar-summary mb-4">
+    <article class="coach-calendar-kpi">
+        <span class="coach-calendar-kpi__icon is-primary"><i class="bi bi-person-video3"></i></span>
+        <div>
+            <p>Coaches activos</p>
+            <strong><?= htmlspecialchars((string) $stats['total_coaches']) ?></strong>
+            <small>Con cohortes en progreso</small>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card bg-body-secondary border-0 h-100">
-            <div class="card-body py-3 text-center">
-                <div class="fs-4 fw-bold text-success"><?= $stats['total_cohorts'] ?></div>
-                <small class="text-muted">Cohorts en Progreso</small>
-            </div>
+    </article>
+    <article class="coach-calendar-kpi">
+        <span class="coach-calendar-kpi__icon is-success"><i class="bi bi-collection"></i></span>
+        <div>
+            <p>Cohortes</p>
+            <strong><?= htmlspecialchars((string) $stats['total_cohorts']) ?></strong>
+            <small>Entre 1% y 99%</small>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card bg-body-secondary border-0 h-100">
-            <div class="card-body py-3 text-center">
-                <div class="fs-4 fw-bold text-info"><?= $stats['avg_completion'] ?>%</div>
-                <small class="text-muted">Completado Promedio</small>
-            </div>
+    </article>
+    <article class="coach-calendar-kpi">
+        <span class="coach-calendar-kpi__icon is-info"><i class="bi bi-speedometer2"></i></span>
+        <div>
+            <p>Avance promedio</p>
+            <strong><?= htmlspecialchars((string) $stats['avg_completion']) ?>%</strong>
+            <small>Progreso calendario</small>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card bg-body-secondary border-0 h-100">
-            <div class="card-body py-3 text-center">
-                <div class="fs-4 fw-bold text-danger"><?= $stats['finishing_soon'] ?></div>
-                <small class="text-muted">Finalizando Pronto</small>
-            </div>
+    </article>
+    <article class="coach-calendar-kpi">
+        <span class="coach-calendar-kpi__icon is-danger"><i class="bi bi-hourglass-bottom"></i></span>
+        <div>
+            <p>Finalizando</p>
+            <strong><?= htmlspecialchars((string) $stats['finishing_soon']) ?></strong>
+            <small>En fase avanzada final</small>
         </div>
-    </div>
+    </article>
 </div>
 
 <?php if (empty($entries)): ?>
-    <div class="card">
-        <div class="card-body">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
-                <h5 class="empty-state-title">Sin coaches activos</h5>
-                <p class="empty-state-text">No hay coaches con cohorts en progreso activo en este momento.</p>
-                <?php if (!empty($activeFilters)): ?>
-                    <a href="/coaches" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
-                <?php endif; ?>
-            </div>
+    <section class="app-panel">
+        <div class="empty-state py-5">
+            <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
+            <h5 class="empty-state-title">Sin coaches activos</h5>
+            <p class="empty-state-text">No hay coaches con cohortes en progreso activo en este momento.</p>
+            <?php if (!empty($activeFilters)): ?>
+                <a href="/coaches" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
+            <?php endif; ?>
         </div>
-    </div>
+    </section>
 <?php else: ?>
 
-<!-- ════════════════════════════════════════════════════════
-     VIEW 1: Timeline (Gantt grouped by coach)
-     ════════════════════════════════════════════════════════ -->
-<div id="view-timeline">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Timeline de Coaches Activos</h6>
-            <small class="text-muted"><?= $stats['total_coaches'] ?> coaches · <?= $stats['total_cohorts'] ?> cohorts</small>
+<section id="view-timeline" class="app-panel coach-calendar-board">
+    <div class="app-panel__header">
+        <div>
+            <h2 class="app-panel__title"><i class="bi bi-bar-chart-steps"></i> Timeline de carga</h2>
+            <p class="app-panel__subtitle"><?= (int) $stats['total_coaches'] ?> coaches - <?= (int) $stats['total_cohorts'] ?> cohortes activas</p>
         </div>
-        <div class="card-body p-0">
-            <div class="gantt-wrapper">
-                <!-- Month headers -->
-                <div class="gantt-header">
-                    <div class="gantt-label-col coach-gantt-label"><small class="fw-semibold text-muted">Coach / Cohort</small></div>
+        <div class="coach-calendar-range">
+            <?= htmlspecialchars(coachCalendarDate($timelineMin)) ?> - <?= htmlspecialchars(coachCalendarDate($timelineMax)) ?>
+        </div>
+    </div>
+
+    <div class="coach-gantt-shell">
+        <div class="gantt-wrapper coach-gantt-modern">
+            <div class="gantt-header">
+                <div class="gantt-label-col coach-gantt-label"><small>Coach / Cohorte</small></div>
+                <div class="gantt-timeline-col position-relative">
+                    <?php foreach ($months as $m): ?>
+                        <div class="gantt-month" data-style-left="<?= $m['left'] ?>%" data-style-width="<?= $m['width'] ?>%"><?= htmlspecialchars($m['label']) ?></div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <?php foreach ($groupedByCoach as $coachName => $coachEntries): ?>
+                <?php
+                $coachAvg = (int) round(array_sum(array_column($coachEntries, 'pct_completion')) / max(1, count($coachEntries)));
+                ?>
+                <div class="coach-gantt-group-header">
+                    <div class="gantt-label-col coach-gantt-label">
+                        <div class="coach-row-person">
+                            <span class="coach-avatar-sm"><?= htmlspecialchars(coachInitial($coachName)) ?></span>
+                            <div>
+                                <strong><?= htmlspecialchars($coachName) ?></strong>
+                                <small><?= count($coachEntries) ?> cohorte<?= count($coachEntries) > 1 ? 's' : '' ?> - <?= $coachAvg ?>% promedio</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="gantt-timeline-col position-relative">
-                        <?php foreach ($months as $m): ?>
-                            <div class="gantt-month" style="left:<?= $m['left'] ?>%;width:<?= $m['width'] ?>%;"><?= htmlspecialchars($m['label']) ?></div>
-                        <?php endforeach; ?>
+                        <div class="gantt-today-line" data-style-left="<?= $todayOffset ?>%"></div>
                     </div>
                 </div>
 
-                <!-- Coach groups -->
-                <?php foreach ($groupedByCoach as $coachName => $coachEntries): ?>
-                    <!-- Coach separator -->
-                    <div class="coach-gantt-group-header">
+                <?php foreach ($coachEntries as $ce): ?>
+                    <?php
+                    $barStart = strtotime($ce['start_date']);
+                    $barEnd = strtotime($ce['end_date']);
+                    $barLeft = max(0, ($barStart - $tlStartTs) / 86400) / $tlSpanDays * 100;
+                    $barWidth = max(1, ($barEnd - $barStart) / 86400) / $tlSpanDays * 100;
+                    $barWidth = min($barWidth, 100 - $barLeft);
+                    $barBg = $phaseBarColors[$ce['phase_status']] ?? $phaseBarColors['mid'];
+                    $fillPct = (int) $ce['pct_completion'];
+                    ?>
+                    <div class="gantt-row">
                         <div class="gantt-label-col coach-gantt-label">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="coach-avatar-sm"><?= htmlspecialchars(mb_substr($coachName, 0, 1)) ?></span>
-                                <div>
-                                    <div class="fw-semibold small"><?= htmlspecialchars($coachName) ?></div>
-                                    <div class="text-muted" style="font-size:.65rem;"><?= count($coachEntries) ?> cohort<?= count($coachEntries) > 1 ? 's' : '' ?></div>
-                                </div>
+                            <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="coach-gantt-code">
+                                <?= htmlspecialchars($ce['cohort_code']) ?>
+                            </a>
+                            <div class="coach-gantt-meta">
+                                <?= coachPhaseBadge($ce['phase_status']) ?>
+                                <span><?= $fillPct ?>%</span>
                             </div>
                         </div>
                         <div class="gantt-timeline-col position-relative">
-                            <div class="gantt-today-line" style="left:<?= $todayOffset ?>%;"></div>
+                            <div class="gantt-today-line" data-style-left="<?= $todayOffset ?>%"></div>
+                            <a class="coach-gantt-bar"
+                               href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>"
+                               data-style-left="<?= $barLeft ?>%"
+                               data-style-width="<?= $barWidth ?>%"
+                               data-style-background="<?= $barBg ?>"
+                               data-bs-toggle="tooltip"
+                               data-bs-html="true"
+                               title="<strong><?= htmlspecialchars($ce['cohort_code']) ?></strong><br><?= htmlspecialchars($ce['name']) ?><br><?= htmlspecialchars(coachCalendarDate($ce['start_date'])) ?> - <?= htmlspecialchars(coachCalendarDate($ce['end_date'])) ?><br>Progreso: <?= $fillPct ?>% - <?= (int) $ce['days_remaining'] ?> dias restantes">
+                                <span class="coach-gantt-bar-fill" data-style-width="<?= $fillPct ?>%"></span>
+                                <span class="gantt-bar-label"><?= htmlspecialchars($ce['cohort_code']) ?> - <?= $fillPct ?>%</span>
+                            </a>
                         </div>
                     </div>
-
-                    <!-- Cohort bars for this coach -->
-                    <?php foreach ($coachEntries as $ce): ?>
-                        <?php
-                            $barStart = strtotime($ce['start_date']);
-                            $barEnd   = strtotime($ce['end_date']);
-                            $barLeft  = max(0, ($barStart - $tlStartTs) / 86400) / $tlSpanDays * 100;
-                            $barWidth = max(1, ($barEnd - $barStart) / 86400) / $tlSpanDays * 100;
-                            $barWidth = min($barWidth, 100 - $barLeft);
-                            $barBg    = $phaseBarColors[$ce['phase_status']] ?? $phaseBarColors['mid'];
-
-                            // Progress fill inside the bar
-                            $fillPct = $ce['pct_completion'];
-                        ?>
-                        <div class="gantt-row">
-                            <div class="gantt-label-col coach-gantt-label">
-                                <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="text-decoration-none text-dark small fw-semibold">
-                                    <?= htmlspecialchars($ce['cohort_code']) ?>
-                                </a>
-                                <div class="d-flex align-items-center gap-1 mt-1">
-                                    <?= phaseBadge($ce['phase_status']) ?>
-                                    <span class="text-muted" style="font-size:.6rem;"><?= $ce['pct_completion'] ?>%</span>
-                                </div>
-                            </div>
-                            <div class="gantt-timeline-col position-relative">
-                                <div class="gantt-today-line" style="left:<?= $todayOffset ?>%;"></div>
-                                <div class="coach-gantt-bar" style="left:<?= $barLeft ?>%;width:<?= $barWidth ?>%;background:<?= $barBg ?>;"
-                                     data-bs-toggle="tooltip" data-bs-html="true"
-                                     title="<strong><?= htmlspecialchars($ce['cohort_code']) ?></strong><br>
-                                            <?= htmlspecialchars($ce['name']) ?><br>
-                                            <?= calFormatDate($ce['start_date']) ?> → <?= calFormatDate($ce['end_date']) ?><br>
-                                            Progreso: <?= $ce['pct_completion'] ?>% · <?= $ce['days_remaining'] ?> días restantes">
-                                    <!-- Progress fill overlay -->
-                                    <div class="coach-gantt-bar-fill" style="width:<?= $fillPct ?>%;"></div>
-                                    <span class="gantt-bar-label"><?= htmlspecialchars($ce['cohort_code']) ?> (<?= $fillPct ?>%)</span>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
                 <?php endforeach; ?>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
-    <!-- Legend -->
-    <div class="d-flex flex-wrap gap-3 mt-3 px-1">
-        <small class="text-muted"><span class="coach-legend-dot" style="background:#0dcaf0;"></span> Inicio (1-25%)</small>
-        <small class="text-muted"><span class="coach-legend-dot" style="background:#2563eb;"></span> Medio (26-50%)</small>
-        <small class="text-muted"><span class="coach-legend-dot" style="background:#ffc107;"></span> Avanzado (51-75%)</small>
-        <small class="text-muted"><span class="coach-legend-dot" style="background:#dc3545;"></span> Finalizando (76-99%)</small>
-        <small class="text-muted"><span class="coach-legend-line"></span> Hoy</small>
+    <div class="coach-calendar-legend">
+        <small><span class="coach-legend-dot is-early"></span> Inicio</small>
+        <small><span class="coach-legend-dot is-mid"></span> Medio</small>
+        <small><span class="coach-legend-dot is-advanced"></span> Avanzado</small>
+        <small><span class="coach-legend-dot is-finishing"></span> Finalizando</small>
+        <small><span class="coach-legend-line"></span> Hoy</small>
     </div>
-</div>
+</section>
 
-<!-- ════════════════════════════════════════════════════════
-     VIEW 2: List (table grouped by coach)
-     ════════════════════════════════════════════════════════ -->
-<div id="view-list" class="d-none">
+<section id="view-list" class="d-none">
     <?php foreach ($groupedByCoach as $coachName => $coachEntries): ?>
-        <div class="card mb-3">
-            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="coach-avatar-sm"><?= htmlspecialchars(mb_substr($coachName, 0, 1)) ?></span>
+        <?php
+        $coachAvg = (int) round(array_sum(array_column($coachEntries, 'pct_completion')) / max(1, count($coachEntries)));
+        ?>
+        <article class="app-panel coach-list-panel mb-3">
+            <div class="coach-list-panel__header">
+                <div class="coach-row-person">
+                    <span class="coach-avatar-sm"><?= htmlspecialchars(coachInitial($coachName)) ?></span>
                     <div>
-                        <span class="fw-semibold"><?= htmlspecialchars($coachName) ?></span>
-                        <span class="badge rounded-pill text-bg-dark ms-2"><?= count($coachEntries) ?></span>
+                        <strong><?= htmlspecialchars($coachName) ?></strong>
+                        <small><?= count($coachEntries) ?> cohorte<?= count($coachEntries) > 1 ? 's' : '' ?> activa<?= count($coachEntries) > 1 ? 's' : '' ?></small>
                     </div>
                 </div>
-                <?php
-                    // Coach-level average completion
-                    $coachAvg = (int) round(array_sum(array_column($coachEntries, 'pct_completion')) / max(1, count($coachEntries)));
-                ?>
-                <span class="text-muted small">Promedio: <?= $coachAvg ?>%</span>
+                <div class="coach-list-panel__avg">
+                    <span><?= $coachAvg ?>%</span>
+                    <div class="dashboard-mini-progress"><span data-style-width="<?= $coachAvg ?>%"></span></div>
+                </div>
             </div>
-            <div class="table-responsive">
+
+            <div class="table-responsive coach-list-table">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
-                            <th>Cohort</th>
+                            <th>Cohorte</th>
                             <th class="d-none d-md-table-cell">Bootcamp</th>
                             <th>Progreso</th>
                             <th class="d-none d-lg-table-cell">Inicio</th>
                             <th class="d-none d-lg-table-cell">Fin</th>
-                            <th class="d-none d-md-table-cell text-center">Días Rest.</th>
-                            <th class="d-none d-xl-table-cell text-center">Duración</th>
+                            <th class="d-none d-md-table-cell text-center">Restante</th>
                             <th>Fase</th>
                             <th class="d-none d-xl-table-cell">Horario</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-end">Accion</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -342,39 +365,39 @@ $phaseBarColors = [
                                     <?php if (!empty($ce['bootcamp_type'])): ?>
                                         <span class="badge bg-light text-dark border"><?= htmlspecialchars($ce['bootcamp_type']) ?></span>
                                     <?php else: ?>
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted">Sin tipo</span>
                                     <?php endif; ?>
                                 </td>
-                                <td style="min-width:120px;">
+                                <td class="coach-progress-col">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="progress flex-grow-1" style="height:6px; border-radius:4px;">
-                                            <div class="progress-bar <?= progressColor($ce['pct_completion']) ?>"
-                                                 role="progressbar" style="width:<?= $ce['pct_completion'] ?>%;"
-                                                 aria-valuenow="<?= $ce['pct_completion'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress flex-grow-1 coach-progress-track">
+                                            <div class="progress-bar <?= coachProgressColor((int) $ce['pct_completion']) ?>"
+                                                 role="progressbar"
+                                                 data-style-width="<?= (int) $ce['pct_completion'] ?>%"
+                                                 aria-valuenow="<?= (int) $ce['pct_completion'] ?>"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100"></div>
                                         </div>
-                                        <small class="fw-semibold text-nowrap"><?= $ce['pct_completion'] ?>%</small>
+                                        <small class="fw-semibold text-nowrap"><?= (int) $ce['pct_completion'] ?>%</small>
                                     </div>
                                 </td>
-                                <td class="d-none d-lg-table-cell"><small><?= calFormatDate($ce['start_date']) ?></small></td>
-                                <td class="d-none d-lg-table-cell"><small><?= calFormatDate($ce['end_date']) ?></small></td>
+                                <td class="d-none d-lg-table-cell"><small><?= htmlspecialchars(coachCalendarDate($ce['start_date'])) ?></small></td>
+                                <td class="d-none d-lg-table-cell"><small><?= htmlspecialchars(coachCalendarDate($ce['end_date'])) ?></small></td>
                                 <td class="d-none d-md-table-cell text-center">
-                                    <?php if ($ce['days_remaining'] <= 7): ?>
-                                        <span class="badge bg-danger-subtle text-danger"><?= $ce['days_remaining'] ?>d</span>
-                                    <?php elseif ($ce['days_remaining'] <= 30): ?>
-                                        <span class="badge bg-warning-subtle text-warning"><?= $ce['days_remaining'] ?>d</span>
+                                    <?php if ((int) $ce['days_remaining'] <= 7): ?>
+                                        <span class="badge bg-danger-subtle text-danger"><?= (int) $ce['days_remaining'] ?>d</span>
+                                    <?php elseif ((int) $ce['days_remaining'] <= 30): ?>
+                                        <span class="badge bg-warning-subtle text-warning"><?= (int) $ce['days_remaining'] ?>d</span>
                                     <?php else: ?>
-                                        <span class="text-muted small"><?= $ce['days_remaining'] ?>d</span>
+                                        <span class="text-muted small"><?= (int) $ce['days_remaining'] ?>d</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="d-none d-xl-table-cell text-center">
-                                    <small class="text-muted"><?= $ce['duration_days'] ?>d</small>
-                                </td>
-                                <td><?= phaseBadge($ce['phase_status']) ?></td>
+                                <td><?= coachPhaseBadge($ce['phase_status']) ?></td>
                                 <td class="d-none d-xl-table-cell">
-                                    <small class="text-muted"><?= htmlspecialchars($ce['assigned_class_schedule'] ?? '—') ?></small>
+                                    <small class="text-muted"><?= htmlspecialchars($ce['assigned_class_schedule'] ?? 'Sin horario') ?></small>
                                 </td>
                                 <td class="text-end">
-                                    <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver cohort">
+                                    <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver cohorte">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
@@ -383,42 +406,33 @@ $phaseBarColors = [
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <div class="coach-mobile-list">
+                <?php foreach ($coachEntries as $ce): ?>
+                    <article class="coach-mobile-card">
+                        <div class="coach-mobile-card__top">
+                            <div>
+                                <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>"><?= htmlspecialchars($ce['cohort_code']) ?></a>
+                                <h3><?= htmlspecialchars($ce['name']) ?></h3>
+                            </div>
+                            <?= coachPhaseBadge($ce['phase_status']) ?>
+                        </div>
+                        <div class="coach-mobile-card__meta">
+                            <span><i class="bi bi-calendar-event"></i><?= htmlspecialchars(coachCalendarDate($ce['start_date'])) ?> - <?= htmlspecialchars(coachCalendarDate($ce['end_date'])) ?></span>
+                            <span><i class="bi bi-clock"></i><?= htmlspecialchars($ce['assigned_class_schedule'] ?? 'Sin horario') ?></span>
+                            <span><i class="bi bi-hourglass-split"></i><?= (int) $ce['days_remaining'] ?> dias restantes</span>
+                        </div>
+                        <div class="coach-mobile-card__progress">
+                            <strong><?= (int) $ce['pct_completion'] ?>%</strong>
+                            <div class="dashboard-mini-progress"><span data-style-width="<?= (int) $ce['pct_completion'] ?>%"></span></div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </article>
     <?php endforeach; ?>
-</div>
+</section>
 
 <?php endif; ?>
 
-<!-- ── View toggle + tooltip init ──────────────────────── -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const btnTimeline = document.getElementById('btn-view-timeline');
-    const btnList     = document.getElementById('btn-view-list');
-    const viewTimeline = document.getElementById('view-timeline');
-    const viewList     = document.getElementById('view-list');
 
-    if (!btnTimeline || !btnList || !viewTimeline || !viewList) return;
-
-    const saved = localStorage.getItem('coaches-view') || 'timeline';
-    if (saved === 'list') switchTo('list');
-
-    btnTimeline.addEventListener('click', function () { switchTo('timeline'); });
-    btnList.addEventListener('click', function () { switchTo('list'); });
-
-    function switchTo(view) {
-        const isTimeline = view === 'timeline';
-        viewTimeline.classList.toggle('d-none', !isTimeline);
-        viewList.classList.toggle('d-none', isTimeline);
-        btnTimeline.classList.toggle('active', isTimeline);
-        btnList.classList.toggle('active', !isTimeline);
-        localStorage.setItem('coaches-view', view);
-
-        const target = isTimeline ? viewTimeline : viewList;
-        target.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-            if (!bootstrap.Tooltip.getInstance(el)) {
-                new bootstrap.Tooltip(el, { trigger: 'hover', container: 'body' });
-            }
-        });
-    }
-});
-</script>

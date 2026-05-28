@@ -1,380 +1,444 @@
-<!-- Dashboard Index View -->
 <?php use App\Core\Auth; ?>
 <?php use App\Services\MarketingService; ?>
 
 <?php
     $statusLabels = [
-        'in_progress' => ['En Progreso', 'success'],
-        'completed'   => ['Completado', 'primary'],
-        'not_started' => ['No Iniciado', 'secondary'],
+        'in_progress' => ['En progreso', 'success', '#16a34a'],
+        'completed'   => ['Completadas', 'primary', '#2563eb'],
+        'not_started' => ['No iniciadas', 'secondary', '#64748b'],
     ];
-    $roleColors = [
-        'admin'          => ['Admin', 'danger'],
-        'admissions_b2b' => ['B2B', 'info'],
-        'admissions_b2c' => ['B2C', 'primary'],
-        'marketing'      => ['Marketing', 'warning'],
+
+    $roleLabels = [
+        'admin'          => ['Admin', 'danger', 'bi-shield-check'],
+        'admissions_b2b' => ['B2B', 'info', 'bi-building'],
+        'admissions_b2c' => ['B2C', 'primary', 'bi-person-check'],
+        'marketing'      => ['Marketing', 'warning', 'bi-megaphone'],
     ];
-    [$roleLabel, $roleColor] = $roleColors[Auth::role()] ?? [ucfirst(Auth::role() ?? ''), 'secondary'];
+
+    [$roleLabel, $roleColor, $roleIcon] = $roleLabels[Auth::role()] ?? [ucfirst(Auth::role() ?? 'Usuario'), 'secondary', 'bi-person'];
+
+    $totalCohorts       = (int) ($totalCohorts ?? 0);
+    $activeCohorts      = (int) ($activeCohorts ?? 0);
+    $completedCohorts   = (int) ($completedCohorts ?? 0);
+    $notStartedCohorts  = (int) ($notStartedCohorts ?? 0);
+    $totalAlerts        = (int) ($totalAlerts ?? 0);
+    $totalTarget        = (int) ($totalTarget ?? 0);
+    $totalAdmissions    = (int) ($totalAdmissions ?? 0);
+    $totalB2bAdmissions = (int) ($totalB2bAdmissions ?? 0);
+    $totalB2cAdmissions = (int) ($totalB2cAdmissions ?? 0);
+    $admissionPct       = min(100, (float) ($admissionPct ?? 0));
+    $remainingTarget    = max(0, $totalTarget - $totalAdmissions);
+    $riskCommentCount   = count($riskComments ?? []);
+    $riskStageCount     = count($atRiskStages ?? []);
+
+    $statusBreakdown = $statusBreakdown ?? [];
+    $statusChart = ['labels' => [], 'series' => [], 'colors' => []];
+    foreach ($statusBreakdown as $key => $count) {
+        [$label, , $hex] = $statusLabels[$key] ?? [ucfirst((string) $key), 'secondary', '#64748b'];
+        $statusChart['labels'][] = $label;
+        $statusChart['series'][] = (int) $count;
+        $statusChart['colors'][] = $hex;
+    }
+
+    $typeRows = array_slice($byType ?? [], 0, 8, true);
+    $typeChart = [
+        'labels' => array_map(static fn($value) => (string) ($value ?: 'Sin tipo'), array_keys($typeRows)),
+        'series' => array_map(static fn($value) => (int) $value, array_values($typeRows)),
+    ];
+
+    $dashboardChartData = [
+        'admissions' => [
+            'pct'       => $admissionPct,
+            'target'    => $totalTarget,
+            'current'   => $totalAdmissions,
+            'b2b'       => $totalB2bAdmissions,
+            'b2c'       => $totalB2cAdmissions,
+            'remaining' => $remainingTarget,
+        ],
+        'status' => $statusChart,
+        'types' => $typeChart,
+        'sparklines' => [
+            'total'     => [$notStartedCohorts, $activeCohorts, $completedCohorts],
+            'active'    => [$notStartedCohorts, $activeCohorts],
+            'completed' => [$activeCohorts, $completedCohorts],
+            'alerts'    => [$riskStageCount, $riskCommentCount, $totalAlerts],
+        ],
+    ];
 ?>
 
-<!-- Welcome Banner -->
-<div class="welcome-banner mb-4">
-    <div class="row align-items-center">
-        <div class="col-lg-8">
-            <h2 class="h4 fw-bold mb-1 text-white">¡Hola, <?= e(explode(' ', Auth::user()['full_name'] ?? 'Usuario')[0]) ?>!</h2>
-            <p class="mb-0 text-white-50">Aquí tienes el resumen general de Cohort Monitor &mdash; <?= date('d \d\e F, Y') ?></p>
+<?php if (!empty($loadError)): ?>
+<div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+    <i class="bi bi-exclamation-octagon"></i>
+    <span><?= htmlspecialchars($loadError) ?></span>
+</div>
+<?php endif; ?>
+
+<section class="dashboard-hero mb-4">
+    <div class="dashboard-hero__content">
+        <div>
+            <div class="dashboard-eyebrow">
+                <i class="bi bi-activity"></i>
+                Vista ejecutiva
+            </div>
+            <h2 class="dashboard-hero__title">&iexcl;Hola, <?= e(explode(' ', Auth::user()['full_name'] ?? 'Usuario')[0]) ?>!</h2>
+            <p class="dashboard-hero__copy">
+                Resumen operativo de cohortes, admisiones y riesgos para <?= date('d/m/Y') ?>.
+            </p>
         </div>
-        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-            <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 fs-6">
-                <i class="bi bi-person-badge me-1"></i><?= $roleLabel ?>
+        <div class="dashboard-hero__meta">
+            <span class="dashboard-role-pill text-<?= $roleColor ?>">
+                <i class="bi <?= $roleIcon ?>"></i>
+                <?= e($roleLabel) ?>
+            </span>
+            <span class="dashboard-health-pill <?= $totalAlerts > 0 ? 'is-warning' : 'is-ok' ?>">
+                <i class="bi <?= $totalAlerts > 0 ? 'bi-exclamation-triangle' : 'bi-shield-check' ?>"></i>
+                <?= $totalAlerts > 0 ? $totalAlerts . ' alertas activas' : 'Sin alertas activas' ?>
             </span>
         </div>
     </div>
-</div>
+</section>
 
-<!-- KPI Cards Row -->
-<div class="row g-3 mb-4">
-    <!-- Total Cohorts -->
-    <div class="col-6 col-lg-3">
-        <div class="card kpi-card kpi-primary h-100">
-            <div class="card-body">
-                <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
-                <div class="kpi-value"><?= $totalCohorts ?? 0 ?></div>
-                <div class="kpi-label">Total Cohortes</div>
+<section class="row g-3 mb-4" aria-label="Indicadores principales">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <article class="metric-card metric-card--primary">
+            <div class="metric-card__body">
+                <span class="metric-card__icon"><i class="bi bi-people-fill"></i></span>
+                <div>
+                    <p class="metric-card__label">Total cohortes</p>
+                    <h3 class="metric-card__value"><?= number_format($totalCohorts) ?></h3>
+                </div>
             </div>
-        </div>
-    </div>
-    <!-- Active Cohorts -->
-    <div class="col-6 col-lg-3">
-        <div class="card kpi-card kpi-success h-100">
-            <div class="card-body">
-                <div class="kpi-icon"><i class="bi bi-play-circle-fill"></i></div>
-                <div class="kpi-value"><?= $activeCohorts ?? 0 ?></div>
-                <div class="kpi-label">En Progreso</div>
+            <div id="kpiTotalSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
+            <div class="metric-card__footer">
+                <span><?= number_format($notStartedCohorts) ?> sin iniciar</span>
+                <span><?= number_format($activeCohorts) ?> activas</span>
             </div>
-        </div>
+        </article>
     </div>
-    <!-- Completed Cohorts -->
-    <div class="col-6 col-lg-3">
-        <div class="card kpi-card kpi-info h-100">
-            <div class="card-body">
-                <div class="kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
-                <div class="kpi-value"><?= $completedCohorts ?? 0 ?></div>
-                <div class="kpi-label">Completadas</div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <article class="metric-card metric-card--success">
+            <div class="metric-card__body">
+                <span class="metric-card__icon"><i class="bi bi-play-circle-fill"></i></span>
+                <div>
+                    <p class="metric-card__label">En progreso</p>
+                    <h3 class="metric-card__value"><?= number_format($activeCohorts) ?></h3>
+                </div>
             </div>
-        </div>
-    </div>
-    <!-- Active Alerts -->
-    <div class="col-6 col-lg-3">
-        <div class="card kpi-card kpi-danger h-100">
-            <div class="card-body">
-                <div class="kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                <div class="kpi-value"><?= $totalAlerts ?? 0 ?></div>
-                <div class="kpi-label">Alertas Activas</div>
+            <div id="kpiActiveSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
+            <div class="metric-card__footer">
+                <span>Operacion activa</span>
+                <a href="/cohorts?cohort_status=in_progress">Ver cohortes</a>
             </div>
-        </div>
+        </article>
     </div>
-</div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <article class="metric-card metric-card--info">
+            <div class="metric-card__body">
+                <span class="metric-card__icon"><i class="bi bi-check-circle-fill"></i></span>
+                <div>
+                    <p class="metric-card__label">Completadas</p>
+                    <h3 class="metric-card__value"><?= number_format($completedCohorts) ?></h3>
+                </div>
+            </div>
+            <div id="kpiCompletedSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
+            <div class="metric-card__footer">
+                <span>Ciclos cerrados</span>
+                <a href="/cohorts?cohort_status=completed">Ver historial</a>
+            </div>
+        </article>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <article class="metric-card metric-card--danger">
+            <div class="metric-card__body">
+                <span class="metric-card__icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                <div>
+                    <p class="metric-card__label">Alertas activas</p>
+                    <h3 class="metric-card__value"><?= number_format($totalAlerts) ?></h3>
+                </div>
+            </div>
+            <div id="kpiAlertsSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
+            <div class="metric-card__footer">
+                <span><?= $riskStageCount ?> marketing</span>
+                <a href="/alerts">Revisar</a>
+            </div>
+        </article>
+    </div>
+</section>
 
-<!-- Quick Actions -->
-<div class="row g-3 mb-4">
+<section class="row g-3 mb-4">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-transparent">
-                <span class="fw-semibold"><i class="bi bi-lightning-charge text-warning me-2"></i>Acciones Rápidas</span>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <?php if (Auth::canCreateCohort()): ?>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/cohorts/create" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-primary bg-opacity-10 text-primary">
-                                <i class="bi bi-plus-lg"></i>
-                            </div>
-                            <span class="qa-text">Nueva Cohorte</span>
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/cohorts" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-success bg-opacity-10 text-success">
-                                <i class="bi bi-list-ul"></i>
-                            </div>
-                            <span class="qa-text">Ver Cohortes</span>
-                        </a>
-                    </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/alerts" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-danger bg-opacity-10 text-danger">
-                                <i class="bi bi-exclamation-triangle"></i>
-                            </div>
-                            <span class="qa-text">Alertas</span>
-                        </a>
-                    </div>
-                    <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/marketing" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-warning bg-opacity-10 text-warning">
-                                <i class="bi bi-megaphone"></i>
-                            </div>
-                            <span class="qa-text">Marketing</span>
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/reports" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-info bg-opacity-10 text-info">
-                                <i class="bi bi-bar-chart"></i>
-                            </div>
-                            <span class="qa-text">Reportes</span>
-                        </a>
-                    </div>
-                    <?php if (Auth::isAdmin()): ?>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <a href="/cohorts/import" class="quick-action-card text-decoration-none">
-                            <div class="qa-icon bg-secondary bg-opacity-10 text-secondary">
-                                <i class="bi bi-cloud-arrow-up"></i>
-                            </div>
-                            <span class="qa-text">Importar</span>
-                        </a>
-                    </div>
-                    <?php endif; ?>
+        <div class="app-panel">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-lightning-charge text-warning"></i> Acciones rapidas</h3>
+                    <p class="app-panel__subtitle">Atajos principales segun permisos del usuario.</p>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Admission Progress + Status Breakdown -->
-<div class="row g-3 mb-4">
-    <!-- Admission Progress -->
-    <div class="col-lg-8">
-        <div class="card h-100">
-            <div class="card-header bg-transparent d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Progreso de Admisiones Global</span>
-                <span class="badge bg-primary-subtle text-primary"><?= $admissionPct ?? 0 ?>%</span>
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-end mb-3">
-                    <div>
-                        <div class="text-muted small">Admisiones actuales</div>
-                        <h3 class="fw-bold mb-0"><?= number_format($totalAdmissions ?? 0) ?></h3>
-                    </div>
-                    <div class="text-end">
-                        <div class="text-muted small">Meta total</div>
-                        <h3 class="fw-bold mb-0 text-muted"><?= number_format($totalTarget ?? 0) ?></h3>
-                    </div>
-                </div>
-                <?php $pct = min(100, $admissionPct ?? 0); ?>
-                <div class="progress progress-lg mb-3" style="height: 18px; border-radius: 10px;">
-                    <div class="progress-bar bg-gradient <?= $pct >= 80 ? 'bg-success' : ($pct >= 50 ? 'bg-primary' : 'bg-warning') ?>"
-                         role="progressbar" style="width: <?= $pct ?>%; border-radius: 10px;"
-                         aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100">
-                        <?= $pct ?>%
-                    </div>
-                </div>
-                <?php if (!empty($upcomingCohorts)): ?>
-                <div class="mt-3">
-                    <h6 class="text-muted small text-uppercase mb-2">
-                        <i class="bi bi-calendar-event me-1"></i>Próximos inicios (30 días)
-                    </h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        <?php foreach (array_slice($upcomingCohorts, 0, 4) as $uc): ?>
-                        <a href="/cohorts/<?= $uc['id'] ?>" class="badge bg-light text-dark text-decoration-none border px-3 py-2">
-                            <i class="bi bi-calendar3 me-1 text-primary"></i>
-                            <?= htmlspecialchars($uc['cohort_code']) ?>
-                            <span class="text-muted ms-1"><?= date('d/m', strtotime($uc['start_date'])) ?></span>
-                        </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
+            <div class="dashboard-actions">
+                <?php if (Auth::canCreateCohort()): ?>
+                <a href="/cohorts/create" class="dashboard-action">
+                    <span class="dashboard-action__icon text-primary bg-primary-subtle"><i class="bi bi-plus-lg"></i></span>
+                    <span>Nueva cohorte</span>
+                </a>
+                <?php endif; ?>
+                <a href="/cohorts" class="dashboard-action">
+                    <span class="dashboard-action__icon text-success bg-success-subtle"><i class="bi bi-list-ul"></i></span>
+                    <span>Ver cohortes</span>
+                </a>
+                <a href="/alerts" class="dashboard-action">
+                    <span class="dashboard-action__icon text-danger bg-danger-subtle"><i class="bi bi-exclamation-triangle"></i></span>
+                    <span>Alertas</span>
+                </a>
+                <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
+                <a href="/marketing" class="dashboard-action">
+                    <span class="dashboard-action__icon text-warning bg-warning-subtle"><i class="bi bi-megaphone"></i></span>
+                    <span>Marketing</span>
+                </a>
+                <?php endif; ?>
+                <a href="/reports" class="dashboard-action">
+                    <span class="dashboard-action__icon text-info bg-info-subtle"><i class="bi bi-bar-chart"></i></span>
+                    <span>Reportes</span>
+                </a>
+                <?php if (Auth::isAdmin()): ?>
+                <a href="/cohorts/import" class="dashboard-action">
+                    <span class="dashboard-action__icon text-secondary bg-secondary-subtle"><i class="bi bi-cloud-arrow-up"></i></span>
+                    <span>Importar</span>
+                </a>
                 <?php endif; ?>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Status Breakdown -->
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-header bg-transparent">
-                <span class="fw-semibold"><i class="bi bi-pie-chart text-info me-2"></i>Estado de Cohortes</span>
+<section class="row g-3 mb-4">
+    <div class="col-xl-8">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow text-primary"></i> Progreso de admisiones</h3>
+                    <p class="app-panel__subtitle">Avance global contra la meta total.</p>
+                </div>
+                <span class="status-pill status-pill--primary"><?= number_format($admissionPct, 1) ?>%</span>
             </div>
-            <div class="card-body d-flex flex-column justify-content-center">
-                <?php
-                    $breakdown = $statusBreakdown ?? [];
-                    $total     = array_sum($breakdown) ?: 1;
-                ?>
-                <?php foreach ($breakdown as $key => $count): ?>
-                <?php [$label, $color] = $statusLabels[$key] ?? [ucfirst($key), 'secondary']; ?>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="small fw-medium"><?= $label ?></span>
-                        <span class="badge bg-<?= $color ?>-subtle text-<?= $color ?>"><?= $count ?></span>
+            <div class="dashboard-admissions-grid">
+                <div>
+                    <div class="dashboard-number-row">
+                        <div>
+                            <span class="dashboard-stat-label">Actuales</span>
+                            <strong><?= number_format($totalAdmissions) ?></strong>
+                        </div>
+                        <div>
+                            <span class="dashboard-stat-label">Meta</span>
+                            <strong><?= number_format($totalTarget) ?></strong>
+                        </div>
+                        <div>
+                            <span class="dashboard-stat-label">Pendiente</span>
+                            <strong><?= number_format($remainingTarget) ?></strong>
+                        </div>
                     </div>
-                    <div class="progress" style="height: 8px; border-radius: 6px;">
-                        <div class="progress-bar bg-<?= $color ?>" role="progressbar"
-                             style="width: <?= round(($count / $total) * 100) ?>%"></div>
+                    <div class="dashboard-progress mt-3" role="progressbar" aria-valuenow="<?= $admissionPct ?>" aria-valuemin="0" aria-valuemax="100">
+                        <span data-style-width="<?= $admissionPct ?>%"></span>
+                    </div>
+                    <div class="dashboard-segments mt-3">
+                        <span><i class="bi bi-square-fill text-primary"></i> B2B <?= number_format($totalB2bAdmissions) ?></span>
+                        <span><i class="bi bi-square-fill text-info"></i> B2C <?= number_format($totalB2cAdmissions) ?></span>
                     </div>
                 </div>
-                <?php endforeach; ?>
-
-                <?php if (!empty($byType)): ?>
-                <hr class="my-3">
-                <h6 class="text-muted small text-uppercase mb-2">Por tipo de Bootcamp</h6>
-                <?php foreach ($byType as $type => $cnt): ?>
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small"><?= htmlspecialchars($type ?: 'Sin tipo') ?></span>
-                    <span class="badge bg-secondary-subtle text-secondary"><?= $cnt ?></span>
-                </div>
-                <?php endforeach; ?>
-                <?php endif; ?>
+                <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions"></div>
             </div>
         </div>
     </div>
-</div>
+    <div class="col-xl-4">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-pie-chart text-info"></i> Estado de cohortes</h3>
+                    <p class="app-panel__subtitle">Distribucion actual por estado.</p>
+                </div>
+            </div>
+            <div id="dashboardStatusChart" class="dashboard-chart dashboard-chart--donut"></div>
+            <div class="dashboard-status-list">
+                <?php $statusTotal = array_sum($statusBreakdown) ?: 1; ?>
+                <?php foreach ($statusBreakdown as $key => $count): ?>
+                    <?php [$label, $color] = $statusLabels[$key] ?? [ucfirst($key), 'secondary', '#64748b']; ?>
+                    <div class="dashboard-status-row">
+                        <span><i class="bi bi-circle-fill text-<?= $color ?>"></i><?= htmlspecialchars($label) ?></span>
+                        <strong><?= (int) $count ?> <small><?= round(((int) $count / $statusTotal) * 100) ?>%</small></strong>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</section>
 
-<!-- Recent Alerts + Recent Cohorts -->
-<div class="row g-3 mb-4">
-    <!-- Recent Alerts -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header bg-transparent d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Alertas Recientes</span>
+<section class="row g-3 mb-4">
+    <div class="col-xl-5">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-layers text-secondary"></i> Bootcamps por tipo</h3>
+                    <p class="app-panel__subtitle">Top <?= count($typeRows) ?> categorias con mas cohortes.</p>
+                </div>
+            </div>
+            <?php if (!empty($typeRows)): ?>
+                <div id="dashboardBootcampChart" class="dashboard-chart dashboard-chart--bar"></div>
+            <?php else: ?>
+                <div class="empty-state py-4">
+                    <i class="bi bi-bar-chart empty-state-icon"></i>
+                    <p class="empty-state-text mb-0">No hay tipos de bootcamp para graficar.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-calendar-event text-primary"></i> Proximos inicios</h3>
+                    <p class="app-panel__subtitle">Cohortes que inician en los proximos 30 dias.</p>
+                </div>
+                <a href="/cohorts?cohort_status=upcoming" class="btn btn-sm btn-outline-primary">Ver agenda</a>
+            </div>
+            <?php if (!empty($upcomingCohorts)): ?>
+                <div class="dashboard-upcoming-list">
+                    <?php foreach (array_slice($upcomingCohorts, 0, 5) as $uc): ?>
+                    <?php
+                        $startTs = strtotime($uc['start_date']);
+                        $daysLeft = $startTs ? max(0, (int) ceil(($startTs - strtotime('today')) / 86400)) : null;
+                    ?>
+                    <a href="/cohorts/<?= (int) $uc['id'] ?>" class="dashboard-upcoming-item">
+                        <span class="dashboard-date-chip">
+                            <strong><?= $startTs ? date('d', $startTs) : '--' ?></strong>
+                            <small><?= $startTs ? date('M', $startTs) : '--' ?></small>
+                        </span>
+                        <span class="dashboard-upcoming-main">
+                            <strong><?= htmlspecialchars($uc['cohort_code']) ?></strong>
+                            <small><?= htmlspecialchars($uc['name'] ?? '') ?></small>
+                        </span>
+                        <span class="dashboard-upcoming-meta">
+                            <?= $daysLeft !== null ? 'En ' . $daysLeft . ' dias' : 'Sin fecha' ?>
+                        </span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="empty-state py-4">
+                    <i class="bi bi-calendar-check text-success empty-state-icon"></i>
+                    <p class="empty-state-text mb-0">No hay inicios programados en los proximos 30 dias.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+    <div class="col-xl-6">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-exclamation-triangle text-danger"></i> Alertas recientes</h3>
+                    <p class="app-panel__subtitle">Riesgos de marketing y comentarios marcados.</p>
+                </div>
                 <a href="/alerts" class="btn btn-sm btn-outline-danger">Ver todas</a>
             </div>
-            <div class="card-body p-0">
-                <?php $hasAlerts = !empty($riskComments) || !empty($atRiskStages); ?>
-                <?php if ($hasAlerts): ?>
-                <div class="list-group list-group-flush">
-                    <?php foreach (($atRiskStages ?? []) as $s): ?>
-                    <a href="/cohorts/<?= $s['cohort_id'] ?>/marketing" class="list-group-item list-group-item-action">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="alert-dot bg-warning"></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold small"><?= htmlspecialchars($s['cohort_code']) ?></div>
-                                <div class="text-muted" style="font-size: .8rem;">
-                                    Mkt: <?= htmlspecialchars(MarketingService::STAGE_LABELS[$s['stage_name']] ?? $s['stage_name']) ?> en riesgo
-                                </div>
-                            </div>
-                            <small class="text-muted"><?= date('d/m', strtotime($s['updated_at'])) ?></small>
-                        </div>
-                    </a>
-                    <?php endforeach; ?>
-                    <?php foreach (($riskComments ?? []) as $rc): ?>
-                    <a href="/cohorts/<?= $rc['cohort_id'] ?>" class="list-group-item list-group-item-action">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="alert-dot bg-danger"></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold small"><?= htmlspecialchars($rc['cohort_code']) ?></div>
-                                <div class="text-muted text-truncate" style="font-size: .8rem; max-width: 260px;">
-                                    <?= htmlspecialchars($rc['body']) ?>
-                                </div>
-                            </div>
-                            <small class="text-muted"><?= date('d/m', strtotime($rc['created_at'])) ?></small>
-                        </div>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-                <?php else: ?>
-                <div class="text-center py-4">
-                    <i class="bi bi-shield-check text-success fs-1 d-block mb-2"></i>
-                    <span class="text-muted">Sin alertas activas</span>
-                </div>
-                <?php endif; ?>
+            <?php $hasAlerts = !empty($riskComments) || !empty($atRiskStages); ?>
+            <?php if ($hasAlerts): ?>
+            <div class="dashboard-alert-list">
+                <?php foreach (($atRiskStages ?? []) as $s): ?>
+                <a href="/cohorts/<?= (int) $s['cohort_id'] ?>/marketing" class="dashboard-alert-item">
+                    <span class="dashboard-alert-dot is-warning"></span>
+                    <span>
+                        <strong><?= htmlspecialchars($s['cohort_code']) ?></strong>
+                        <small>Mkt: <?= htmlspecialchars(MarketingService::STAGE_LABELS[$s['stage_name']] ?? $s['stage_name']) ?> en riesgo</small>
+                    </span>
+                    <time><?= date('d/m', strtotime($s['updated_at'])) ?></time>
+                </a>
+                <?php endforeach; ?>
+                <?php foreach (($riskComments ?? []) as $rc): ?>
+                <a href="/cohorts/<?= (int) $rc['cohort_id'] ?>" class="dashboard-alert-item">
+                    <span class="dashboard-alert-dot is-danger"></span>
+                    <span>
+                        <strong><?= htmlspecialchars($rc['cohort_code']) ?></strong>
+                        <small><?= htmlspecialchars($rc['body']) ?></small>
+                    </span>
+                    <time><?= date('d/m', strtotime($rc['created_at'])) ?></time>
+                </a>
+                <?php endforeach; ?>
             </div>
+            <?php else: ?>
+            <div class="empty-state py-4">
+                <i class="bi bi-shield-check text-success empty-state-icon"></i>
+                <p class="empty-state-text mb-0">Sin alertas activas.</p>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Recent Cohorts -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header bg-transparent d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-clock-history text-primary me-2"></i>Cohortes Recientes</span>
+    <div class="col-xl-6">
+        <div class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-clock-history text-primary"></i> Cohortes recientes</h3>
+                    <p class="app-panel__subtitle">Ultimos registros y avance de admisiones.</p>
+                </div>
                 <a href="/cohorts" class="btn btn-sm btn-outline-primary">Ver todas</a>
             </div>
-            <div class="card-body p-0">
-                <?php if (!empty($recentCohorts)): ?>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Código</th>
-                                <th class="d-none d-md-table-cell">Tipo</th>
-                                <th class="text-center">Admisiones</th>
-                                <th class="text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($recentCohorts as $c): ?>
-                            <?php
-                                $target = (int) ($c['total_admission_target'] ?? 0);
-                                $actual = (int) ($c['b2b_admissions'] ?? 0) + (int) ($c['b2c_admissions'] ?? 0);
-                                $cPct   = $target > 0 ? round(($actual / $target) * 100) : 0;
-                                [$sLabel, $sColor] = $statusLabels[$c['training_status'] ?? ''] ?? ['—', 'secondary'];
-                            ?>
-                            <tr>
-                                <td>
-                                    <a href="/cohorts/<?= $c['id'] ?>" class="text-decoration-none fw-semibold"><?= htmlspecialchars($c['cohort_code']) ?></a>
-                                    <div class="text-muted" style="font-size: .75rem;"><?= htmlspecialchars($c['name']) ?></div>
-                                </td>
-                                <td class="d-none d-md-table-cell">
-                                    <span class="small"><?= htmlspecialchars($c['bootcamp_type'] ?? '—') ?></span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="small fw-medium"><?= $actual ?>/<?= $target ?></div>
-                                    <div class="progress mt-1" style="height: 4px; width: 60px; margin: 0 auto; border-radius: 3px;">
-                                        <div class="progress-bar bg-<?= $cPct >= 80 ? 'success' : ($cPct >= 50 ? 'primary' : 'warning') ?>"
-                                             style="width: <?= min(100, $cPct) ?>%"></div>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-<?= $sColor ?>-subtle text-<?= $sColor ?> badge-status"><?= $sLabel ?></span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php else: ?>
-                <div class="text-center py-4">
-                    <i class="bi bi-inbox text-muted fs-1 d-block mb-2"></i>
-                    <span class="text-muted">No hay cohortes registradas</span>
-                </div>
-                <?php endif; ?>
+            <?php if (!empty($recentCohorts)): ?>
+            <div class="table-responsive dashboard-table-wrap">
+                <table class="table table-hover align-middle mb-0 dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th class="d-none d-md-table-cell">Tipo</th>
+                            <th class="text-center">Admisiones</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($recentCohorts as $c): ?>
+                        <?php
+                            $target = (int) ($c['total_admission_target'] ?? 0);
+                            $actual = (int) ($c['b2b_admissions'] ?? 0) + (int) ($c['b2c_admissions'] ?? 0);
+                            $cPct   = $target > 0 ? min(100, round(($actual / $target) * 100)) : 0;
+                            [$sLabel, $sColor] = $statusLabels[$c['training_status'] ?? ''] ?? ['Sin estado', 'secondary', '#64748b'];
+                        ?>
+                        <tr>
+                            <td>
+                                <a href="/cohorts/<?= (int) $c['id'] ?>" class="text-decoration-none fw-semibold"><?= htmlspecialchars($c['cohort_code']) ?></a>
+                                <div class="text-muted text-truncate dashboard-recent-name"><?= htmlspecialchars($c['name']) ?></div>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <span class="small"><?= htmlspecialchars($c['bootcamp_type'] ?? 'Sin tipo') ?></span>
+                            </td>
+                            <td class="text-center">
+                                <div class="small fw-medium"><?= $actual ?>/<?= $target ?></div>
+                                <div class="dashboard-mini-progress mx-auto mt-1"><span data-style-width="<?= $cPct ?>%"></span></div>
+                            </td>
+                            <td class="text-center">
+                                <span class="status-pill status-pill--<?= $sColor ?>"><?= htmlspecialchars($sLabel) ?></span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
+            <?php else: ?>
+            <div class="empty-state py-4">
+                <i class="bi bi-inbox text-muted empty-state-icon"></i>
+                <p class="empty-state-text mb-0">No hay cohortes registradas.</p>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
+</section>
+
+<div class="dashboard-system-note">
+    <i class="bi bi-code-slash"></i> PHP <?= PHP_VERSION ?>
+    <span>&bull;</span>
+    <i class="bi bi-calendar3"></i> <span id="dash-date">--/--/----</span>
+    <span>&bull;</span>
+    <i class="bi bi-clock"></i> <span id="dash-time">--:--:--</span>
 </div>
 
-<!-- System Info (collapsed) -->
-<div class="row mt-3">
-    <div class="col-12">
-        <div class="text-center">
-            <small class="text-muted">
-                <i class="bi bi-code-slash me-1"></i>PHP <?= PHP_VERSION ?> &bull;
-                <i class="bi bi-calendar3 me-1"></i><span id="dash-date">--/--/----</span> &bull;
-                <i class="bi bi-clock me-1"></i><span id="dash-time">--:--:--</span>
-            </small>
-        </div>
-    </div>
-</div>
-
-<script>
-(function updateDashClock() {
-    var now  = new Date();
-    var pad  = function(n) { return String(n).padStart(2, '0'); };
-    var day  = pad(now.getDate());
-    var mon  = pad(now.getMonth() + 1);
-    var year = now.getFullYear();
-    var h    = pad(now.getHours());
-    var m    = pad(now.getMinutes());
-    var s    = pad(now.getSeconds());
-
-    var dateEl = document.getElementById('dash-date');
-    var timeEl = document.getElementById('dash-time');
-    if (dateEl) dateEl.textContent = day + '/' + mon + '/' + year;
-    if (timeEl) timeEl.textContent = h + ':' + m + ':' + s;
-
-    setTimeout(updateDashClock, 1000);
-})();
-</script>
+<textarea id="cohort-dashboard-data" class="d-none"><?= htmlspecialchars(json_encode($dashboardChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>

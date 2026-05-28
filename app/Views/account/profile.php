@@ -1,19 +1,36 @@
-<!-- Account Profile View (Self-Service) -->
-<?php use App\Core\Auth; ?>
-
+<!-- Account Profile View -->
 <?php
+use App\Core\Auth;
+
+/** @var array<string, mixed> $user */
+$user = isset($user) && is_array($user) ? $user : [];
+
+$userRole = (string) ($user['role'] ?? 'usuario');
+$userFullName = (string) ($user['full_name'] ?? 'Usuario');
+$userUsername = (string) ($user['username'] ?? 'usuario');
+$userEmail = (string) ($user['email'] ?? '');
+$userIsActive = (bool) ($user['is_active'] ?? false);
+$userLastLoginAt = (string) ($user['last_login_at'] ?? '');
+$userCreatedAt = (string) ($user['created_at'] ?? '');
+
 $roleLabels = [
-    'admin'           => ['Administrador', 'bg-danger-subtle text-danger'],
-    'admissions_b2b'  => ['Admisiones B2B', 'bg-info-subtle text-info'],
-    'admissions_b2c'  => ['Admisiones B2C', 'bg-primary-subtle text-primary'],
-    'marketing'       => ['Marketing', 'bg-warning-subtle text-warning'],
+    'admin' => ['Administrador', 'bg-danger-subtle text-danger', 'bi-shield-lock'],
+    'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info', 'bi-building'],
+    'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary', 'bi-people'],
+    'marketing' => ['Marketing', 'bg-warning-subtle text-warning', 'bi-megaphone'],
 ];
-[$roleLabel, $roleClass] = $roleLabels[$user['role']] ?? [$user['role'], 'bg-secondary-subtle text-secondary'];
+[$roleLabel, $roleClass, $roleIcon] = $roleLabels[$userRole] ?? [$userRole, 'bg-secondary-subtle text-secondary', 'bi-person-badge'];
+
+$nameParts = preg_split('/\s+/', trim($userFullName));
+$initials = strtoupper(substr($nameParts[0] ?? 'U', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
+$initials = $initials !== '' ? $initials : 'U';
+$lastLogin = $userLastLoginAt !== '' ? date('d/m/Y H:i', strtotime($userLastLoginAt)) : 'Sin registro';
+$createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 'Sin fecha';
 ?>
 
 <?php if ($msg = Auth::getFlash('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-1"></i> <?= $msg ?>
+        <i class="bi bi-check-circle me-1"></i> <?= htmlspecialchars($msg) ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 <?php endif; ?>
@@ -24,150 +41,178 @@ $roleLabels = [
     </div>
 <?php endif; ?>
 
-<div class="row g-4">
-    <!-- Left Column: Profile Summary Card -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center py-4">
-                <!-- Avatar -->
-                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
-                    <?= strtoupper(mb_substr($user['full_name'], 0, 1)) ?><?= strtoupper(mb_substr(explode(' ', $user['full_name'])[1] ?? '', 0, 1)) ?>
-                </div>
-                <h5 class="fw-bold mb-1"><?= htmlspecialchars($user['full_name']) ?></h5>
-                <p class="text-muted mb-2">@<?= htmlspecialchars($user['username']) ?></p>
-                <span class="badge <?= $roleClass ?> fs-6"><?= $roleLabel ?></span>
-            </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-envelope me-2"></i>Email</span>
-                    <span class="text-truncate ms-2" style="max-width: 180px;"><?= htmlspecialchars($user['email']) ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-check-circle me-2"></i>Estado</span>
-                    <?php if ($user['is_active']): ?>
-                        <span class="badge bg-success-subtle text-success">Activo</span>
-                    <?php else: ?>
-                        <span class="badge bg-secondary-subtle text-secondary">Inactivo</span>
-                    <?php endif; ?>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-clock me-2"></i>Último acceso</span>
-                    <span><?= $user['last_login_at'] ? date('d/m/Y H:i', strtotime($user['last_login_at'])) : '—' ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-calendar me-2"></i>Miembro desde</span>
-                    <span><?= date('d/m/Y', strtotime($user['created_at'])) ?></span>
-                </li>
-            </ul>
+<section class="account-hero mb-4">
+    <div class="account-hero__identity">
+        <span class="account-avatar account-avatar--lg"><?= htmlspecialchars($initials) ?></span>
+        <div>
+            <span class="dashboard-hero__eyebrow">
+                <i class="bi bi-person-circle"></i>
+                Mi cuenta
+            </span>
+            <h1><?= htmlspecialchars($userFullName) ?></h1>
+            <p>@<?= htmlspecialchars($userUsername) ?> - <?= htmlspecialchars($userEmail) ?></p>
         </div>
+    </div>
+    <div class="account-hero__meta">
+        <span class="badge badge-status <?= $roleClass ?>">
+            <i class="bi <?= $roleIcon ?> me-1"></i><?= htmlspecialchars($roleLabel) ?>
+        </span>
+        <?php if ($userIsActive): ?>
+            <span class="badge badge-status bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
+        <?php else: ?>
+            <span class="badge badge-status bg-secondary-subtle text-secondary"><i class="bi bi-pause-circle me-1"></i>Inactivo</span>
+        <?php endif; ?>
+    </div>
+</section>
 
-        <!-- System Info Card -->
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-transparent border-bottom">
-                <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Sistema</h6>
-            </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-filetype-php me-2"></i>PHP</span>
-                    <span class="badge bg-primary-subtle text-primary"><?= PHP_VERSION ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-calendar-date me-2"></i>Fecha</span>
-                    <span id="systemDate">--/--/----</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Hora</span>
-                    <span id="systemTime">--:--:--</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="text-muted"><i class="bi bi-shield me-2"></i>Rol</span>
-                    <span class="badge <?= $roleClass ?>"><?= $roleLabel ?></span>
-                </li>
-            </ul>
+<div class="account-summary mb-4">
+    <article class="account-summary-card">
+        <span class="account-summary-card__icon is-primary"><i class="bi bi-envelope"></i></span>
+        <div>
+            <p>Email</p>
+            <strong><?= htmlspecialchars($userEmail) ?></strong>
+            <small>Contacto principal</small>
         </div>
-        <script>
-        // Live system clock — runs immediately and updates every second
-        (function updateClock() {
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            document.getElementById('systemDate').textContent =
-                pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear();
-            document.getElementById('systemTime').textContent =
-                pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-            setTimeout(updateClock, 1000);
-        })();
-        </script>
+    </article>
+    <article class="account-summary-card">
+        <span class="account-summary-card__icon is-success"><i class="bi bi-clock-history"></i></span>
+        <div>
+            <p>Ultimo acceso</p>
+            <strong><?= htmlspecialchars($lastLogin) ?></strong>
+            <small>Actividad reciente</small>
+        </div>
+    </article>
+    <article class="account-summary-card">
+        <span class="account-summary-card__icon is-info"><i class="bi bi-calendar-check"></i></span>
+        <div>
+            <p>Miembro desde</p>
+            <strong><?= htmlspecialchars($createdAt) ?></strong>
+            <small>Registro de cuenta</small>
+        </div>
+    </article>
+    <article class="account-summary-card">
+        <span class="account-summary-card__icon is-warning"><i class="bi bi-shield-check"></i></span>
+        <div>
+            <p>Rol</p>
+            <strong><?= htmlspecialchars($roleLabel) ?></strong>
+            <small>Permisos activos</small>
+        </div>
+    </article>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-4">
+        <section class="app-panel account-side-panel mb-4">
+            <div class="account-profile-card">
+                <span class="account-avatar account-avatar--xl"><?= htmlspecialchars($initials) ?></span>
+                <h2><?= htmlspecialchars($userFullName) ?></h2>
+                <p>@<?= htmlspecialchars($userUsername) ?></p>
+                <span class="badge badge-status <?= $roleClass ?>"><?= htmlspecialchars($roleLabel) ?></span>
+            </div>
+            <dl class="account-meta-list">
+                <div>
+                    <dt>Estado</dt>
+                    <dd><?= $userIsActive ? 'Activo' : 'Inactivo' ?></dd>
+                </div>
+                <div>
+                    <dt>PHP</dt>
+                    <dd><?= htmlspecialchars(PHP_VERSION) ?></dd>
+                </div>
+                <div>
+                    <dt>Fecha</dt>
+                    <dd id="systemDate">--/--/----</dd>
+                </div>
+                <div>
+                    <dt>Hora</dt>
+                    <dd id="systemTime">--:--:--</dd>
+                </div>
+            </dl>
+        </section>
     </div>
 
-    <!-- Right Column: Edit Forms -->
-    <div class="col-lg-8">
-        <!-- Profile Information -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-transparent border-bottom">
-                <h6 class="mb-0"><i class="bi bi-person me-2"></i>Información del Perfil</h6>
+    <div class="col-xl-8">
+        <section class="app-panel account-form-panel mb-4">
+            <div class="app-panel__header">
+                <div>
+                    <h2 class="app-panel__title"><i class="bi bi-person"></i> Informacion del perfil</h2>
+                    <p class="app-panel__subtitle">Actualiza tus datos visibles y correo de contacto.</p>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST" action="/account" class="needs-validation" novalidate>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="username" class="form-label text-muted">Nombre de usuario</label>
-                            <input type="text" class="form-control-plaintext fw-semibold" id="username" value="<?= htmlspecialchars($user['username']) ?>" readonly>
-                            <div class="form-text">El nombre de usuario no se puede cambiar.</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required
-                                   value="<?= htmlspecialchars($user['email']) ?>">
-                            <div class="invalid-feedback">Ingresa un email válido.</div>
-                        </div>
-                        <div class="col-12">
-                            <label for="full_name" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required
-                                   value="<?= htmlspecialchars($user['full_name']) ?>">
-                            <div class="invalid-feedback">El nombre completo es requerido.</div>
-                        </div>
+            <form method="POST" action="/account" class="needs-validation" novalidate>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input type="text" class="form-control account-readonly-input" id="username" value="<?= htmlspecialchars($userUsername) ?>" readonly>
+                        <div class="form-text">El nombre de usuario no se puede cambiar.</div>
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> Guardar Cambios
-                        </button>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="email" name="email" required value="<?= htmlspecialchars($userEmail) ?>">
+                        <div class="invalid-feedback">Ingresa un email valido.</div>
                     </div>
-                </form>
-            </div>
-        </div>
+                    <div class="col-12">
+                        <label for="full_name" class="form-label">Nombre completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="full_name" name="full_name" required value="<?= htmlspecialchars($userFullName) ?>">
+                        <div class="invalid-feedback">El nombre completo es requerido.</div>
+                    </div>
+                </div>
+                <div class="account-form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </section>
 
-        <!-- Change Password -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-bottom">
-                <h6 class="mb-0"><i class="bi bi-lock me-2"></i>Cambiar Contraseña</h6>
+        <section class="app-panel account-form-panel">
+            <div class="app-panel__header">
+                <div>
+                    <h2 class="app-panel__title"><i class="bi bi-lock"></i> Seguridad</h2>
+                    <p class="app-panel__subtitle">Cambia tu contrasena usando una clave de al menos 8 caracteres.</p>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST" action="/account/password" class="needs-validation" novalidate>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label for="current_password" class="form-label">Contraseña Actual <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" id="current_password" name="current_password" required>
-                            <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="new_password" class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" id="new_password" name="new_password" required minlength="8">
-                            <div class="form-text">Mínimo 8 caracteres.</div>
-                            <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="confirm_password" class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8">
-                            <div class="invalid-feedback">Confirma la nueva contraseña.</div>
+            <form method="POST" action="/account/password" class="needs-validation" novalidate>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="current_password" class="form-label">Contrasena actual <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="current_password" name="current_password" required autocomplete="current-password">
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle="#current_password" aria-label="Mostrar contrasena actual">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <div class="invalid-feedback">Ingresa tu contrasena actual.</div>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-shield-lock me-1"></i> Cambiar Contraseña
-                        </button>
+                    <div class="col-md-6">
+                        <label for="new_password" class="form-label">Nueva contrasena <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="new_password" name="new_password" required minlength="8" autocomplete="new-password">
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle="#new_password" aria-label="Mostrar nueva contrasena">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <div class="invalid-feedback">La contrasena debe tener al menos 8 caracteres.</div>
+                        </div>
+                        <div class="form-text">Minimo 8 caracteres.</div>
                     </div>
-                </form>
-            </div>
-        </div>
+                    <div class="col-md-6">
+                        <label for="confirm_password" class="form-label">Confirmar contrasena <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password">
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle="#confirm_password" aria-label="Mostrar confirmacion de contrasena">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <div class="invalid-feedback">Confirma la nueva contrasena.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="account-form-actions">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-shield-lock me-1"></i> Cambiar contrasena
+                    </button>
+                </div>
+            </form>
+        </section>
     </div>
 </div>
+
+
