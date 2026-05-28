@@ -40,10 +40,13 @@ class UserRepository
     {
         $rows = $this->db->query(
             'SELECT * FROM users
-             WHERE LOWER(username) = LOWER(:identifier)
-                OR LOWER(email) = LOWER(:identifier)
+             WHERE LOWER(username) = LOWER(:identifier_username)
+                OR LOWER(email) = LOWER(:identifier_email)
              LIMIT 1',
-            ['identifier' => trim($identifier)]
+            [
+                'identifier_username' => trim($identifier),
+                'identifier_email' => trim($identifier),
+            ]
         );
         return $rows[0] ?? null;
     }
