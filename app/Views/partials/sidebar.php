@@ -1,7 +1,9 @@
 <!-- Sidebar Navigation -->
 <?php use App\Core\Auth; ?>
+<?php
+    $active = static fn(string $page): string => ($activePage ?? '') === $page ? 'active' : '';
+?>
 <nav id="sidebar" class="offcanvas-lg offcanvas-start sidebar" tabindex="-1" aria-labelledby="sidebarLabel">
-    <!-- Offcanvas Header (visible only on mobile) -->
     <div class="offcanvas-header d-lg-none border-bottom border-secondary border-opacity-25 px-3 py-2">
         <a href="/" class="d-flex align-items-center text-decoration-none gap-2">
             <img src="/assets/images/logo/kodigo.jpg" alt="Kodigo Logo" class="brand-logo rounded" width="36" height="36">
@@ -10,7 +12,6 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
     </div>
 
-    <!-- Brand (Desktop only) -->
     <div class="sidebar-brand d-none d-lg-flex">
         <a href="/" class="d-flex align-items-center text-decoration-none">
             <img src="/assets/images/logo/kodigo.jpg" alt="Kodigo Logo" class="brand-logo rounded" width="40" height="40">
@@ -18,102 +19,94 @@
         </a>
     </div>
 
-    <!-- Navigation -->
     <div class="sidebar-nav">
         <ul class="nav flex-column">
-            <!-- Dashboard — all roles -->
+            <li class="nav-section-label"><span>Principal</span></li>
             <li class="nav-item">
-                <a href="/" class="nav-link <?= ($activePage ?? '') === 'dashboard' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                <a href="/" class="nav-link <?= $active('dashboard') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
 
-            <!-- Cohorts — all roles -->
+            <li class="nav-section-label"><span>Operacion</span></li>
             <li class="nav-item">
-                <a href="/cohorts" class="nav-link <?= ($activePage ?? '') === 'cohorts' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Cohortes">
+                <a href="/cohorts" class="nav-link <?= $active('cohorts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Cohortes">
                     <i class="bi bi-people"></i>
                     <span>Cohortes</span>
                 </a>
             </li>
 
-            <!-- Import Cohorts — admin only -->
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">
-                <a href="/cohorts/import" class="nav-link <?= ($activePage ?? '') === 'import' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Importar Cohortes">
+                <a href="/cohorts/import" class="nav-link <?= $active('import') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Importar cohortes">
                     <i class="bi bi-cloud-arrow-up"></i>
                     <span>Importar</span>
                 </a>
             </li>
             <?php endif; ?>
 
-            <!-- Marketing — admin + marketing -->
             <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
             <li class="nav-item">
-                <a href="/marketing" class="nav-link <?= ($activePage ?? '') === 'marketing' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Marketing">
+                <a href="/marketing" class="nav-link <?= $active('marketing') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Marketing">
                     <i class="bi bi-megaphone"></i>
                     <span>Marketing</span>
                 </a>
             </li>
             <?php endif; ?>
 
-            <!-- Alerts — all authenticated users -->
             <li class="nav-item">
-                <a href="/alerts" class="nav-link <?= ($activePage ?? '') === 'alerts' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
+                <a href="/alerts" class="nav-link <?= $active('alerts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
                     <i class="bi bi-exclamation-triangle"></i>
                     <span>Alertas</span>
+                    <span class="nav-alert-dot" aria-hidden="true"></span>
                 </a>
             </li>
 
-            <!-- Coach Calendar — admin only -->
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">
-                <a href="/coaches" class="nav-link <?= ($activePage ?? '') === 'coaches' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
+                <a href="/coaches" class="nav-link <?= $active('coaches') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
                     <i class="bi bi-calendar-range"></i>
                     <span>Coaches</span>
                 </a>
             </li>
             <?php endif; ?>
 
-            <!-- Users — admin only -->
-            <?php if (Auth::isAdmin()): ?>
+            <li class="nav-section-label"><span>Analitica</span></li>
             <li class="nav-item">
-                <a href="/users" class="nav-link <?= ($activePage ?? '') === 'users' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
+                <a href="/reports" class="nav-link <?= $active('reports') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Reportes</span>
+                </a>
+            </li>
+
+            <?php if (Auth::isAdmin()): ?>
+            <li class="nav-section-label"><span>Administracion</span></li>
+            <li class="nav-item">
+                <a href="/users" class="nav-link <?= $active('users') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
                     <i class="bi bi-person-gear"></i>
                     <span>Usuarios</span>
                 </a>
             </li>
             <?php endif; ?>
 
-            <!-- Divider -->
-            <li class="nav-divider"></li>
-
-            <!-- Mi Cuenta — all authenticated users -->
+            <li class="nav-section-label"><span>Cuenta</span></li>
             <li class="nav-item">
-                <a href="/account" class="nav-link <?= ($activePage ?? '') === 'account' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Mi Cuenta">
+                <a href="/account" class="nav-link <?= $active('account') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Mi cuenta">
                     <i class="bi bi-person-circle"></i>
-                    <span>Mi Cuenta</span>
+                    <span>Mi cuenta</span>
                 </a>
             </li>
-
-            <!-- Coming Soon -->
             <li class="nav-item">
-                <a href="#" class="nav-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Próximamente">
+                <a href="#" class="nav-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Proximamente">
                     <i class="bi bi-person-lines-fill"></i>
                     <span>Estudiantes</span>
                     <span class="badge-soon">Pronto</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="/reports" class="nav-link <?= ($activePage ?? '') === 'reports' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
-                    <i class="bi bi-bar-chart"></i>
-                    <span>Reportes</span>
-                </a>
-            </li>
         </ul>
     </div>
 
-    <!-- Sidebar Footer -->
     <div class="sidebar-footer">
         <div class="version-badge">
             <i class="bi bi-shield-check"></i>
@@ -121,8 +114,7 @@
         </div>
     </div>
 
-    <!-- Collapse Toggle (Desktop) -->
-    <button type="button" class="sidebar-collapse-btn d-none d-lg-flex" id="sidebarCollapseBtn" aria-label="Colapsar menú">
+    <button type="button" class="sidebar-collapse-btn d-none d-lg-flex" id="sidebarCollapseBtn" aria-label="Colapsar menu">
         <i class="bi bi-chevron-left"></i>
     </button>
 </nav>

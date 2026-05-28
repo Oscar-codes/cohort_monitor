@@ -45,6 +45,17 @@ class CohortRepository
         $where = [];
         $params = [];
 
+        if (!empty($filters['search'])) {
+            $where[] = '(
+                cohort_code LIKE :search
+                OR name LIKE :search
+                OR assigned_coach LIKE :search
+                OR related_project LIKE :search
+                OR bootcamp_type LIKE :search
+            )';
+            $params['search'] = '%' . $filters['search'] . '%';
+        }
+
         if (!empty($filters['bootcamp_type'])) {
             $where[] = 'bootcamp_type = :bootcamp_type';
             $params['bootcamp_type'] = $filters['bootcamp_type'];

@@ -87,4 +87,28 @@ abstract class Controller
         return $_REQUEST;
     }
 
+    /**
+     * Log an exception in a consistent format to storage/logs/app.log.
+     */
+    protected function logException(\Throwable $e, string $context): void
+    {
+        $logFile = APP_ROOT . '/storage/logs/app.log';
+
+        $entry = sprintf(
+            "[%s] %s - %s in %s:%d%s%s",
+            date('Y-m-d H:i:s'),
+            $context,
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine(),
+            PHP_EOL,
+            $e->getTraceAsString()
+        ) . PHP_EOL;
+
+        // Try to append to the project log file; fall back to PHP error_log.
+        if (@file_put_contents($logFile, $entry, FILE_APPEND) === false) {
+            error_log($entry);
+        }
+    }
+
 }

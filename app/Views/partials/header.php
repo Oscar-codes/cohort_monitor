@@ -1,17 +1,33 @@
 <!-- Top Header Bar -->
 <?php use App\Core\Auth; ?>
+<?php
+    $roleBadges = [
+        'admin'           => ['danger', 'bi-shield-check'],
+        'admissions_b2b'  => ['info', 'bi-building'],
+        'admissions_b2c'  => ['primary', 'bi-person-check'],
+        'marketing'       => ['warning', 'bi-megaphone'],
+    ];
+    $roleLabels = [
+        'admin'           => 'Admin',
+        'admissions_b2b'  => 'B2B',
+        'admissions_b2c'  => 'B2C',
+        'marketing'       => 'Marketing',
+    ];
+    $role  = Auth::role();
+    $badge = $roleBadges[$role][0] ?? 'secondary';
+    $icon  = $roleBadges[$role][1] ?? 'bi-person';
+    $label = $roleLabels[$role] ?? ucfirst($role ?? 'Usuario');
+    $headerSearch = (string) ($_GET['search'] ?? '');
+?>
 <header class="header bg-white border-bottom sticky-top">
     <div class="header-content">
-        <!-- Left: Mobile Toggle + Page Title -->
         <div class="header-left">
-            <!-- Mobile Menu Toggle (drives Bootstrap offcanvas) -->
             <button type="button" class="btn btn-link text-dark d-lg-none me-2 p-0"
                     data-bs-toggle="offcanvas" data-bs-target="#sidebar"
-                    aria-controls="sidebar" aria-label="Abrir menú">
+                    aria-controls="sidebar" aria-label="Abrir menu">
                 <i class="bi bi-list fs-4"></i>
             </button>
 
-            <!-- Page Title & Breadcrumb -->
             <div class="header-title">
                 <h1 class="h5 mb-0 fw-semibold"><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?></h1>
                 <?php if (isset($breadcrumb) && is_array($breadcrumb)): ?>
@@ -31,34 +47,38 @@
             </div>
         </div>
 
-        <!-- Right: User Menu -->
-        <div class="header-right">
-            <?php
-                $roleBadges = [
-                    'admin'           => ['danger', 'bi-shield-check'],
-                    'admissions_b2b'  => ['info', 'bi-building'],
-                    'admissions_b2c'  => ['primary', 'bi-person-check'],
-                    'marketing'       => ['warning', 'bi-megaphone'],
-                ];
-                $roleLabels = [
-                    'admin'           => 'Admin',
-                    'admissions_b2b'  => 'B2B',
-                    'admissions_b2c'  => 'B2C',
-                    'marketing'       => 'Marketing',
-                ];
-                $role  = Auth::role();
-                $badge = $roleBadges[$role][0] ?? 'secondary';
-                $icon  = $roleBadges[$role][1] ?? 'bi-person';
-                $label = $roleLabels[$role] ?? ucfirst($role ?? 'Usuario');
-            ?>
+        <form action="/cohorts" method="GET" class="header-search d-none d-xl-flex" role="search">
+            <i class="bi bi-search"></i>
+            <input type="search" name="search" value="<?= htmlspecialchars($headerSearch) ?>"
+                   placeholder="Buscar cohorte, coach, proyecto..." aria-label="Buscar cohortes">
+            <button type="submit" class="btn btn-sm btn-primary">Buscar</button>
+        </form>
 
-            <!-- Role Badge (Desktop) -->
+        <div class="header-right">
+            <?php if (Auth::canCreateCohort()): ?>
+                <a href="/cohorts/create" class="btn btn-sm btn-primary d-none d-lg-inline-flex align-items-center gap-1">
+                    <i class="bi bi-plus-lg"></i>
+                    Nueva cohorte
+                </a>
+            <?php endif; ?>
+
+            <a href="/alerts" class="header-icon-btn" aria-label="Ver alertas" data-bs-toggle="tooltip" title="Alertas">
+                <i class="bi bi-bell"></i>
+            </a>
+
+            <button type="button" class="header-icon-btn d-xl-none" data-bs-toggle="collapse" data-bs-target="#headerMobileSearch" aria-controls="headerMobileSearch" aria-expanded="false" aria-label="Abrir busqueda">
+                <i class="bi bi-search"></i>
+            </button>
+
+            <button type="button" class="header-icon-btn" id="densityToggle" aria-label="Activar modo compacto" aria-pressed="false" data-bs-toggle="tooltip" title="Modo compacto">
+                <i class="bi bi-arrows-collapse"></i>
+            </button>
+
             <span class="badge bg-<?= $badge ?>-subtle text-<?= $badge ?> d-none d-md-inline-flex align-items-center gap-1">
                 <i class="bi <?= $icon ?>"></i>
                 <?= e($label) ?>
             </span>
 
-            <!-- User Dropdown -->
             <div class="dropdown">
                 <button class="btn btn-light btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="user-avatar">
@@ -73,13 +93,35 @@
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
+                        <a class="dropdown-item d-flex align-items-center" href="/account">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Mi cuenta
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" href="/reports">
+                            <i class="bi bi-bar-chart me-2"></i>
+                            Reportes
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
                         <a class="dropdown-item d-flex align-items-center text-danger" href="/logout">
                             <i class="bi bi-box-arrow-right me-2"></i>
-                            Cerrar sesión
+                            Cerrar sesion
                         </a>
                     </li>
                 </ul>
             </div>
         </div>
+    </div>
+
+    <div class="collapse header-mobile-search d-xl-none" id="headerMobileSearch">
+        <form action="/cohorts" method="GET" class="header-search header-search--mobile" role="search">
+            <i class="bi bi-search"></i>
+            <input type="search" name="search" value="<?= htmlspecialchars($headerSearch) ?>"
+                   placeholder="Buscar cohorte, coach, proyecto..." aria-label="Buscar cohortes">
+            <button type="submit" class="btn btn-sm btn-primary">Buscar</button>
+        </form>
     </div>
 </header>

@@ -70,6 +70,9 @@ class CoachCalendarController extends Controller
             'coachNames'     => $coachNames,
             'bootcampTypes'  => $bootcampTypes,
             'loadError'      => $loadError,
+            'scripts'        => [
+                '/assets/js/coaches-calendar.js',
+            ],
         ]);
     }
 }

@@ -41,6 +41,8 @@ class DashboardController extends Controller
                 'notStartedCohorts' => 0,
                 'totalTarget'       => 0,
                 'totalAdmissions'   => 0,
+                'totalB2bAdmissions'=> 0,
+                'totalB2cAdmissions'=> 0,
                 'admissionPct'      => 0,
                 'totalAlerts'       => 0,
                 'riskComments'      => [],
@@ -54,7 +56,17 @@ class DashboardController extends Controller
         }
 
         $this->view('dashboard.index', array_merge(
-            ['pageTitle' => 'Dashboard', 'activePage' => 'dashboard'],
+            [
+                'pageTitle'  => 'Dashboard',
+                'activePage' => 'dashboard',
+                'styles'     => [
+                    '/assets/vendor/apexcharts/apexcharts.css',
+                ],
+                'scripts'    => [
+                    '/assets/vendor/apexcharts/apexcharts.min.js',
+                    '/assets/js/dashboard.js',
+                ],
+            ],
             $stats
         ));
     }

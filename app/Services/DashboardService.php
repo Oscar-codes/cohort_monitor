@@ -32,7 +32,9 @@ class DashboardService
         $stats = $this->cohortRepo->getDashboardStats();
 
         $totalTarget     = (int) $stats['total_target'];
-        $totalAdmissions = (int) $stats['total_b2b'] + (int) $stats['total_b2c'];
+        $totalB2bAdmissions = (int) $stats['total_b2b'];
+        $totalB2cAdmissions = (int) $stats['total_b2c'];
+        $totalAdmissions = $totalB2bAdmissions + $totalB2cAdmissions;
         $admissionPct    = $totalTarget > 0 ? round(($totalAdmissions / $totalTarget) * 100, 1) : 0;
 
         // Risk alerts
@@ -72,6 +74,8 @@ class DashboardService
             'notStartedCohorts' => $notStarted,
             'totalTarget'       => $totalTarget,
             'totalAdmissions'   => $totalAdmissions,
+            'totalB2bAdmissions'=> $totalB2bAdmissions,
+            'totalB2cAdmissions'=> $totalB2cAdmissions,
             'admissionPct'      => $admissionPct,
             'totalAlerts'       => $totalAlerts,
             'riskComments'      => array_slice($riskComments, 0, 5),

@@ -245,6 +245,7 @@ class CohortService
     private function normalizeFilters(array $filters): array
     {
         $normalized = [
+            'search'          => null,
             'bootcamp_type'   => null,
             'related_project' => null,
             'start_date'      => null,
@@ -252,6 +253,13 @@ class CohortService
             'business_model'  => null,
             'cohort_status'   => null,
         ];
+
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            if ($search !== '') {
+                $normalized['search'] = mb_substr($search, 0, 80);
+            }
+        }
 
         if (!empty($filters['bootcamp_type'])) {
             $normalized['bootcamp_type'] = trim((string) $filters['bootcamp_type']);

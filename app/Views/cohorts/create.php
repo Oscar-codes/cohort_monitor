@@ -1,15 +1,28 @@
 <!-- Cohort Create View -->
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="/cohorts" class="text-decoration-none">Cohortes</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Nueva Cohorte</li>
-    </ol>
-</nav>
+<section class="form-page-hero mb-4">
+    <div>
+        <div class="dashboard-eyebrow">
+            <i class="bi bi-plus-circle"></i>
+            Nueva operacion
+        </div>
+        <h2 class="form-page-hero__title">Nueva cohorte</h2>
+        <p class="form-page-hero__copy">Registra informacion academica, admisiones, fechas y asignaciones en un solo flujo.</p>
+    </div>
+    <a href="/cohorts" class="btn btn-outline-light">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+</section>
 
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-8">
-        <div class="card">
-            <div class="card-body p-4">
+        <div class="app-panel form-workbench">
+            <div class="form-workbench__header">
+                <div>
+                    <h3><i class="bi bi-pencil-square text-primary"></i> Datos de cohorte</h3>
+                    <p>Los campos marcados con asterisco son obligatorios.</p>
+                </div>
+            </div>
+            <div class="form-workbench__body">
                 <form method="POST" action="/cohorts" class="needs-validation" novalidate>
 
                     <!-- ─── Identificación ─────────────────────── -->
