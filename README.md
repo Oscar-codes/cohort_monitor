@@ -179,3 +179,25 @@ Controllers already support JSON output via `$this->json($data)`.
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+## Railway Deployment Notes
+
+If deployment fails with `SQLSTATE[HY000] [2002]` (socket/host issues), verify DB env vars in Railway service:
+
+- `DB_HOST` or `MYSQLHOST` (internal host from Railway MySQL service)
+- `DB_PORT` or `MYSQLPORT`
+- `DB_DATABASE` or `MYSQLDATABASE`
+- `DB_USERNAME` or `MYSQLUSER`
+- `DB_PASSWORD` or `MYSQLPASSWORD`
+
+Optional:
+
+- `DATABASE_URL` / `MYSQL_URL` (full mysql URL)
+- `DB_SOCKET` only when using unix socket directly
+
+Notes:
+
+- The app forces TCP when host is empty or `localhost`, to avoid accidental socket resolution in containers.
+- For local development, keep a local `.env` with your local DB values to avoid connecting to Railway from your machine.

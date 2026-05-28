@@ -137,15 +137,43 @@ class CohortController extends Controller
     {
         $chartPrefs = $this->resolveFinanceChartPreferences();
 
-        $filters = [
-            'search'          => (string) $this->input('search', ''),
-            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
-            'related_project' => (string) $this->input('related_project', ''),
-            'start_date'      => (string) $this->input('start_date', ''),
-            'end_date'        => (string) $this->input('end_date', ''),
-            'business_model'  => (string) $this->input('business_model', ''),
-            'cohort_status'   => (string) $this->input('cohort_status', ''),
-        ];
+        $defaultFilters = $this->financeFilterDefaults();
+        $filterKeys = array_keys($defaultFilters);
+        $requestHasFilterParams = false;
+        foreach ($filterKeys as $key) {
+            if (array_key_exists($key, $_GET)) {
+                $requestHasFilterParams = true;
+                break;
+            }
+        }
+
+        if ((string) $this->input('reset_filters', '') === '1') {
+            unset($_SESSION['finance_filters']);
+            $filters = $defaultFilters;
+        } elseif ($requestHasFilterParams) {
+            $filters = [
+                'search'          => (string) $this->input('search', ''),
+                'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+                'related_project' => (string) $this->input('related_project', ''),
+                'start_date'      => (string) $this->input('start_date', ''),
+                'end_date'        => (string) $this->input('end_date', ''),
+                'business_model'  => (string) $this->input('business_model', ''),
+                'cohort_status'   => (string) $this->input('cohort_status', ''),
+            ];
+            $_SESSION['finance_filters'] = $filters;
+        } else {
+            $sessionFilters = $_SESSION['finance_filters'] ?? [];
+            $filters = [
+                'search'          => (string) ($sessionFilters['search'] ?? ''),
+                'bootcamp_type'   => (string) ($sessionFilters['bootcamp_type'] ?? ''),
+                'related_project' => (string) ($sessionFilters['related_project'] ?? ''),
+                'start_date'      => (string) ($sessionFilters['start_date'] ?? ''),
+                'end_date'        => (string) ($sessionFilters['end_date'] ?? ''),
+                'business_model'  => (string) ($sessionFilters['business_model'] ?? ''),
+                'cohort_status'   => (string) ($sessionFilters['cohort_status'] ?? ''),
+            ];
+            $_SESSION['finance_filters'] = $filters;
+        }
 
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
@@ -287,6 +315,19 @@ class CohortController extends Controller
     {
         $parsed = (string) $value;
         return in_array($parsed, ['moving_avg', 'linear_trend'], true) ? $parsed : 'moving_avg';
+    }
+
+    private function financeFilterDefaults(): array
+    {
+        return [
+            'search'          => '',
+            'bootcamp_type'   => '',
+            'related_project' => '',
+            'start_date'      => '',
+            'end_date'        => '',
+            'business_model'  => '',
+            'cohort_status'   => '',
+        ];
     }
 
     /**

@@ -23,13 +23,27 @@ class Database
     {
         $config = require APP_ROOT . '/config/database.php';
 
-        $dsn = sprintf(
-            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-            $config['host'],
-            $config['port'],
-            $config['database'],
-            $config['charset']
-        );
+        $host = trim((string) ($config['host'] ?? ''));
+        $port = trim((string) ($config['port'] ?? '3306'));
+        $database = trim((string) ($config['database'] ?? ''));
+        $charset = trim((string) ($config['charset'] ?? 'utf8mb4'));
+        $socket = trim((string) ($config['unix_socket'] ?? ''));
+
+        if ($host === '' || strtolower($host) === 'localhost') {
+            // Force TCP by default to avoid socket-based resolution failures on containers.
+            $host = '127.0.0.1';
+        }
+
+        $dsnParts = [];
+        if ($socket !== '') {
+            $dsnParts[] = 'unix_socket=' . $socket;
+        } else {
+            $dsnParts[] = 'host=' . $host;
+            $dsnParts[] = 'port=' . $port;
+        }
+        $dsnParts[] = 'dbname=' . $database;
+        $dsnParts[] = 'charset=' . $charset;
+        $dsn = 'mysql:' . implode(';', $dsnParts);
 
         try {
             $this->pdo = new PDO($dsn, $config['username'], $config['password'], [
@@ -41,7 +55,7 @@ class Database
             // Reinforce UTF-8 session settings for environments that ignore DSN charset.
             $this->pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
         } catch (PDOException $e) {
-            throw new \RuntimeException('Database connection failed: ' . $e->getMessage());
+            throw new \RuntimeException('Database connection failed: ' . $e->getMessage() . ' [dsn=' . $dsn . ']');
         }
     }
 

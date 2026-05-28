@@ -165,7 +165,7 @@ if (!function_exists('moneyFmt')) {
                 <i class="bi bi-search me-1"></i> Aplicar filtros
             </button>
             <?php if (!empty($activeFilters)): ?>
-                <a href="/cohorts/finance" class="btn btn-outline-secondary ms-2">
+                <a href="/cohorts/finance?reset_filters=1" class="btn btn-outline-secondary ms-2">
                     <i class="bi bi-x-circle me-1"></i> Limpiar
                 </a>
             <?php endif; ?>
