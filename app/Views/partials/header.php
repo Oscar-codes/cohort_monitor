@@ -5,12 +5,14 @@
         'admin'           => ['danger', 'bi-shield-check'],
         'admissions_b2b'  => ['info', 'bi-building'],
         'admissions_b2c'  => ['primary', 'bi-person-check'],
+        'finance'         => ['success', 'bi-cash-stack'],
         'marketing'       => ['warning', 'bi-megaphone'],
     ];
     $roleLabels = [
         'admin'           => 'Admin',
         'admissions_b2b'  => 'B2B',
         'admissions_b2c'  => 'B2C',
+        'finance'         => 'Finanzas',
         'marketing'       => 'Marketing',
     ];
     $role  = Auth::role();

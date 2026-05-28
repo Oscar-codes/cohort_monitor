@@ -150,7 +150,7 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255) NULL,
-  role ENUM('admin','admissions_b2b','admissions_b2c','marketing') NOT NULL DEFAULT 'marketing',
+  role ENUM('admin','admissions_b2b','admissions_b2c','finance','marketing') NOT NULL DEFAULT 'marketing',
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   last_login_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

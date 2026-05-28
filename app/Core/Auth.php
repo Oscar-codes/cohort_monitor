@@ -103,6 +103,11 @@ class Auth
         return self::role() === 'marketing';
     }
 
+    public static function isFinance(): bool
+    {
+        return self::role() === 'finance';
+    }
+
     /**
      * Check whether the current user has one of the given roles.
      *
@@ -125,8 +130,11 @@ class Auth
         'correlative_number',
         'total_admission_target',
         'b2b_admission_target',
+        'b2c_admission_target',
         'b2b_admissions',
         'b2c_admissions',
+        'financial_target_revenue',
+        'financial_actual_revenue',
         'admission_deadline_date',
         'start_date',
         'end_date',
@@ -145,6 +153,7 @@ class Auth
         'admin'          => self::ALL_COHORT_FIELDS,
         'admissions_b2b' => ['b2b_admissions'],
         'admissions_b2c' => ['b2c_admissions'],
+        'finance'        => ['financial_target_revenue', 'financial_actual_revenue'],
         'marketing'      => [], // Marketing edits marketing_stages, not cohort fields
     ];
 

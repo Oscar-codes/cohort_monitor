@@ -131,7 +131,7 @@ class CohortRepository
                     'training_date_50' => null,
                     'training_date_75' => null,
                     'b2b_target'       => (int) ($data['b2b_admission_target'] ?? 0),
-                    'b2c_target'       => max(0, (int) ($data['total_admission_target'] ?? 0) - (int) ($data['b2b_admission_target'] ?? 0)),
+                    'b2c_target'       => max(0, (int) ($data['b2c_admission_target'] ?? ((int) ($data['total_admission_target'] ?? 0) - (int) ($data['b2b_admission_target'] ?? 0)))),
                     'total_target'     => (int) ($data['total_admission_target'] ?? 0),
                     'calendar_pattern' => $data['assigned_class_schedule'] ?? null,
                     'source_row_number'=> (int) ($data['correlative_number'] ?? 0),
@@ -197,7 +197,7 @@ class CohortRepository
                     'start_date'      => $data['start_date'] ?? $row['start_date'],
                     'end_date'        => $data['end_date'] ?? $row['end_date'],
                     'b2b_target'      => (int) ($data['b2b_admission_target'] ?? $row['b2b_admission_target']),
-                    'b2c_target'      => max(0, (int) ($data['total_admission_target'] ?? $row['total_admission_target']) - (int) ($data['b2b_admission_target'] ?? $row['b2b_admission_target'])),
+                    'b2c_target'      => max(0, (int) ($data['b2c_admission_target'] ?? ((int) ($data['total_admission_target'] ?? $row['total_admission_target']) - (int) ($data['b2b_admission_target'] ?? $row['b2b_admission_target'])))),
                     'total_target'    => (int) ($data['total_admission_target'] ?? $row['total_admission_target']),
                     'calendar_pattern'=> $data['assigned_class_schedule'] ?? $row['assigned_class_schedule'],
                     'source_row_number'=> (int) ($data['correlative_number'] ?? $row['correlative_number']),
@@ -360,20 +360,33 @@ class CohortRepository
                 COALESCE(cs.source_row_number, 0) AS correlative_number,
                 COALESCE(cs.total_students_target, 0) AS total_admission_target,
                 COALESCE(cs.b2b_target, 0) AS b2b_admission_target,
+                COALESCE(cs.b2c_target, 0) AS b2c_admission_target,
                 COALESCE(m.b2b_admissions, 0) AS b2b_admissions,
                 COALESCE(m.b2c_admissions, 0) AS b2c_admissions,
+                COALESCE(m.total_target_revenue, 0) AS financial_target_revenue,
+                COALESCE(m.total_actual_revenue, 0) AS financial_actual_revenue,
                 NULL AS admission_deadline_date,
                 cs.start_date,
                 cs.end_date,
+                cs.start_time,
+                cs.end_time,
                 p.project_name AS related_project,
                 ch.coach_name AS assigned_coach,
                 COALESCE(b.bootcamp_name, bf.family_name) AS bootcamp_type,
                 LOWER(r.route_name) AS area,
                 cs.calendar_pattern AS assigned_class_schedule,
+                COALESCE(cd.class_days, "—") AS class_days,
+                CASE
+                    WHEN cs.start_time IS NOT NULL AND cs.end_time IS NOT NULL THEN CONCAT(DATE_FORMAT(cs.start_time, "%H:%i"), " - ", DATE_FORMAT(cs.end_time, "%H:%i"))
+                    WHEN cs.start_time IS NOT NULL THEN CONCAT(DATE_FORMAT(cs.start_time, "%H:%i"), " - ", "--:--")
+                    ELSE "—"
+                END AS class_time,
                 cs.training_status,
                 cs.training_date_50,
                 cs.training_date_75,
-                cs.status
+                cs.status,
+                cs.created_at,
+                cs.updated_at
             FROM cohort_sections cs
             LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
             LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
@@ -384,10 +397,20 @@ class CohortRepository
                 SELECT
                     section_id,
                     SUM(CASE WHEN cohort_type_code = "B2B" THEN actual_students ELSE 0 END) AS b2b_admissions,
-                    SUM(CASE WHEN cohort_type_code = "B2C" THEN actual_students ELSE 0 END) AS b2c_admissions
+                    SUM(CASE WHEN cohort_type_code = "B2C" THEN actual_students ELSE 0 END) AS b2c_admissions,
+                    COALESCE(SUM(target_revenue), 0) AS total_target_revenue,
+                    COALESCE(SUM(actual_revenue), 0) AS total_actual_revenue
                 FROM cohort_section_memberships
                 GROUP BY section_id
-            ) m ON m.section_id = cs.id';
+            ) m ON m.section_id = cs.id
+            LEFT JOIN (
+                SELECT
+                    ccd.section_id,
+                    GROUP_CONCAT(w.day_name_es ORDER BY ccd.day_position SEPARATOR ", ") AS class_days
+                FROM cohort_section_class_days ccd
+                JOIN weekdays w ON w.id = ccd.weekday_id
+                GROUP BY ccd.section_id
+            ) cd ON cd.section_id = cs.id';
     }
 
     private function buildFilters(array $filters): array
@@ -457,9 +480,14 @@ class CohortRepository
 
         $b2bTarget = max(0, (int) ($data['b2b_admission_target'] ?? 0));
         $totalTarget = max(0, (int) ($data['total_admission_target'] ?? 0));
-        $b2cTarget = max(0, $totalTarget - $b2bTarget);
+        $b2cTarget = max(0, (int) ($data['b2c_admission_target'] ?? ($totalTarget - $b2bTarget)));
         $b2bActual = max(0, (int) ($data['b2b_admissions'] ?? 0));
         $b2cActual = max(0, (int) ($data['b2c_admissions'] ?? 0));
+        $targetRevenue = (float) ($data['financial_target_revenue'] ?? 0);
+        $actualRevenue = (float) ($data['financial_actual_revenue'] ?? 0);
+
+        [$b2bTargetRevenue, $b2cTargetRevenue] = $this->splitRevenueByType($targetRevenue, $b2bTarget, $b2cTarget);
+        [$b2bActualRevenue, $b2cActualRevenue] = $this->splitRevenueByType($actualRevenue, $b2bActual, $b2cActual);
 
         $this->db->execute('DELETE FROM cohort_section_memberships WHERE section_id = :sid', ['sid' => $sectionId]);
 
@@ -468,9 +496,9 @@ class CohortRepository
             $this->db->execute(
                 'INSERT INTO cohort_section_memberships (
                     section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
-                    target_students, actual_students
+                    target_students, actual_students, target_revenue, actual_revenue
                 ) VALUES (
-                    :section_id, :family_id, "B2B", :cohort_year, :cohort_month, :target_students, :actual_students
+                    :section_id, :family_id, "B2B", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
                 )',
                 [
                     'section_id'     => $sectionId,
@@ -479,6 +507,8 @@ class CohortRepository
                     'cohort_month'   => $month,
                     'target_students'=> $b2bTarget,
                     'actual_students'=> $b2bActual,
+                    'target_revenue' => $b2bTargetRevenue,
+                    'actual_revenue' => $b2bActualRevenue,
                 ]
             );
         }
@@ -488,9 +518,9 @@ class CohortRepository
             $this->db->execute(
                 'INSERT INTO cohort_section_memberships (
                     section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
-                    target_students, actual_students
+                    target_students, actual_students, target_revenue, actual_revenue
                 ) VALUES (
-                    :section_id, :family_id, "B2C", :cohort_year, :cohort_month, :target_students, :actual_students
+                    :section_id, :family_id, "B2C", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
                 )',
                 [
                     'section_id'     => $sectionId,
@@ -499,9 +529,31 @@ class CohortRepository
                     'cohort_month'   => $month,
                     'target_students'=> $b2cTarget,
                     'actual_students'=> $b2cActual,
+                    'target_revenue' => $b2cTargetRevenue,
+                    'actual_revenue' => $b2cActualRevenue,
                 ]
             );
         }
+    }
+
+    /**
+     * Split a section-level revenue amount between B2B and B2C by weights.
+     *
+     * @return array{0: float, 1: float}
+     */
+    private function splitRevenueByType(float $total, int $b2bWeight, int $b2cWeight): array
+    {
+        $total = max(0.0, $total);
+        $sum = max(0, $b2bWeight) + max(0, $b2cWeight);
+
+        if ($sum <= 0) {
+            return [0.0, 0.0];
+        }
+
+        $b2b = round($total * ($b2bWeight / $sum), 2);
+        $b2c = round($total - $b2b, 2);
+
+        return [$b2b, $b2c];
     }
 
     private function ensureCohortTypes(): void

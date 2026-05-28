@@ -33,10 +33,29 @@ if (!function_exists('cohortDetailValue')) {
 
 $totalTarget = max(0, (int) ($cohort['total_admission_target'] ?? 0));
 $b2bTarget = max(0, (int) ($cohort['b2b_admission_target'] ?? 0));
+$b2cTarget = max(0, (int) ($cohort['b2c_admission_target'] ?? 0));
 $b2bAdmissions = max(0, (int) ($cohort['b2b_admissions'] ?? 0));
 $b2cAdmissions = max(0, (int) ($cohort['b2c_admissions'] ?? 0));
 $actualAdmissions = $b2bAdmissions + $b2cAdmissions;
 $admissionPct = $totalTarget > 0 ? min(100, (int) round(($actualAdmissions / $totalTarget) * 100)) : 0;
+$targetRevenue = max(0.0, (float) ($cohort['financial_target_revenue'] ?? 0));
+$actualRevenue = max(0.0, (float) ($cohort['financial_actual_revenue'] ?? 0));
+$revenuePct = $targetRevenue > 0 ? min(100, (int) round(($actualRevenue / $targetRevenue) * 100)) : 0;
+
+$trainingProgressPct = 0;
+if (!empty($cohort['start_date']) && !empty($cohort['end_date'])) {
+    $startTs = strtotime((string) $cohort['start_date']);
+    $endTs = strtotime((string) $cohort['end_date']);
+    $todayTs = strtotime(date('Y-m-d'));
+    $duration = max(1, (int) floor(($endTs - $startTs) / 86400));
+    $elapsed = max(0, min($duration, (int) floor(($todayTs - $startTs) / 86400)));
+    $trainingProgressPct = (int) round(($elapsed / $duration) * 100);
+}
+
+$classDaysLabel = trim((string) ($cohort['class_days'] ?? ''));
+$classDaysLabel = $classDaysLabel !== '' ? $classDaysLabel : 'Sin definir';
+$classTimeLabel = trim((string) ($cohort['class_time'] ?? ''));
+$classTimeLabel = $classTimeLabel !== '' ? $classTimeLabel : 'Sin definir';
 $commentCount = count($comments ?? []);
 $riskCount = 0;
 foreach (($comments ?? []) as $comment) {
@@ -135,17 +154,17 @@ $catLabels = [
     <article class="cohort-detail-kpi">
         <span class="cohort-detail-kpi__icon is-success"><i class="bi bi-calendar-check"></i></span>
         <div>
-            <p>Fecha limite</p>
-            <strong><?= htmlspecialchars(cohortDetailDate($cohort['admission_deadline_date'] ?? null)) ?></strong>
-            <small>Admision</small>
+            <p>Progreso training</p>
+            <strong><?= $trainingProgressPct ?>%</strong>
+            <small><?= htmlspecialchars($classDaysLabel) ?> | <?= htmlspecialchars($classTimeLabel) ?></small>
         </div>
     </article>
     <article class="cohort-detail-kpi">
         <span class="cohort-detail-kpi__icon is-danger"><i class="bi bi-exclamation-triangle"></i></span>
         <div>
-            <p>Riesgos</p>
-            <strong><?= $riskCount ?></strong>
-            <small><?= $commentCount ?> comentarios totales</small>
+            <p>Revenue</p>
+            <strong>$<?= number_format($actualRevenue, 2) ?> / $<?= number_format($targetRevenue, 2) ?></strong>
+            <small><?= $revenuePct ?>% de cumplimiento</small>
         </div>
     </article>
 </div>
@@ -198,6 +217,14 @@ $catLabels = [
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['assigned_coach'] ?? null)) ?></strong>
                 </div>
                 <div>
+                    <span>Dias de clase</span>
+                    <strong><?= htmlspecialchars($classDaysLabel) ?></strong>
+                </div>
+                <div>
+                    <span>Horario puntual</span>
+                    <strong><?= htmlspecialchars($classTimeLabel) ?></strong>
+                </div>
+                <div>
                     <span>Tipo de bootcamp</span>
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['bootcamp_type'] ?? null)) ?></strong>
                 </div>
@@ -206,7 +233,7 @@ $catLabels = [
                     <strong><?= htmlspecialchars($areaLabel) ?></strong>
                 </div>
                 <div class="cohort-info-grid__wide">
-                    <span>Horario asignado</span>
+                    <span>Patron de horario</span>
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['assigned_class_schedule'] ?? null)) ?></strong>
                 </div>
             </div>
@@ -244,8 +271,48 @@ $catLabels = [
                     <strong><?= $b2bTarget ?></strong>
                 </div>
                 <div>
+                    <span>Meta B2C</span>
+                    <strong><?= $b2cTarget ?></strong>
+                </div>
+                <div>
                     <span>Meta total</span>
                     <strong><?= $totalTarget ?></strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="app-panel cohort-detail-panel mb-4">
+            <div class="app-panel__header">
+                <div>
+                    <h2 class="app-panel__title"><i class="bi bi-currency-dollar"></i> Finanzas</h2>
+                    <p class="app-panel__subtitle">Seguimiento de ingresos vs meta por cohorte.</p>
+                </div>
+            </div>
+            <div class="cohort-admission-meter">
+                <div class="cohort-admission-meter__top">
+                    <strong><?= $revenuePct ?>%</strong>
+                    <span>$<?= number_format($actualRevenue, 2) ?> de $<?= number_format($targetRevenue, 2) ?></span>
+                </div>
+                <div class="dashboard-progress">
+                    <span data-style-width="<?= $revenuePct ?>%"></span>
+                </div>
+            </div>
+            <div class="cohort-admission-breakdown">
+                <div>
+                    <span>Meta ingresos</span>
+                    <strong>$<?= number_format($targetRevenue, 2) ?></strong>
+                </div>
+                <div>
+                    <span>Ingresos actuales</span>
+                    <strong>$<?= number_format($actualRevenue, 2) ?></strong>
+                </div>
+                <div>
+                    <span>Brecha</span>
+                    <strong>$<?= number_format(max(0, $targetRevenue - $actualRevenue), 2) ?></strong>
+                </div>
+                <div>
+                    <span>Cumplimiento</span>
+                    <strong><?= $revenuePct ?>%</strong>
                 </div>
             </div>
         </section>
@@ -265,6 +332,10 @@ $catLabels = [
                 <div>
                     <dt>Correlativo</dt>
                     <dd><?= htmlspecialchars((string) ($cohort['correlative_number'] ?? 0)) ?></dd>
+                </div>
+                <div>
+                    <dt>Riesgos</dt>
+                    <dd><?= $riskCount ?> (<?= $commentCount ?> comentarios)</dd>
                 </div>
                 <div>
                     <dt>Creado</dt>

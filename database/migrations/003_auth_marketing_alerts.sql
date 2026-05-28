@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     email           VARCHAR(255)    NOT NULL UNIQUE,
     password_hash   VARCHAR(255)    NOT NULL,
     full_name       VARCHAR(255)    NOT NULL,
-    role            ENUM('admin','admissions_b2b','admissions_b2c','marketing') NOT NULL DEFAULT 'admin',
+    role            ENUM('admin','admissions_b2b','admissions_b2c','finance','marketing') NOT NULL DEFAULT 'admin',
     is_active       TINYINT(1)      NOT NULL DEFAULT 1,
     last_login_at   DATETIME        NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -129,6 +129,10 @@ INSERT INTO users (username, email, password_hash, full_name, role) VALUES
 ('admissions_b2c', 'b2c@cohortmonitor.com',
  '$2y$10$tQaeHyCrKEADqdY7hhH0huYTnhZLD1egi8vFK6zLEv693tkpgQGWS',
  'Analista Admisiones B2C', 'admissions_b2c'),
+
+('finance', 'finance@cohortmonitor.com',
+ '$2y$10$tQaeHyCrKEADqdY7hhH0huYTnhZLD1egi8vFK6zLEv693tkpgQGWS',
+ 'Analista de Finanzas', 'finance'),
 
 ('marketing', 'marketing@cohortmonitor.com',
  '$2y$10$tQaeHyCrKEADqdY7hhH0huYTnhZLD1egi8vFK6zLEv693tkpgQGWS',

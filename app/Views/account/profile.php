@@ -17,6 +17,7 @@ $roleLabels = [
     'admin' => ['Administrador', 'bg-danger-subtle text-danger', 'bi-shield-lock'],
     'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info', 'bi-building'],
     'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary', 'bi-people'],
+    'finance' => ['Finanzas', 'bg-success-subtle text-success', 'bi-cash-stack'],
     'marketing' => ['Marketing', 'bg-warning-subtle text-warning', 'bi-megaphone'],
 ];
 [$roleLabel, $roleClass, $roleIcon] = $roleLabels[$userRole] ?? [$userRole, 'bg-secondary-subtle text-secondary', 'bi-person-badge'];

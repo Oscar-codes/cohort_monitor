@@ -1,7 +1,9 @@
 <!-- Cohort Edit View with Role-Based Field Permissions -->
 <?php
+use App\Core\Auth;
+
 // ── Access control: marketing role cannot edit cohorts ─────────────────────
-$currentRole = $_SESSION['role'] ?? '';
+$currentRole = Auth::role() ?? '';
 $isMarketingBlocked = ($currentRole === 'marketing');
 
 /** @var array<string, mixed> $cohort */
@@ -153,7 +155,7 @@ if (!$isMarketingBlocked) {
                         <div class="form-section-title">
                             <i class="bi bi-people"></i> Admisiones
                             <?php 
-                            $admissionFields = ['total_admission_target', 'b2b_admission_target', 'b2b_admissions', 'b2c_admissions'];
+                            $admissionFields = ['total_admission_target', 'b2b_admission_target', 'b2c_admission_target', 'b2b_admissions', 'b2c_admissions'];
                             $canEditAny = count(array_intersect($admissionFields, $editableFields ?? [])) > 0;
                             if (!$canEditAny): 
                             ?>
@@ -172,6 +174,12 @@ if (!$isMarketingBlocked) {
                                 <input type="number" class="<?= $fieldClass('b2b_admission_target') ?>" id="b2b_admission_target" name="b2b_admission_target"
                                        min="0" <?= $disabled('b2b_admission_target') ?>
                                        value="<?= htmlspecialchars($cohort['b2b_admission_target'] ?? 0) ?>">
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="b2c_admission_target" class="form-label">Meta B2C</label>
+                                <input type="number" class="<?= $fieldClass('b2c_admission_target') ?>" id="b2c_admission_target" name="b2c_admission_target"
+                                       min="0" <?= $disabled('b2c_admission_target') ?>
+                                       value="<?= htmlspecialchars($cohort['b2c_admission_target'] ?? 0) ?>">
                             </div>
                             <div class="col-sm-6 col-md-3">
                                 <label for="b2b_admissions" class="form-label">
@@ -204,6 +212,48 @@ if (!$isMarketingBlocked) {
                                 <input type="date" class="<?= $fieldClass('admission_deadline_date') ?>" id="admission_deadline_date" name="admission_deadline_date"
                                        <?= $disabled('admission_deadline_date') ?>
                                        value="<?= htmlspecialchars($cohort['admission_deadline_date'] ?? '') ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ─── Finanzas ─────────────────────────── -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="bi bi-cash-stack"></i> Finanzas
+                            <?php
+                            $financeFields = ['financial_target_revenue', 'financial_actual_revenue'];
+                            $canEditFinance = count(array_intersect($financeFields, $editableFields ?? [])) > 0;
+                            if (!$canEditFinance):
+                            ?>
+                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="financial_target_revenue" class="form-label">
+                                    Meta de ingresos (USD)
+                                    <?php if ($canEdit('financial_target_revenue')): ?>
+                                    <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
+                                    <?php endif; ?>
+                                </label>
+                                <input type="number" step="0.01" min="0"
+                                       class="<?= $fieldClass('financial_target_revenue') ?> <?= $canEdit('financial_target_revenue') ? 'border-success' : '' ?>"
+                                       id="financial_target_revenue" name="financial_target_revenue"
+                                       <?= $disabled('financial_target_revenue') ?>
+                                       value="<?= htmlspecialchars((string) ($cohort['financial_target_revenue'] ?? 0)) ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="financial_actual_revenue" class="form-label">
+                                    Ingreso actual (USD)
+                                    <?php if ($canEdit('financial_actual_revenue')): ?>
+                                    <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
+                                    <?php endif; ?>
+                                </label>
+                                <input type="number" step="0.01" min="0"
+                                       class="<?= $fieldClass('financial_actual_revenue') ?> <?= $canEdit('financial_actual_revenue') ? 'border-success' : '' ?>"
+                                       id="financial_actual_revenue" name="financial_actual_revenue"
+                                       <?= $disabled('financial_actual_revenue') ?>
+                                       value="<?= htmlspecialchars((string) ($cohort['financial_actual_revenue'] ?? 0)) ?>">
                             </div>
                         </div>
                     </div>
@@ -285,6 +335,16 @@ if (!$isMarketingBlocked) {
                                 <input type="text" class="<?= $fieldClass('assigned_class_schedule') ?>" id="assigned_class_schedule" name="assigned_class_schedule"
                                        <?= $disabled('assigned_class_schedule') ?>
                                        value="<?= htmlspecialchars($cohort['assigned_class_schedule'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Dias de clase</label>
+                                <input type="text" class="form-control bg-light text-muted" disabled readonly
+                                       value="<?= htmlspecialchars($cohort['class_days'] ?? '—') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Horario puntual</label>
+                                <input type="text" class="form-control bg-light text-muted" disabled readonly
+                                       value="<?= htmlspecialchars($cohort['class_time'] ?? '—') ?>">
                             </div>
                         </div>
                     </div>

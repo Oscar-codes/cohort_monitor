@@ -74,6 +74,7 @@
                                     <option value="admin">Administrador</option>
                                     <option value="admissions_b2b">Admisiones B2B</option>
                                     <option value="admissions_b2c">Admisiones B2C</option>
+                                    <option value="finance">Finanzas</option>
                                     <option value="marketing">Marketing</option>
                                 </select>
                             </div>

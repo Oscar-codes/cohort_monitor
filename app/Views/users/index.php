@@ -6,6 +6,7 @@ $roleMeta = [
     'admin' => ['Administrador', 'bg-danger-subtle text-danger', 'bi-shield-lock', 'danger'],
     'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info', 'bi-building', 'info'],
     'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary', 'bi-people', 'primary'],
+    'finance' => ['Finanzas', 'bg-success-subtle text-success', 'bi-cash-stack', 'success'],
     'marketing' => ['Marketing', 'bg-warning-subtle text-warning', 'bi-megaphone', 'warning'],
 ];
 

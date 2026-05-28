@@ -57,6 +57,7 @@ class CohortController extends Controller
             'bootcampTypes'   => $bootcampTypes,
             'projectNames'    => $projectNames,
             'canCreate'       => Auth::canCreateCohort(),
+            'canEdit'         => Auth::canEditCohort(),
             'canDelete'       => Auth::canDeleteCohort(),
             'scripts'         => [
                 '/assets/js/cohorts-index.js',
@@ -168,6 +169,26 @@ class CohortController extends Controller
             return;
         }
 
+        $cohort = $this->cohortService->getCohortById((int) $id);
+        if (!$cohort) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Cohorte no encontrada.']);
+            return;
+        }
+
+        if (Auth::isAdmissionsB2B() && (int) ($cohort['b2b_admission_target'] ?? 0) <= 0) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Esta cohorte no pertenece al canal B2B para edición de admisiones.']);
+            return;
+        }
+
+        $b2cTarget = (int) ($cohort['b2c_admission_target'] ?? 0);
+        if (Auth::isAdmissionsB2C() && $b2cTarget <= 0) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Esta cohorte no pertenece al canal B2C para edición de admisiones.']);
+            return;
+        }
+
         $allData = $this->collectFormData();
         
         // Filter to only editable fields for this role (backend validation)
@@ -212,8 +233,11 @@ class CohortController extends Controller
             'correlative_number'       => (int) $this->input('correlative_number', '0'),
             'total_admission_target'   => (int) $this->input('total_admission_target', '0'),
             'b2b_admission_target'     => (int) $this->input('b2b_admission_target', '0'),
+            'b2c_admission_target'     => (int) $this->input('b2c_admission_target', '0'),
             'b2b_admissions'           => (int) $this->input('b2b_admissions', '0'),
             'b2c_admissions'           => (int) $this->input('b2c_admissions', '0'),
+            'financial_target_revenue' => (float) $this->input('financial_target_revenue', '0'),
+            'financial_actual_revenue' => (float) $this->input('financial_actual_revenue', '0'),
             'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
             'start_date'               => $this->input('start_date') ?: null,
             'end_date'                 => $this->input('end_date') ?: null,

@@ -10,6 +10,7 @@
         'admin'          => ['Administrador', 'bg-danger-subtle text-danger'],
         'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info'],
         'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary'],
+        'finance'        => ['Finanzas', 'bg-success-subtle text-success'],
         'marketing'      => ['Marketing', 'bg-warning-subtle text-warning'],
     ];
 

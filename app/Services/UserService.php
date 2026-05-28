@@ -14,7 +14,7 @@ class UserService
     private UserRepository  $userRepo;
     private AuditRepository $auditRepo;
 
-    private const VALID_ROLES = ['admin', 'admissions_b2b', 'admissions_b2c', 'marketing'];
+    private const VALID_ROLES = ['admin', 'admissions_b2b', 'admissions_b2c', 'finance', 'marketing'];
 
     public function __construct()
     {

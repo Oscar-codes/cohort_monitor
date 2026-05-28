@@ -206,6 +206,7 @@ class CohortService
         $numericFields = [
             'total_admission_target',
             'b2b_admission_target',
+            'b2c_admission_target',
             'b2b_admissions',
             'b2c_admissions',
             'correlative_number',
@@ -215,6 +216,15 @@ class CohortService
             if (array_key_exists($field, $data)) {
                 if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
                     throw new \InvalidArgumentException("El campo {$field} debe ser un número positivo.");
+                }
+            }
+        }
+
+        $revenueFields = ['financial_target_revenue', 'financial_actual_revenue'];
+        foreach ($revenueFields as $field) {
+            if (array_key_exists($field, $data)) {
+                if (!is_numeric($data[$field]) || (float) $data[$field] < 0) {
+                    throw new \InvalidArgumentException("El campo {$field} debe ser un monto positivo.");
                 }
             }
         }

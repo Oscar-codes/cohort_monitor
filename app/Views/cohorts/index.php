@@ -110,7 +110,7 @@ function businessModelBadge(array $cohort): string
 }
 
 /** Helper: render a single cohort row */
-function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): string
+function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool $canDelete): string
 {
     $id = (int) $cohort['id'];
     $name = htmlspecialchars($cohort['name']);
@@ -122,6 +122,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): s
     $badge = lifecycleBadge($cohort);
     $coach = htmlspecialchars($cohort['assigned_coach'] ?? '—');
     $schedule = htmlspecialchars($cohort['assigned_class_schedule'] ?? '—');
+    $classDays = htmlspecialchars($cohort['class_days'] ?? '—');
     $project = htmlspecialchars($cohort['related_project'] ?? '—');
     $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
     $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
@@ -134,6 +135,11 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): s
             . '<input type="hidden" name="_method" value="DELETE">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash"></i></button>'
             . '</form>';
+    }
+
+    $editBtn = '';
+    if ($canEdit) {
+        $editBtn = '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil"></i></a>';
     }
 
     return '<tr>'
@@ -150,18 +156,19 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canDelete): s
         . '</div></td>'
         . '<td class="d-none d-xl-table-cell"><small>' . $coach . '</small></td>'
         . '<td class="d-none d-xl-table-cell"><small>' . $schedule . '</small></td>'
+        . '<td class="d-none d-xl-table-cell"><small>' . $classDays . '</small></td>'
         . '<td class="d-none d-xl-table-cell text-center"><small>' . $b2b . ' / ' . $b2c . '</small></td>'
         . '<td class="d-none d-lg-table-cell text-center">' . $bModel . '</td>'
         . '<td class="text-end"><div class="action-buttons justify-content-end">'
             . '<a href="/cohorts/' . $id . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles"><i class="bi bi-eye"></i></a>'
-            . '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil"></i></a>'
+            . $editBtn
             . $deleteBtn
         . '</div></td>'
         . '</tr>';
 }
 
 /** Helper: render a mobile-first cohort card */
-function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canDelete): string
+function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canEdit, bool $canDelete): string
 {
     $id = (int) $cohort['id'];
     $name = htmlspecialchars($cohort['name']);
@@ -169,6 +176,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canDel
     $type = htmlspecialchars($cohort['bootcamp_type'] ?? 'Sin tipo');
     $coach = htmlspecialchars($cohort['assigned_coach'] ?? 'Sin coach');
     $project = htmlspecialchars($cohort['related_project'] ?? 'Sin proyecto');
+    $classDays = htmlspecialchars($cohort['class_days'] ?? '—');
     $startLabel = htmlspecialchars(formatDateLabel($cohort['start_date'] ?? null));
     $endLabel = htmlspecialchars(formatDateLabel($cohort['end_date'] ?? null));
     $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
@@ -185,6 +193,11 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canDel
             . '</form>';
     }
 
+    $editBtn = '';
+    if ($canEdit) {
+        $editBtn = '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil me-1"></i>Editar</a>';
+    }
+
     return '<article class="cohort-mobile-card">'
         . '<div class="cohort-mobile-card__top">'
             . '<div>'
@@ -197,6 +210,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canDel
             . '<span><i class="bi bi-layers"></i>' . $type . '</span>'
             . '<span><i class="bi bi-building"></i>' . $project . '</span>'
             . '<span><i class="bi bi-person"></i>' . $coach . '</span>'
+            . '<span><i class="bi bi-calendar-week"></i>' . $classDays . '</span>'
             . '<span><i class="bi bi-calendar-event"></i>' . $startLabel . ' - ' . $endLabel . '</span>'
         . '</div>'
         . '<div class="cohort-mobile-card__progress">'
@@ -205,7 +219,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canDel
         . '</div>'
         . '<div class="cohort-mobile-card__actions">'
             . '<a href="/cohorts/' . $id . $querySuffix . '" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Ver</a>'
-            . '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil me-1"></i>Editar</a>'
+            . $editBtn
             . $deleteBtn
         . '</div>'
     . '</article>';
@@ -215,6 +229,7 @@ $filters = $filters ?? [];
 $activeFilters = $activeFilters ?? [];
 $cohorts = isset($cohorts) && is_array($cohorts) ? $cohorts : [];
 $querySuffix = !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '';
+$canEditVal = $canEdit ?? false;
 $canDeleteVal = $canDelete ?? false;
 
 // Group cohorts by lifecycle status
@@ -459,7 +474,7 @@ $statusConfig = [
                 <div class="card table-card border-top-0 rounded-top-0">
                     <div class="cohort-mobile-list d-lg-none">
                         <?php foreach ($grouped[$status] as $cohort): ?>
-                            <?= renderCohortMobileCard($cohort, $querySuffix, $canDeleteVal) ?>
+                            <?= renderCohortMobileCard($cohort, $querySuffix, $canEditVal, $canDeleteVal) ?>
                         <?php endforeach; ?>
                     </div>
                     <div class="table-responsive d-none d-lg-block">
@@ -473,6 +488,7 @@ $statusConfig = [
                                     <th class="d-none d-lg-table-cell">Fechas</th>
                                     <th class="d-none d-xl-table-cell">Coach</th>
                                     <th class="d-none d-xl-table-cell">Horario</th>
+                                    <th class="d-none d-xl-table-cell">Dias</th>
                                     <th class="d-none d-xl-table-cell text-center">B2B/B2C</th>
                                     <th class="d-none d-lg-table-cell text-center">Business Model</th>
                                     <th class="text-end cohort-col-actions">Acciones</th>
@@ -480,7 +496,7 @@ $statusConfig = [
                             </thead>
                             <tbody>
                                 <?php foreach ($grouped[$status] as $cohort): ?>
-                                    <?= renderCohortRow($cohort, $querySuffix, $canDeleteVal) ?>
+                                    <?= renderCohortRow($cohort, $querySuffix, $canEditVal, $canDeleteVal) ?>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>

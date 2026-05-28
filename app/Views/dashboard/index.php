@@ -12,6 +12,7 @@
         'admin'          => ['Admin', 'danger', 'bi-shield-check'],
         'admissions_b2b' => ['B2B', 'info', 'bi-building'],
         'admissions_b2c' => ['B2C', 'primary', 'bi-person-check'],
+        'finance'        => ['Finanzas', 'success', 'bi-cash-stack'],
         'marketing'      => ['Marketing', 'warning', 'bi-megaphone'],
     ];
 

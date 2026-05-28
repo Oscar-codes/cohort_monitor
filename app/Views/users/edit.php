@@ -16,6 +16,7 @@ $roleLabels = [
     'admin' => 'Administrador',
     'admissions_b2b' => 'Admisiones B2B',
     'admissions_b2c' => 'Admisiones B2C',
+    'finance' => 'Finanzas',
     'marketing' => 'Marketing',
 ];
 ?>
@@ -95,6 +96,7 @@ $roleLabels = [
                                     <option value="admin" <?= $userRole === 'admin' ? 'selected' : '' ?>>Administrador</option>
                                     <option value="admissions_b2b" <?= $userRole === 'admissions_b2b' ? 'selected' : '' ?>>Admisiones B2B</option>
                                     <option value="admissions_b2c" <?= $userRole === 'admissions_b2c' ? 'selected' : '' ?>>Admisiones B2C</option>
+                                    <option value="finance" <?= $userRole === 'finance' ? 'selected' : '' ?>>Finanzas</option>
                                     <option value="marketing" <?= $userRole === 'marketing' ? 'selected' : '' ?>>Marketing</option>
                                 </select>
                             </div>
