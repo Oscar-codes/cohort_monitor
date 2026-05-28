@@ -21,12 +21,10 @@ class AuditRepository
     public function log(array $data): void
     {
         $entityRaw = $data['entity_key'] ?? ($data['entity_id'] ?? null);
-        $params = [
+        $baseParams = [
             'user_id'     => $data['user_id'] ?? null,
             'action'      => $data['action'],
             'entity_type' => $data['entity_type'],
-            'entity_key'  => $entityRaw !== null ? (string) $entityRaw : null,
-            'entity_id'   => $entityRaw !== null && is_numeric((string) $entityRaw) ? (int) $entityRaw : null,
             'old_values'  => isset($data['old_values']) ? json_encode($data['old_values']) : null,
             'new_values'  => isset($data['new_values']) ? json_encode($data['new_values']) : null,
             'ip'          => $_SERVER['REMOTE_ADDR'] ?? null,
@@ -36,7 +34,9 @@ class AuditRepository
             $this->db->execute(
                 'INSERT INTO audit_log (user_id, action, entity_type, entity_key, old_values, new_values, ip_address, created_at)
                  VALUES (:user_id, :action, :entity_type, :entity_key, :old_values, :new_values, :ip, NOW())',
-                $params
+                $baseParams + [
+                    'entity_key' => $entityRaw !== null ? (string) $entityRaw : null,
+                ]
             );
             return;
         }
@@ -44,7 +44,9 @@ class AuditRepository
         $this->db->execute(
             'INSERT INTO audit_log (user_id, action, entity_type, entity_id, old_values, new_values, ip_address, created_at)
              VALUES (:user_id, :action, :entity_type, :entity_id, :old_values, :new_values, :ip, NOW())',
-            $params
+            $baseParams + [
+                'entity_id' => $entityRaw !== null && is_numeric((string) $entityRaw) ? (int) $entityRaw : null,
+            ]
         );
     }
 
