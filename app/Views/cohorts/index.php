@@ -16,6 +16,20 @@ function formatDateLabel(?string $date): string
     return date('d M Y', strtotime($date));
 }
 
+/** Helper: format month label with intl fallback */
+function formatMonthLabel(int $timestamp): string
+{
+    if (class_exists('IntlDateFormatter')) {
+        $fmt = new IntlDateFormatter('es', IntlDateFormatter::NONE, IntlDateFormatter::NONE, null, null, 'MMM yyyy');
+        $formatted = $fmt->format($timestamp);
+        if (is_string($formatted) && $formatted !== '') {
+            return ucfirst($formatted);
+        }
+    }
+
+    return ucfirst(strtolower(date('M Y', $timestamp)));
+}
+
 /** Helper: derive lifecycle status based on dates */
 function cohortLifecycleStatus(array $cohort): string
 {
@@ -514,7 +528,7 @@ $statusConfig = [
                         $cursor = strtotime(date('Y-m-01', $ganttStartTs));
                         while ($cursor <= $ganttEndTs) {
                             $mKey = date('Y-m', $cursor);
-                            $mLabel = ucfirst((new IntlDateFormatter('es', IntlDateFormatter::NONE, IntlDateFormatter::NONE, null, null, 'MMM yyyy'))->format($cursor));
+                            $mLabel = formatMonthLabel($cursor);
                             $mStart = max($ganttStartTs, $cursor);
                             $mEnd   = min($ganttEndTs, strtotime(date('Y-m-t', $cursor)));
                             $mLeft  = (($mStart - $ganttStartTs) / 86400) / $ganttSpanDays * 100;

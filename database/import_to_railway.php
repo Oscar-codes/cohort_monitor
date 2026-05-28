@@ -1,7 +1,7 @@
 <?php
 /**
- * Script para importar SQL contra la BD configurada por entorno.
- * Usa mysqli::multi_query para ejecutar el archivo completo.
+ * Script para importar uno o varios archivos SQL contra la BD configurada por entorno.
+ * Usa mysqli::multi_query para ejecutar cada archivo completo.
  */
 
 $mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
@@ -15,10 +15,12 @@ $port     = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: ($parsed['port'] 
 $user     = getenv('DB_USERNAME') ?: getenv('MYSQLUSER') ?: ($parsed['user'] ?? 'root');
 $password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: ($parsed['pass'] ?? '');
 $database = getenv('DB_DATABASE') ?: getenv('MYSQLDATABASE') ?: ltrim((string) ($parsed['path'] ?? '/cohort_monitor'), '/');
-$dumpFile = __DIR__ . '/schema.sql';
-
-if (!empty($argv[1])) {
-    $dumpFile = $argv[1];
+$dumpFiles = array_slice($argv, 1);
+if (empty($dumpFiles)) {
+    $dumpFiles = [
+        __DIR__ . '/schema.sql',
+        __DIR__ . '/registros_cohort_plan.sql',
+    ];
 }
 
 echo "Conectando a MySQL ({$host}:{$port})...\n";
@@ -32,35 +34,36 @@ if ($mysqli->connect_error) {
 $mysqli->set_charset('utf8mb4');
 echo "Conexion exitosa!\n\n";
 
-// Leer el dump
-if (!file_exists($dumpFile)) {
-    die("No se encontro el archivo: {$dumpFile}\n");
-}
-
-$sql = file_get_contents($dumpFile);
-// Quitar BOM si existe (UTF-8 BOM = EF BB BF)
-$sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
-$size = round(strlen($sql) / 1024, 1);
-echo "Leyendo SQL ({$size} KB)...\n";
-echo "Importando...\n\n";
-
-// Ejecutar todo el dump con multi_query
-if ($mysqli->multi_query($sql)) {
-    $i = 0;
-    do {
-        if ($result = $mysqli->store_result()) {
-            $result->free();
-        }
-        $i++;
-    } while ($mysqli->more_results() && $mysqli->next_result());
-
-    if ($mysqli->errno) {
-        echo "Error en statement #{$i}: " . $mysqli->error . "\n";
-    } else {
-        echo "Importacion completada! ({$i} statements procesados)\n\n";
+foreach ($dumpFiles as $dumpFile) {
+    if (!file_exists($dumpFile)) {
+        die("No se encontro el archivo: {$dumpFile}\n");
     }
-} else {
-    die("Error ejecutando dump: " . $mysqli->error . "\n");
+
+    $sql = file_get_contents($dumpFile);
+    $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
+    $sql = preg_replace('/USE\s+cohort_monitor\s*;/i', 'USE ' . $database . ';', $sql);
+    $size = round(strlen($sql) / 1024, 1);
+    echo "Leyendo SQL ({$size} KB): " . basename($dumpFile) . "\n";
+    echo "Importando...\n\n";
+
+    if ($mysqli->multi_query($sql)) {
+        $i = 0;
+        do {
+            if ($result = $mysqli->store_result()) {
+                $result->free();
+            }
+            $i++;
+        } while ($mysqli->more_results() && $mysqli->next_result());
+
+        if ($mysqli->errno) {
+            echo "Error en statement #{$i}: " . $mysqli->error . "\n";
+            exit(1);
+        }
+
+        echo "Importacion completada! ({$i} statements procesados)\n\n";
+    } else {
+        die("Error ejecutando dump: " . $mysqli->error . "\n");
+    }
 }
 
 // Verificar tablas

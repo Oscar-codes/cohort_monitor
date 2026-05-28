@@ -47,7 +47,7 @@ class ReportController extends Controller
             'filters'      => $filters,
             'rawFilters'   => $this->allInput(),
             'reportData'   => $reportData,
-            'areaLabels'   => ReportService::AREA_LABELS,
+            'areaLabels'   => $this->reportService->getAreaLabels(),
             'statusLabels' => ReportService::STATUS_LABELS,
             'error'        => $error,
             'scripts'      => [

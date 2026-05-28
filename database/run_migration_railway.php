@@ -1,7 +1,7 @@
 <?php
 /**
- * Ejecuta el esquema SQL contra la BD configurada por entorno.
- * Uso: php run_migration_railway.php [archivo_sql]
+ * Ejecuta uno o varios archivos SQL contra la BD configurada por entorno.
+ * Uso: php run_migration_railway.php [archivo_sql_1] [archivo_sql_2] ...
  */
 
 $mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
@@ -16,11 +16,13 @@ $user     = getenv('DB_USERNAME') ?: getenv('MYSQLUSER') ?: ($parsed['user'] ?? 
 $password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: ($parsed['pass'] ?? '');
 $database = getenv('DB_DATABASE') ?: getenv('MYSQLDATABASE') ?: ltrim((string) ($parsed['path'] ?? '/cohort_monitor'), '/');
 
-// Archivo SQL por argumento o por defecto el nuevo esquema base
-$migrationFile = $argv[1] ?? __DIR__ . '/schema.sql';
-
-if (!file_exists($migrationFile)) {
-    die("No se encontró el archivo: {$migrationFile}\n");
+// Archivos SQL por argumentos o por defecto esquema + registros
+$migrationFiles = array_slice($argv, 1);
+if (empty($migrationFiles)) {
+    $migrationFiles = [
+        __DIR__ . '/schema.sql',
+        __DIR__ . '/registros_cohort_plan.sql',
+    ];
 }
 
 echo "Conectando a MySQL ({$host}:{$port})...\n";
@@ -32,31 +34,36 @@ if ($mysqli->connect_error) {
 $mysqli->set_charset('utf8mb4');
 echo "Conexión exitosa!\n\n";
 
-$sql = file_get_contents($migrationFile);
-$sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
-
-// Reemplazar "USE cohort_monitor;" por "USE railway;" para Railway
-$sql = preg_replace('/USE\s+cohort_monitor\s*;/i', 'USE railway;', $sql);
-
-$size = round(strlen($sql) / 1024, 1);
-echo "Ejecutando SQL: " . basename($migrationFile) . " ({$size} KB)...\n";
-
-if ($mysqli->multi_query($sql)) {
-    $i = 0;
-    do {
-        if ($result = $mysqli->store_result()) {
-            $result->free();
-        }
-        $i++;
-    } while ($mysqli->more_results() && $mysqli->next_result());
-
-    if ($mysqli->errno) {
-        echo "Error en statement #{$i}: " . $mysqli->error . "\n";
-    } else {
-        echo "Ejecución completada! ({$i} statements procesados)\n\n";
+foreach ($migrationFiles as $migrationFile) {
+    if (!file_exists($migrationFile)) {
+        die("No se encontró el archivo: {$migrationFile}\n");
     }
-} else {
-    die("Error ejecutando SQL: " . $mysqli->error . "\n");
+
+    $sql = file_get_contents($migrationFile);
+    $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
+    $sql = preg_replace('/USE\s+cohort_monitor\s*;/i', 'USE ' . $database . ';', $sql);
+
+    $size = round(strlen($sql) / 1024, 1);
+    echo "Ejecutando SQL: " . basename($migrationFile) . " ({$size} KB)...\n";
+
+    if ($mysqli->multi_query($sql)) {
+        $i = 0;
+        do {
+            if ($result = $mysqli->store_result()) {
+                $result->free();
+            }
+            $i++;
+        } while ($mysqli->more_results() && $mysqli->next_result());
+
+        if ($mysqli->errno) {
+            echo "Error en statement #{$i}: " . $mysqli->error . "\n";
+            exit(1);
+        }
+
+        echo "Ejecución completada! ({$i} statements procesados)\n\n";
+    } else {
+        die("Error ejecutando SQL: " . $mysqli->error . "\n");
+    }
 }
 
 // Verificar conteo de cohorts

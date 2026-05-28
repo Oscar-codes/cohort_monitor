@@ -21,13 +21,6 @@ class ReportService
 {
     private ReportRepository $reportRepo;
 
-    /** Human-readable labels for areas */
-    public const AREA_LABELS = [
-        'academic'   => 'Academic',
-        'marketing'  => 'Marketing',
-        'admissions' => 'Admissions',
-    ];
-
     /** Human-readable labels for training statuses */
     public const STATUS_LABELS = [
         'completed'   => 'Completado',
@@ -53,11 +46,12 @@ class ReportService
     public function validateFilters(array $raw): array
     {
         $filters = [];
+        $areaLabels = $this->getAreaLabels();
 
         // Area filter
         $area = trim($raw['area'] ?? '');
         if ($area !== '' && $area !== 'all') {
-            if (!array_key_exists($area, self::AREA_LABELS)) {
+            if (!array_key_exists($area, $areaLabels)) {
                 throw new \InvalidArgumentException('Área no válida.');
             }
             $filters['area'] = $area;
@@ -102,9 +96,10 @@ class ReportService
         $cohorts    = $this->reportRepo->getFilteredCohorts($filters);
         $byArea     = $this->reportRepo->getMetricsByArea($filters);
         $byStatus   = $this->reportRepo->getMetricsByStatus($filters);
+        $areaLabels = $this->getAreaLabels();
 
         // Ensure all areas are represented
-        foreach (array_keys(self::AREA_LABELS) as $area) {
+        foreach (array_keys($areaLabels) as $area) {
             if (!isset($byArea[$area])) {
                 $byArea[$area] = [
                     'area'        => $area,
@@ -123,6 +118,28 @@ class ReportService
         ];
     }
 
+    /**
+     * Get distinct area labels from database routes.
+     *
+     * @return array<string, string>
+     */
+    public function getAreaLabels(): array
+    {
+        $rows = $this->reportRepo->getDistinctAreas();
+        $labels = [];
+
+        foreach ($rows as $row) {
+            $key = strtolower((string) ($row['area'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+
+            $labels[$key] = ucwords($key);
+        }
+
+        return $labels;
+    }
+
     // ─── Excel Export ────────────────────────────────────────
 
     /**
@@ -134,6 +151,8 @@ class ReportService
      */
     public function exportToExcel(array $cohorts, array $filters = []): void
     {
+            $areaLabels = $this->getAreaLabels();
+
         if (empty($cohorts)) {
             throw new \RuntimeException('No hay datos para exportar.');
         }
@@ -150,7 +169,7 @@ class ReportService
 
         // ── Filter info ──────────────────────────────
         $filterText = 'Filtros: ';
-        $filterText .= !empty($filters['area']) ? 'Área: ' . (self::AREA_LABELS[$filters['area']] ?? $filters['area']) : 'Todas las áreas';
+        $filterText .= !empty($filters['area']) ? 'Área: ' . ($areaLabels[$filters['area']] ?? $filters['area']) : 'Todas las áreas';
         $filterText .= !empty($filters['date_from']) ? ' | Desde: ' . $filters['date_from'] : '';
         $filterText .= !empty($filters['date_to'])   ? ' | Hasta: ' . $filters['date_to']   : '';
         $filterText .= ' | Generado: ' . date('d/m/Y H:i');
@@ -182,7 +201,7 @@ class ReportService
         $row = 5;
         foreach ($cohorts as $c) {
             $sheet->setCellValue('A' . $row, $c['name']);
-            $sheet->setCellValue('B' . $row, self::AREA_LABELS[$c['area'] ?? ''] ?? ($c['area'] ?? '—'));
+            $sheet->setCellValue('B' . $row, $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? '—'));
             $sheet->setCellValue('C' . $row, self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? '—'));
             $sheet->setCellValue('D' . $row, $c['start_date'] ?? '—');
             $sheet->setCellValue('E' . $row, $c['end_date']   ?? '—');
@@ -279,10 +298,11 @@ class ReportService
         $cohorts  = $reportData['cohorts'];
         $byArea   = $reportData['byArea'];
         $byStatus = $reportData['byStatus'];
+        $areaLabels = $this->getAreaLabels();
 
         $filterDesc = [];
         if (!empty($filters['area'])) {
-            $filterDesc[] = 'Área: ' . (self::AREA_LABELS[$filters['area']] ?? $filters['area']);
+            $filterDesc[] = 'Área: ' . ($areaLabels[$filters['area']] ?? $filters['area']);
         } else {
             $filterDesc[] = 'Área: Todas';
         }
@@ -296,7 +316,7 @@ class ReportService
 
         // ── Area summary rows ────────────
         $areaSummaryHtml = '';
-        foreach (self::AREA_LABELS as $key => $label) {
+        foreach ($areaLabels as $key => $label) {
             $a = $byArea[$key] ?? ['total' => 0, 'at_risk' => 0, 'completed' => 0, 'in_progress' => 0];
             $areaSummaryHtml .= "<tr>
                 <td><strong>{$label}</strong></td>
@@ -310,7 +330,7 @@ class ReportService
         // ── Cohort rows ─────────────────
         $cohortRowsHtml = '';
         foreach ($cohorts as $c) {
-            $areaLabel  = self::AREA_LABELS[$c['area'] ?? ''] ?? ($c['area'] ?? '—');
+            $areaLabel  = $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? '—');
             $statusLabel = self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? '—');
             $riskLabel  = ($c['at_risk'] ?? 0) ? '<span style="color:#dc3545;font-weight:bold">Sí</span>' : 'No';
             $riskBg     = ($c['at_risk'] ?? 0) ? 'background-color:#fff3cd;' : '';
