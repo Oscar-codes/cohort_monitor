@@ -73,16 +73,24 @@ class AuthService
         // Store in session
         Auth::login($user);
 
-        // Update last_login timestamp
-        $this->userRepo()->updateLastLogin((int) $user['id']);
+        // Update last_login timestamp (best effort)
+        try {
+            $this->userRepo()->updateLastLogin((int) $user['id']);
+        } catch (\Throwable $e) {
+            error_log('[auth] updateLastLogin failed: ' . $e->getMessage());
+        }
 
-        // Audit
-        $this->auditRepo()->log([
-            'user_id'     => $user['id'],
-            'action'      => 'login',
-            'entity_type' => 'user',
-            'entity_key'  => (string) $user['id'],
-        ]);
+        // Audit (best effort)
+        try {
+            $this->auditRepo()->log([
+                'user_id'     => $user['id'],
+                'action'      => 'login',
+                'entity_type' => 'user',
+                'entity_key'  => (string) $user['id'],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[auth] login audit failed: ' . $e->getMessage());
+        }
 
         return $user;
     }
