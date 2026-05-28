@@ -85,6 +85,12 @@
                     <span>Reportes</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/cohorts/finance" class="nav-link <?= $active('cohorts-finance') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Finanzas Cohort Plan">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Finanzas</span>
+                </a>
+            </li>
 
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-section-label"><span>Administracion</span></li>

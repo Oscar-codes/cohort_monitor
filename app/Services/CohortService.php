@@ -62,6 +62,28 @@ class CohortService
     }
 
     /**
+     * Financial aggregation by month (filtered).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFinancialByMonth(array $filters = []): array
+    {
+        $normalizedFilters = $this->normalizeFilters($filters);
+        return $this->cohortRepo->getFinancialByMonth($normalizedFilters);
+    }
+
+    /**
+     * Financial aggregation by bootcamp (filtered).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFinancialByBootcamp(array $filters = []): array
+    {
+        $normalizedFilters = $this->normalizeFilters($filters);
+        return $this->cohortRepo->getFinancialByBootcamp($normalizedFilters);
+    }
+
+    /**
      * Get a single cohort by ID with calculated milestone dates.
      */
     public function getCohortById(int $id): ?array

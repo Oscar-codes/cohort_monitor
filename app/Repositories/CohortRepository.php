@@ -304,6 +304,77 @@ class CohortRepository
         ');
     }
 
+    /**
+     * Financial aggregation by cohort start month.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFinancialByMonth(array $filters = []): array
+    {
+        $sql = '
+            SELECT
+                DATE_FORMAT(cs.start_date, "%Y-%m") AS period_key,
+                DATE_FORMAT(cs.start_date, "%b %Y") AS period_label,
+                COALESCE(SUM(m.target_revenue), 0) AS target_revenue,
+                COALESCE(SUM(m.actual_revenue), 0) AS actual_revenue,
+                COUNT(DISTINCT cs.id) AS cohorts_total
+            FROM cohort_sections cs
+            LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
+            LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
+            LEFT JOIN projects p ON p.id = cs.project_id
+            LEFT JOIN (
+                SELECT section_id, SUM(target_revenue) AS target_revenue, SUM(actual_revenue) AS actual_revenue
+                FROM cohort_section_memberships
+                GROUP BY section_id
+            ) m ON m.section_id = cs.id';
+
+        [$where, $params] = $this->buildFilters($filters);
+        if (!empty($where)) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= '
+            GROUP BY DATE_FORMAT(cs.start_date, "%Y-%m"), DATE_FORMAT(cs.start_date, "%b %Y")
+            ORDER BY DATE_FORMAT(cs.start_date, "%Y-%m") ASC';
+
+        return $this->db->query($sql, $params);
+    }
+
+    /**
+     * Financial aggregation by bootcamp.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFinancialByBootcamp(array $filters = []): array
+    {
+        $sql = '
+            SELECT
+                COALESCE(b.bootcamp_name, bf.family_name, "Sin bootcamp") AS bootcamp_name,
+                COALESCE(SUM(m.target_revenue), 0) AS target_revenue,
+                COALESCE(SUM(m.actual_revenue), 0) AS actual_revenue,
+                COUNT(DISTINCT cs.id) AS cohorts_total
+            FROM cohort_sections cs
+            LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
+            LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
+            LEFT JOIN projects p ON p.id = cs.project_id
+            LEFT JOIN (
+                SELECT section_id, SUM(target_revenue) AS target_revenue, SUM(actual_revenue) AS actual_revenue
+                FROM cohort_section_memberships
+                GROUP BY section_id
+            ) m ON m.section_id = cs.id';
+
+        [$where, $params] = $this->buildFilters($filters);
+        if (!empty($where)) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= '
+            GROUP BY COALESCE(b.bootcamp_name, bf.family_name, "Sin bootcamp")
+            ORDER BY actual_revenue DESC, bootcamp_name ASC';
+
+        return $this->db->query($sql, $params);
+    }
+
     public function findActiveCoaches(array $filters = []): array
     {
         $sql = $this->baseSelect() . '

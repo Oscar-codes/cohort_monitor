@@ -39,6 +39,16 @@ if (!function_exists('masterCurrency')) {
         <p class="cohorts-hero__copy">Tablero unificado para monitorear admisiones, finanzas, calendario y responsables por cohorte.</p>
     </div>
     <div class="cohorts-hero__actions">
+        <?php $querySuffix = !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : ''; ?>
+        <a href="/cohorts/master/export/csv<?= htmlspecialchars($querySuffix) ?>" class="btn btn-outline-secondary">
+            <i class="bi bi-filetype-csv me-1"></i> CSV
+        </a>
+        <a href="/cohorts/master/export/xlsx<?= htmlspecialchars($querySuffix) ?>" class="btn btn-outline-secondary">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> XLSX
+        </a>
+        <a href="/cohorts/finance<?= htmlspecialchars($querySuffix) ?>" class="btn btn-light">
+            <i class="bi bi-cash-coin me-1"></i> Ver finanzas
+        </a>
         <a href="/cohorts" class="btn btn-outline-secondary">
             <i class="bi bi-list-ul me-1"></i> Vista Cohortes
         </a>
@@ -188,6 +198,7 @@ if (!function_exists('masterCurrency')) {
                         <th>Horario</th>
                         <th>Admisiones</th>
                         <th>Revenue</th>
+                        <th>Semaforo</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -206,6 +217,16 @@ if (!function_exists('masterCurrency')) {
                         $targetRevenue = max(0.0, (float) ($cohort['financial_target_revenue'] ?? 0));
                         $actualRevenue = max(0.0, (float) ($cohort['financial_actual_revenue'] ?? 0));
                         $revenueProgress = $targetRevenue > 0 ? min(100, (int) round(($actualRevenue / $targetRevenue) * 100)) : 0;
+
+                        $semaphore = 'Alto riesgo';
+                        $semaphoreClass = 'bg-danger-subtle text-danger';
+                        if ($admissionProgress >= 90 && $revenueProgress >= 90) {
+                            $semaphore = 'Saludable';
+                            $semaphoreClass = 'bg-success-subtle text-success';
+                        } elseif ($admissionProgress >= 70 || $revenueProgress >= 70) {
+                            $semaphore = 'Atencion';
+                            $semaphoreClass = 'bg-warning-subtle text-warning';
+                        }
                         ?>
                         <tr>
                             <td>
@@ -236,6 +257,10 @@ if (!function_exists('masterCurrency')) {
                                     <span><?= $revenueProgress ?>%</span>
                                 </div>
                                 <div class="dashboard-mini-progress"><span data-style-width="<?= $revenueProgress ?>%"></span></div>
+                            </td>
+                            <td>
+                                <span class="badge <?= $semaphoreClass ?>"><?= htmlspecialchars($semaphore) ?></span>
+                                <div class="small text-muted mt-1">Adm <?= $admissionProgress ?>% | Rev <?= $revenueProgress ?>%</div>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border"><?= htmlspecialchars((string) ($cohort['training_status'] ?? '—')) ?></span>

@@ -6,6 +6,10 @@ use App\Core\Controller;
 use App\Core\Auth;
 use App\Services\CohortService;
 use App\Services\AlertService;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
  * CohortController
@@ -124,6 +128,196 @@ class CohortController extends Controller
             'totalRevenueActual'     => $totalRevenueActual,
             'atRiskAdmissionsCount'  => $atRiskAdmissionsCount,
         ]);
+    }
+
+    /**
+     * Financial dashboard with month and bootcamp breakdown.
+     */
+    public function finance(): void
+    {
+        $filters = [
+            'search'          => (string) $this->input('search', ''),
+            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+            'related_project' => (string) $this->input('related_project', ''),
+            'start_date'      => (string) $this->input('start_date', ''),
+            'end_date'        => (string) $this->input('end_date', ''),
+            'business_model'  => (string) $this->input('business_model', ''),
+            'cohort_status'   => (string) $this->input('cohort_status', ''),
+        ];
+
+        $bootcampTypes = $this->cohortService->getBootcampTypes();
+        $projectNames = $this->cohortService->getProjectNames();
+        $activeFilters = array_filter($filters, static fn($value) => $value !== '');
+
+        $byMonth = $this->cohortService->getFinancialByMonth($filters);
+        $byBootcamp = $this->cohortService->getFinancialByBootcamp($filters);
+
+        $totalTarget = 0.0;
+        $totalActual = 0.0;
+        foreach ($byMonth as $row) {
+            $totalTarget += max(0.0, (float) ($row['target_revenue'] ?? 0));
+            $totalActual += max(0.0, (float) ($row['actual_revenue'] ?? 0));
+        }
+
+        $this->view('cohorts.finance', [
+            'pageTitle'      => 'Finanzas Cohort Plan',
+            'activePage'     => 'cohorts-finance',
+            'filters'        => $filters,
+            'activeFilters'  => $activeFilters,
+            'bootcampTypes'  => $bootcampTypes,
+            'projectNames'   => $projectNames,
+            'byMonth'        => $byMonth,
+            'byBootcamp'     => $byBootcamp,
+            'totalTarget'    => $totalTarget,
+            'totalActual'    => $totalActual,
+        ]);
+    }
+
+    /**
+     * Export the master view with current filters to CSV.
+     */
+    public function exportMasterCsv(): void
+    {
+        $filters = [
+            'search'          => (string) $this->input('search', ''),
+            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+            'related_project' => (string) $this->input('related_project', ''),
+            'start_date'      => (string) $this->input('start_date', ''),
+            'end_date'        => (string) $this->input('end_date', ''),
+            'business_model'  => (string) $this->input('business_model', ''),
+            'cohort_status'   => (string) $this->input('cohort_status', ''),
+        ];
+        $cohorts = $this->cohortService->getFilteredCohorts($filters);
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="plan_maestro_cohort_' . date('Ymd_His') . '.csv"');
+
+        $output = fopen('php://output', 'wb');
+        if ($output === false) {
+            http_response_code(500);
+            exit;
+        }
+
+        // UTF-8 BOM for Excel compatibility
+        fwrite($output, "\xEF\xBB\xBF");
+
+        fputcsv($output, [
+            'Codigo', 'Cohorte', 'Bootcamp', 'Proyecto', 'Coach', 'Dias', 'Horario',
+            'Meta Total', 'Meta B2B', 'Meta B2C', 'Actual B2B', 'Actual B2C', 'Actual Total',
+            'Revenue Meta', 'Revenue Actual', 'Estado', 'Inicio', 'Fin'
+        ]);
+
+        foreach ($cohorts as $cohort) {
+            $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
+            $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
+            fputcsv($output, [
+                (string) ($cohort['cohort_code'] ?? ''),
+                (string) ($cohort['name'] ?? ''),
+                (string) ($cohort['bootcamp_type'] ?? ''),
+                (string) ($cohort['related_project'] ?? ''),
+                (string) ($cohort['assigned_coach'] ?? ''),
+                (string) ($cohort['class_days'] ?? ''),
+                (string) ($cohort['class_time'] ?? ''),
+                (int) ($cohort['total_admission_target'] ?? 0),
+                (int) ($cohort['b2b_admission_target'] ?? 0),
+                (int) ($cohort['b2c_admission_target'] ?? 0),
+                $b2b,
+                $b2c,
+                $b2b + $b2c,
+                (float) ($cohort['financial_target_revenue'] ?? 0),
+                (float) ($cohort['financial_actual_revenue'] ?? 0),
+                (string) ($cohort['training_status'] ?? ''),
+                (string) ($cohort['start_date'] ?? ''),
+                (string) ($cohort['end_date'] ?? ''),
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Export the master view with current filters to XLSX.
+     */
+    public function exportMasterXlsx(): void
+    {
+        $filters = [
+            'search'          => (string) $this->input('search', ''),
+            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+            'related_project' => (string) $this->input('related_project', ''),
+            'start_date'      => (string) $this->input('start_date', ''),
+            'end_date'        => (string) $this->input('end_date', ''),
+            'business_model'  => (string) $this->input('business_model', ''),
+            'cohort_status'   => (string) $this->input('cohort_status', ''),
+        ];
+        $cohorts = $this->cohortService->getFilteredCohorts($filters);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Plan Maestro');
+
+        $headers = [
+            'Codigo', 'Cohorte', 'Bootcamp', 'Proyecto', 'Coach', 'Dias', 'Horario',
+            'Meta Total', 'Meta B2B', 'Meta B2C', 'Actual B2B', 'Actual B2C', 'Actual Total',
+            'Revenue Meta', 'Revenue Actual', 'Estado', 'Inicio', 'Fin'
+        ];
+
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+
+        $sheet->getStyle('A1:R1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0D6EFD'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+            ],
+        ]);
+
+        $row = 2;
+        foreach ($cohorts as $cohort) {
+            $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
+            $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
+
+            $sheet->setCellValue('A' . $row, (string) ($cohort['cohort_code'] ?? ''));
+            $sheet->setCellValue('B' . $row, (string) ($cohort['name'] ?? ''));
+            $sheet->setCellValue('C' . $row, (string) ($cohort['bootcamp_type'] ?? ''));
+            $sheet->setCellValue('D' . $row, (string) ($cohort['related_project'] ?? ''));
+            $sheet->setCellValue('E' . $row, (string) ($cohort['assigned_coach'] ?? ''));
+            $sheet->setCellValue('F' . $row, (string) ($cohort['class_days'] ?? ''));
+            $sheet->setCellValue('G' . $row, (string) ($cohort['class_time'] ?? ''));
+            $sheet->setCellValue('H' . $row, (int) ($cohort['total_admission_target'] ?? 0));
+            $sheet->setCellValue('I' . $row, (int) ($cohort['b2b_admission_target'] ?? 0));
+            $sheet->setCellValue('J' . $row, (int) ($cohort['b2c_admission_target'] ?? 0));
+            $sheet->setCellValue('K' . $row, $b2b);
+            $sheet->setCellValue('L' . $row, $b2c);
+            $sheet->setCellValue('M' . $row, $b2b + $b2c);
+            $sheet->setCellValue('N' . $row, (float) ($cohort['financial_target_revenue'] ?? 0));
+            $sheet->setCellValue('O' . $row, (float) ($cohort['financial_actual_revenue'] ?? 0));
+            $sheet->setCellValue('P' . $row, (string) ($cohort['training_status'] ?? ''));
+            $sheet->setCellValue('Q' . $row, (string) ($cohort['start_date'] ?? ''));
+            $sheet->setCellValue('R' . $row, (string) ($cohort['end_date'] ?? ''));
+
+            $row++;
+        }
+
+        foreach (range('A', 'R') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'plan_maestro_cohort_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 
     /**
