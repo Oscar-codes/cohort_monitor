@@ -8,6 +8,7 @@
     let data = {};
     let monthlyChart = null;
     let bootcampChart = null;
+    let persistTimeout = null;
 
     try {
         const raw = document.getElementById('cohort-finance-data');
@@ -52,6 +53,10 @@
     }
 
     function buildForecast(actual, horizon) {
+        return buildMovingAverageForecast(actual, horizon);
+    }
+
+    function buildMovingAverageForecast(actual, horizon) {
         const steps = Math.max(0, Number(horizon || 0));
         if (steps <= 0 || !Array.isArray(actual) || actual.length === 0) {
             return [];
@@ -69,6 +74,83 @@
         return forecast;
     }
 
+    function buildLinearTrendForecast(actual, horizon) {
+        const steps = Math.max(0, Number(horizon || 0));
+        if (steps <= 0 || !Array.isArray(actual) || actual.length === 0) {
+            return [];
+        }
+
+        const points = actual
+            .map(Number)
+            .map((y, index) => ({ x: index + 1, y }))
+            .filter(point => Number.isFinite(point.y));
+
+        if (points.length === 0) {
+            return [];
+        }
+
+        if (points.length === 1) {
+            return new Array(steps).fill(points[0].y);
+        }
+
+        const n = points.length;
+        let sumX = 0;
+        let sumY = 0;
+        let sumXY = 0;
+        let sumX2 = 0;
+
+        points.forEach(point => {
+            sumX += point.x;
+            sumY += point.y;
+            sumXY += point.x * point.y;
+            sumX2 += point.x * point.x;
+        });
+
+        const denominator = (n * sumX2) - (sumX * sumX);
+        const slope = denominator === 0 ? 0 : ((n * sumXY) - (sumX * sumY)) / denominator;
+        const intercept = (sumY - (slope * sumX)) / n;
+
+        const forecast = [];
+        for (let i = 1; i <= steps; i++) {
+            const x = n + i;
+            forecast.push(Math.max(0, intercept + (slope * x)));
+        }
+
+        return forecast;
+    }
+
+    function schedulePreferencePersist() {
+        if (persistTimeout) {
+            clearTimeout(persistTimeout);
+        }
+
+        persistTimeout = setTimeout(() => {
+            const topNEl = document.getElementById('financeTopN');
+            const horizonEl = document.getElementById('financeForecastHorizon');
+            const methodEl = document.getElementById('financeForecastMethod');
+
+            if (!topNEl || !horizonEl || !methodEl) {
+                return;
+            }
+
+            const body = new URLSearchParams();
+            body.set('top_n', String(topNEl.value || '10'));
+            body.set('forecast_horizon', String(horizonEl.value || '3'));
+            body.set('forecast_method', String(methodEl.value || 'moving_avg'));
+
+            fetch('/cohorts/finance/preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).catch(() => {
+                // Ignore persistence errors to keep chart interactions responsive.
+            });
+        }, 250);
+    }
+
     function renderMonthlyChart() {
         const el = document.getElementById('financeMonthlyChart');
         if (!el || !hasApex()) return;
@@ -79,8 +161,12 @@
         const actual = Array.isArray(monthly.actual) ? monthly.actual.map(Number) : [];
 
         const horizonEl = document.getElementById('financeForecastHorizon');
+        const methodEl = document.getElementById('financeForecastMethod');
         const horizon = horizonEl ? Number(horizonEl.value || 0) : 0;
-        const forecast = buildForecast(actual, horizon);
+        const method = methodEl ? String(methodEl.value || 'moving_avg') : 'moving_avg';
+        const forecast = method === 'linear_trend'
+            ? buildLinearTrendForecast(actual, horizon)
+            : buildForecast(actual, horizon);
 
         const extendedLabels = labels.slice();
         for (let i = 0; i < forecast.length; i++) {
@@ -221,12 +307,25 @@
     function init() {
         const topNEl = document.getElementById('financeTopN');
         const horizonEl = document.getElementById('financeForecastHorizon');
+        const methodEl = document.getElementById('financeForecastMethod');
 
         if (topNEl) {
-            topNEl.addEventListener('change', renderBootcampChart);
+            topNEl.addEventListener('change', () => {
+                renderBootcampChart();
+                schedulePreferencePersist();
+            });
         }
         if (horizonEl) {
-            horizonEl.addEventListener('change', renderMonthlyChart);
+            horizonEl.addEventListener('change', () => {
+                renderMonthlyChart();
+                schedulePreferencePersist();
+            });
+        }
+        if (methodEl) {
+            methodEl.addEventListener('change', () => {
+                renderMonthlyChart();
+                schedulePreferencePersist();
+            });
         }
 
         renderMonthlyChart();

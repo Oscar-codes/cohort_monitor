@@ -6,6 +6,11 @@ $byBootcamp = isset($byBootcamp) && is_array($byBootcamp) ? $byBootcamp : [];
 $filters = isset($filters) && is_array($filters) ? $filters : [];
 $activeFilters = isset($activeFilters) && is_array($activeFilters) ? $activeFilters : [];
 $financeChartData = isset($financeChartData) && is_array($financeChartData) ? $financeChartData : [];
+$chartPrefs = isset($chartPrefs) && is_array($chartPrefs) ? $chartPrefs : [];
+
+$selectedTopN = (int) ($chartPrefs['top_n'] ?? 10);
+$selectedForecastHorizon = (int) ($chartPrefs['forecast_horizon'] ?? 3);
+$selectedForecastMethod = (string) ($chartPrefs['forecast_method'] ?? 'moving_avg');
 
 $totalTarget = max(0.0, (float) ($totalTarget ?? 0));
 $totalActual = max(0.0, (float) ($totalActual ?? 0));
@@ -84,11 +89,16 @@ if (!function_exists('moneyFmt')) {
                     <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
+                    <label for="financeForecastMethod" class="form-label mb-0 small text-muted">Metodo</label>
+                    <select id="financeForecastMethod" class="form-select form-select-sm" style="min-width: 140px;">
+                        <option value="moving_avg" <?= $selectedForecastMethod === 'moving_avg' ? 'selected' : '' ?>>Media movil</option>
+                        <option value="linear_trend" <?= $selectedForecastMethod === 'linear_trend' ? 'selected' : '' ?>>Tendencia lineal</option>
+                    </select>
                     <label for="financeForecastHorizon" class="form-label mb-0 small text-muted">Proyeccion</label>
                     <select id="financeForecastHorizon" class="form-select form-select-sm" style="min-width: 110px;">
-                        <option value="0">Sin proyeccion</option>
-                        <option value="3" selected>+3 periodos</option>
-                        <option value="6">+6 periodos</option>
+                        <option value="0" <?= $selectedForecastHorizon === 0 ? 'selected' : '' ?>>Sin proyeccion</option>
+                        <option value="3" <?= $selectedForecastHorizon === 3 ? 'selected' : '' ?>>+3 periodos</option>
+                        <option value="6" <?= $selectedForecastHorizon === 6 ? 'selected' : '' ?>>+6 periodos</option>
                     </select>
                 </div>
             </div>
@@ -105,9 +115,9 @@ if (!function_exists('moneyFmt')) {
                 <div class="d-flex align-items-center gap-2">
                     <label for="financeTopN" class="form-label mb-0 small text-muted">Top</label>
                     <select id="financeTopN" class="form-select form-select-sm" style="min-width: 90px;">
-                        <option value="5">Top 5</option>
-                        <option value="10" selected>Top 10</option>
-                        <option value="15">Top 15</option>
+                        <option value="5" <?= $selectedTopN === 5 ? 'selected' : '' ?>>Top 5</option>
+                        <option value="10" <?= $selectedTopN === 10 ? 'selected' : '' ?>>Top 10</option>
+                        <option value="15" <?= $selectedTopN === 15 ? 'selected' : '' ?>>Top 15</option>
                     </select>
                 </div>
             </div>

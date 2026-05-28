@@ -135,6 +135,8 @@ class CohortController extends Controller
      */
     public function finance(): void
     {
+        $chartPrefs = $this->resolveFinanceChartPreferences();
+
         $filters = [
             'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
@@ -188,6 +190,7 @@ class CohortController extends Controller
                     $byBootcamp
                 )),
             ],
+            'preferences' => $chartPrefs,
         ];
 
         $this->view('cohorts.finance', [
@@ -201,6 +204,7 @@ class CohortController extends Controller
             'byBootcamp'     => $byBootcamp,
             'totalTarget'    => $totalTarget,
             'totalActual'    => $totalActual,
+            'chartPrefs'     => $chartPrefs,
             'financeChartData' => $financeChartData,
             'styles' => [
                 '/assets/vendor/apexcharts/apexcharts.css',
@@ -210,6 +214,79 @@ class CohortController extends Controller
                 '/assets/js/cohorts-finance.js',
             ],
         ]);
+    }
+
+    /**
+     * Persist finance chart preferences in session for the current user.
+     */
+    public function updateFinancePreferences(): void
+    {
+        $prefs = $_SESSION['finance_chart_preferences'] ?? [
+            'top_n' => 10,
+            'forecast_horizon' => 3,
+            'forecast_method' => 'moving_avg',
+        ];
+
+        $prefs['top_n'] = $this->sanitizeTopN($_POST['top_n'] ?? ($prefs['top_n'] ?? 10));
+        $prefs['forecast_horizon'] = $this->sanitizeForecastHorizon($_POST['forecast_horizon'] ?? ($prefs['forecast_horizon'] ?? 3));
+        $prefs['forecast_method'] = $this->sanitizeForecastMethod($_POST['forecast_method'] ?? ($prefs['forecast_method'] ?? 'moving_avg'));
+
+        $_SESSION['finance_chart_preferences'] = $prefs;
+
+        $this->json([
+            'ok' => true,
+            'preferences' => $prefs,
+        ]);
+    }
+
+    /**
+     * Resolve and normalize chart preferences, allowing URL overrides.
+     */
+    private function resolveFinanceChartPreferences(): array
+    {
+        $prefs = $_SESSION['finance_chart_preferences'] ?? [
+            'top_n' => 10,
+            'forecast_horizon' => 3,
+            'forecast_method' => 'moving_avg',
+        ];
+
+        $prefs['top_n'] = $this->sanitizeTopN($prefs['top_n'] ?? 10);
+        $prefs['forecast_horizon'] = $this->sanitizeForecastHorizon($prefs['forecast_horizon'] ?? 3);
+        $prefs['forecast_method'] = $this->sanitizeForecastMethod($prefs['forecast_method'] ?? 'moving_avg');
+
+        if (array_key_exists('top_n', $_GET)) {
+            $prefs['top_n'] = $this->sanitizeTopN($_GET['top_n']);
+        }
+        if (array_key_exists('forecast_horizon', $_GET)) {
+            $prefs['forecast_horizon'] = $this->sanitizeForecastHorizon($_GET['forecast_horizon']);
+        }
+        if (array_key_exists('forecast_method', $_GET)) {
+            $prefs['forecast_method'] = $this->sanitizeForecastMethod($_GET['forecast_method']);
+        }
+
+        $_SESSION['finance_chart_preferences'] = $prefs;
+
+        return $prefs;
+    }
+
+    private function sanitizeTopN(mixed $value): int
+    {
+        $allowed = [5, 10, 15];
+        $parsed = (int) $value;
+        return in_array($parsed, $allowed, true) ? $parsed : 10;
+    }
+
+    private function sanitizeForecastHorizon(mixed $value): int
+    {
+        $allowed = [0, 3, 6];
+        $parsed = (int) $value;
+        return in_array($parsed, $allowed, true) ? $parsed : 3;
+    }
+
+    private function sanitizeForecastMethod(mixed $value): string
+    {
+        $parsed = (string) $value;
+        return in_array($parsed, ['moving_avg', 'linear_trend'], true) ? $parsed : 'moving_avg';
     }
 
     /**

@@ -43,6 +43,7 @@ $router->get('/cohorts/master',           [CohortController::class, 'master'],  
 $router->get('/cohorts/master/export/csv',  [CohortController::class, 'exportMasterCsv'],  'cohorts.master.export.csv');
 $router->get('/cohorts/master/export/xlsx', [CohortController::class, 'exportMasterXlsx'], 'cohorts.master.export.xlsx');
 $router->get('/cohorts/finance',          [CohortController::class, 'finance'], 'cohorts.finance');
+$router->post('/cohorts/finance/preferences', [CohortController::class, 'updateFinancePreferences'], 'cohorts.finance.preferences');
 $router->get('/cohorts/create',           [CohortController::class, 'create'],  'cohorts.create');
 $router->get('/cohorts/import',           [ImportCohortController::class, 'showForm'],         'cohorts.import');
 $router->post('/cohorts/import',          [ImportCohortController::class, 'handleImport'],     'cohorts.import.post');
