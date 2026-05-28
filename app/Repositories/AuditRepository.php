@@ -93,7 +93,7 @@ class AuditRepository
         }
 
         try {
-            $rows = $this->db->query('SHOW COLUMNS FROM audit_log LIKE :column', ['column' => 'entity_key']);
+            $rows = $this->db->query("SHOW COLUMNS FROM audit_log LIKE 'entity_key'");
             $this->usesEntityKey = !empty($rows);
         } catch (\Throwable $e) {
             $this->usesEntityKey = false;

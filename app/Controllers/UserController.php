@@ -101,6 +101,10 @@ class UserController extends Controller
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
             $this->redirect('/users/' . $id . '/edit');
+        } catch (\Throwable $e) {
+            $this->logException($e, 'User update failed');
+            Auth::flash('error', 'No se pudo actualizar el usuario en este momento. Intenta nuevamente.');
+            $this->redirect('/users/' . $id . '/edit');
         }
     }
 
