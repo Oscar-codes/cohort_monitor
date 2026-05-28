@@ -100,6 +100,18 @@
                     <span>Usuarios</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/admin/audit-log" class="nav-link <?= $active('admin-audit-log') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Bitacora de auditoria">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Bitacora</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/health" class="nav-link <?= $active('admin-health') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Estado del sistema">
+                    <i class="bi bi-heart-pulse"></i>
+                    <span>Estado Sistema</span>
+                </a>
+            </li>
             <?php endif; ?>
 
             <li class="nav-section-label"><span>Cuenta</span></li>

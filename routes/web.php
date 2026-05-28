@@ -23,6 +23,7 @@ use App\Controllers\ReportController;
 use App\Controllers\ImportCohortController;
 use App\Controllers\AccountController;
 use App\Controllers\CoachCalendarController;
+use App\Controllers\AdminController;
 
 // ─── Auth (public) ───────────────────────────────────────────
 $router->get('/login',  [AuthController::class, 'showLogin'], 'auth.login');
@@ -66,6 +67,8 @@ $router->put('/users/{id}',        [UserController::class, 'update'],  'users.up
 $router->delete('/users/{id}',     [UserController::class, 'destroy'], 'users.destroy');
 $router->post('/users/{id}/toggle-status',  [UserController::class, 'toggleStatus'],  'users.toggle');
 $router->post('/users/{id}/reset-password', [UserController::class, 'resetPassword'], 'users.reset');
+$router->get('/admin/audit-log', [AdminController::class, 'auditLog'], 'admin.audit-log');
+$router->get('/admin/health', [AdminController::class, 'health'], 'admin.health');
 
 // ─── Marketing (admin + marketing) ─────────────────────────
 $router->get('/marketing',                    [MarketingController::class, 'index'],  'marketing.index');

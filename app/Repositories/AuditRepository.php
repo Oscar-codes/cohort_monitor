@@ -53,12 +53,95 @@ class AuditRepository
     /** Recent audit entries (limit). */
     public function findRecent(int $limit = 50): array
     {
+        $entityRefSelect = $this->auditUsesEntityKey()
+            ? 'al.entity_key AS entity_ref'
+            : 'CAST(al.entity_id AS CHAR) AS entity_ref';
+
         return $this->db->query(
-            'SELECT al.*, u.full_name AS user_name, u.role AS user_role
+            'SELECT al.*, ' . $entityRefSelect . ', u.full_name AS user_name, u.role AS user_role
              FROM audit_log al
              LEFT JOIN users u ON u.id = al.user_id
              ORDER BY al.created_at DESC
              LIMIT ' . (int) $limit
+        );
+    }
+
+    /**
+     * Filtered audit entries for admin view.
+     */
+    public function findFiltered(array $filters, int $limit = 200): array
+    {
+        $where = ['1=1'];
+        $params = [];
+
+        if (!empty($filters['action'])) {
+            $where[] = 'al.action = :action';
+            $params['action'] = (string) $filters['action'];
+        }
+
+        if (!empty($filters['entity_type'])) {
+            $where[] = 'al.entity_type = :entity_type';
+            $params['entity_type'] = (string) $filters['entity_type'];
+        }
+
+        if (!empty($filters['user_id']) && ctype_digit((string) $filters['user_id'])) {
+            $where[] = 'al.user_id = :user_id';
+            $params['user_id'] = (int) $filters['user_id'];
+        }
+
+        if (!empty($filters['start_date'])) {
+            $where[] = 'al.created_at >= :start_date';
+            $params['start_date'] = (string) $filters['start_date'] . ' 00:00:00';
+        }
+
+        if (!empty($filters['end_date'])) {
+            $where[] = 'al.created_at <= :end_date';
+            $params['end_date'] = (string) $filters['end_date'] . ' 23:59:59';
+        }
+
+        if (!empty($filters['q'])) {
+            $params['q_like'] = '%' . trim((string) $filters['q']) . '%';
+            if ($this->auditUsesEntityKey()) {
+                $where[] = '(u.full_name LIKE :q_like OR u.username LIKE :q_like OR al.action LIKE :q_like OR al.entity_type LIKE :q_like OR al.entity_key LIKE :q_like)';
+            } else {
+                $where[] = '(u.full_name LIKE :q_like OR u.username LIKE :q_like OR al.action LIKE :q_like OR al.entity_type LIKE :q_like OR CAST(al.entity_id AS CHAR) LIKE :q_like)';
+            }
+        }
+
+        $entityRefSelect = $this->auditUsesEntityKey()
+            ? 'al.entity_key AS entity_ref'
+            : 'CAST(al.entity_id AS CHAR) AS entity_ref';
+
+        return $this->db->query(
+            'SELECT al.*, ' . $entityRefSelect . ', u.username, u.full_name AS user_name, u.role AS user_role
+             FROM audit_log al
+             LEFT JOIN users u ON u.id = al.user_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY al.created_at DESC
+             LIMIT ' . (int) $limit,
+            $params
+        );
+    }
+
+    public function getActionOptions(): array
+    {
+        $rows = $this->db->query('SELECT DISTINCT action FROM audit_log ORDER BY action ASC');
+        return array_values(array_filter(array_map(static fn(array $r): string => (string) ($r['action'] ?? ''), $rows)));
+    }
+
+    public function getEntityTypeOptions(): array
+    {
+        $rows = $this->db->query('SELECT DISTINCT entity_type FROM audit_log ORDER BY entity_type ASC');
+        return array_values(array_filter(array_map(static fn(array $r): string => (string) ($r['entity_type'] ?? ''), $rows)));
+    }
+
+    public function getUserOptions(): array
+    {
+        return $this->db->query(
+            'SELECT id, username, full_name
+             FROM users
+             WHERE is_active = 1
+             ORDER BY full_name ASC'
         );
     }
 
