@@ -5,6 +5,7 @@ $byMonth = isset($byMonth) && is_array($byMonth) ? $byMonth : [];
 $byBootcamp = isset($byBootcamp) && is_array($byBootcamp) ? $byBootcamp : [];
 $filters = isset($filters) && is_array($filters) ? $filters : [];
 $activeFilters = isset($activeFilters) && is_array($activeFilters) ? $activeFilters : [];
+$financeChartData = isset($financeChartData) && is_array($financeChartData) ? $financeChartData : [];
 
 $totalTarget = max(0.0, (float) ($totalTarget ?? 0));
 $totalActual = max(0.0, (float) ($totalActual ?? 0));
@@ -74,6 +75,31 @@ if (!function_exists('moneyFmt')) {
     </div>
 </div>
 
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <section class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
+                    <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo.</p>
+                </div>
+            </div>
+            <div id="financeMonthlyChart" style="min-height: 320px;"></div>
+        </section>
+    </div>
+    <div class="col-xl-5">
+        <section class="app-panel h-100">
+            <div class="app-panel__header">
+                <div>
+                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por bootcamp</h3>
+                    <p class="app-panel__subtitle">Top de revenue actual con referencia de meta.</p>
+                </div>
+            </div>
+            <div id="financeBootcampChart" style="min-height: 320px;"></div>
+        </section>
+    </div>
+</div>
+
 <div class="app-panel cohort-filter-panel mb-4">
     <div class="app-panel__header">
         <div>
@@ -120,6 +146,8 @@ if (!function_exists('moneyFmt')) {
         </div>
     </form>
 </div>
+
+<textarea id="cohort-finance-data" class="d-none"><?= htmlspecialchars(json_encode($financeChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
 
 <div class="row g-4">
     <div class="col-xl-6">

@@ -159,6 +159,37 @@ class CohortController extends Controller
             $totalActual += max(0.0, (float) ($row['actual_revenue'] ?? 0));
         }
 
+        $financeChartData = [
+            'monthly' => [
+                'labels' => array_values(array_map(
+                    static fn(array $row): string => (string) ($row['period_label'] ?? '—'),
+                    $byMonth
+                )),
+                'target' => array_values(array_map(
+                    static fn(array $row): float => (float) ($row['target_revenue'] ?? 0),
+                    $byMonth
+                )),
+                'actual' => array_values(array_map(
+                    static fn(array $row): float => (float) ($row['actual_revenue'] ?? 0),
+                    $byMonth
+                )),
+            ],
+            'bootcamp' => [
+                'labels' => array_values(array_map(
+                    static fn(array $row): string => (string) ($row['bootcamp_name'] ?? '—'),
+                    $byBootcamp
+                )),
+                'target' => array_values(array_map(
+                    static fn(array $row): float => (float) ($row['target_revenue'] ?? 0),
+                    $byBootcamp
+                )),
+                'actual' => array_values(array_map(
+                    static fn(array $row): float => (float) ($row['actual_revenue'] ?? 0),
+                    $byBootcamp
+                )),
+            ],
+        ];
+
         $this->view('cohorts.finance', [
             'pageTitle'      => 'Finanzas Cohort Plan',
             'activePage'     => 'cohorts-finance',
@@ -170,6 +201,14 @@ class CohortController extends Controller
             'byBootcamp'     => $byBootcamp,
             'totalTarget'    => $totalTarget,
             'totalActual'    => $totalActual,
+            'financeChartData' => $financeChartData,
+            'styles' => [
+                '/assets/vendor/apexcharts/apexcharts.css',
+            ],
+            'scripts' => [
+                '/assets/vendor/apexcharts/apexcharts.min.js',
+                '/assets/js/cohorts-finance.js',
+            ],
         ]);
     }
 
