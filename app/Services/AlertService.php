@@ -50,7 +50,7 @@ class AlertService
             'user_id'     => Auth::id(),
             'action'      => 'add_comment',
             'entity_type' => 'cohort_comment',
-            'entity_id'   => $cohortId,
+            'entity_key'  => (string) $cohortId,
             'new_values'  => ['category' => $category, 'body' => mb_substr($body, 0, 100)],
         ]);
 

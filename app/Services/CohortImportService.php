@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Repositories\CohortRepository;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -517,7 +518,7 @@ class CohortImportService
      */
     private function getExistingCohortKeys(): array
     {
-        $rows = $this->db->query('SELECT name, start_date FROM cohorts');
+        $rows = $this->db->query('SELECT section_code AS name, start_date FROM cohort_sections');
         $keys = [];
         foreach ($rows as $r) {
             $key = strtolower(trim($r['name'])) . '|' . ($r['start_date'] ?? '');
@@ -534,7 +535,7 @@ class CohortImportService
      */
     private function bulkInsert(array $validRows, array $summary): array
     {
-        $this->db->beginTransaction();
+        $repo = new CohortRepository();
 
         try {
             foreach ($validRows as $row) {
@@ -542,37 +543,7 @@ class CohortImportService
                 unset($row['_row']);
 
                 try {
-                    $this->db->execute(
-                        'INSERT INTO cohorts (
-                            cohort_code, name,
-                            total_admission_target, b2b_admission_target, b2c_admissions,
-                            start_date, end_date,
-                            related_project, bootcamp_type, area,
-                            training_status, at_risk,
-                            created_at, updated_at
-                        ) VALUES (
-                            :cohort_code, :name,
-                            :total_admission_target, :b2b_admission_target, :b2c_admissions,
-                            :start_date, :end_date,
-                            :related_project, :bootcamp_type, :area,
-                            :training_status, :at_risk,
-                            NOW(), NOW()
-                        )',
-                        [
-                            'cohort_code'            => $row['cohort_code'],
-                            'name'                   => $row['name'],
-                            'total_admission_target' => $row['total_admission_target'],
-                            'b2b_admission_target'   => $row['b2b_admission_target'],
-                            'b2c_admissions'         => $row['b2c_admissions'],
-                            'start_date'             => $row['start_date'],
-                            'end_date'               => $row['end_date'],
-                            'related_project'        => $row['related_project'],
-                            'bootcamp_type'          => $row['bootcamp_type'],
-                            'area'                   => $row['area'],
-                            'training_status'        => $row['training_status'],
-                            'at_risk'                => $row['at_risk'],
-                        ]
-                    );
+                    $repo->create($row);
                     $summary['inserted']++;
                 } catch (\Throwable $e) {
                     $summary['failed']++;
@@ -584,9 +555,7 @@ class CohortImportService
                 }
             }
 
-            $this->db->commit();
         } catch (\Throwable $e) {
-            $this->db->rollBack();
             $summary['errors'][] = [
                 'row'     => 0,
                 'field'   => 'transacción',

@@ -1,17 +1,27 @@
 <?php
 /**
- * Script para importar el dump SQL al MySQL de Railway
- * Usa mysqli::multi_query para ejecutar el dump completo
+ * Script para importar SQL contra la BD configurada por entorno.
+ * Usa mysqli::multi_query para ejecutar el archivo completo.
  */
 
-$host     = 'mainline.proxy.rlwy.net';
-$port     = 26351;
-$user     = 'root';
-$password = 'DvbeBrhnPeKDxVCkgBDInPetvffhMJCB';
-$database = 'railway';
-$dumpFile = __DIR__ . '/railway_dump.sql';
+$mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
+$parsed = null;
+if ($mysqlUrl && str_starts_with($mysqlUrl, 'mysql://')) {
+    $parsed = parse_url($mysqlUrl) ?: null;
+}
 
-echo "Conectando a Railway MySQL ({$host}:{$port})...\n";
+$host     = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: ($parsed['host'] ?? '127.0.0.1');
+$port     = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: ($parsed['port'] ?? 3306));
+$user     = getenv('DB_USERNAME') ?: getenv('MYSQLUSER') ?: ($parsed['user'] ?? 'root');
+$password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: ($parsed['pass'] ?? '');
+$database = getenv('DB_DATABASE') ?: getenv('MYSQLDATABASE') ?: ltrim((string) ($parsed['path'] ?? '/cohort_monitor'), '/');
+$dumpFile = __DIR__ . '/schema.sql';
+
+if (!empty($argv[1])) {
+    $dumpFile = $argv[1];
+}
+
+echo "Conectando a MySQL ({$host}:{$port})...\n";
 
 $mysqli = new mysqli($host, $user, $password, $database, $port);
 
@@ -31,7 +41,7 @@ $sql = file_get_contents($dumpFile);
 // Quitar BOM si existe (UTF-8 BOM = EF BB BF)
 $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
 $size = round(strlen($sql) / 1024, 1);
-echo "Leyendo dump ({$size} KB)...\n";
+echo "Leyendo SQL ({$size} KB)...\n";
 echo "Importando...\n\n";
 
 // Ejecutar todo el dump con multi_query
@@ -54,7 +64,7 @@ if ($mysqli->multi_query($sql)) {
 }
 
 // Verificar tablas
-echo "Tablas en la BD 'railway':\n";
+echo "Tablas en la BD '{$database}':\n";
 $result = $mysqli->query("SHOW TABLES");
 if ($result) {
     while ($row = $result->fetch_array()) {

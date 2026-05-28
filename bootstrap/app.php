@@ -120,6 +120,11 @@ function loadEnv(string $path): void
         $key   = trim($key);
         $value = trim($value);
 
+        // Respect externally injected env vars (server/container/CI)
+        if (getenv($key) !== false) {
+            continue;
+        }
+
         // Remove surrounding quotes
         if (preg_match('/^(["\'])(.*)\\1$/', $value, $m)) {
             $value = $m[2];

@@ -1,23 +1,29 @@
 <?php
 /**
- * Ejecuta una migración SQL contra la BD de Railway.
- * Uso: php run_migration_railway.php <archivo_migracion.sql>
+ * Ejecuta el esquema SQL contra la BD configurada por entorno.
+ * Uso: php run_migration_railway.php [archivo_sql]
  */
 
-$host     = 'mainline.proxy.rlwy.net';
-$port     = 26351;
-$user     = 'root';
-$password = 'DvbeBrhnPeKDxVCkgBDInPetvffhMJCB';
-$database = 'railway';
+$mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
+$parsed = null;
+if ($mysqlUrl && str_starts_with($mysqlUrl, 'mysql://')) {
+    $parsed = parse_url($mysqlUrl) ?: null;
+}
 
-// Archivo de migración por argumento o por defecto la 009
-$migrationFile = $argv[1] ?? __DIR__ . '/migrations/009_seed_cohorts_march2026.sql';
+$host     = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: ($parsed['host'] ?? '127.0.0.1');
+$port     = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: ($parsed['port'] ?? 3306));
+$user     = getenv('DB_USERNAME') ?: getenv('MYSQLUSER') ?: ($parsed['user'] ?? 'root');
+$password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: ($parsed['pass'] ?? '');
+$database = getenv('DB_DATABASE') ?: getenv('MYSQLDATABASE') ?: ltrim((string) ($parsed['path'] ?? '/cohort_monitor'), '/');
+
+// Archivo SQL por argumento o por defecto el nuevo esquema base
+$migrationFile = $argv[1] ?? __DIR__ . '/schema.sql';
 
 if (!file_exists($migrationFile)) {
     die("No se encontró el archivo: {$migrationFile}\n");
 }
 
-echo "Conectando a Railway MySQL ({$host}:{$port})...\n";
+echo "Conectando a MySQL ({$host}:{$port})...\n";
 
 $mysqli = new mysqli($host, $user, $password, $database, $port);
 if ($mysqli->connect_error) {
@@ -33,7 +39,7 @@ $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
 $sql = preg_replace('/USE\s+cohort_monitor\s*;/i', 'USE railway;', $sql);
 
 $size = round(strlen($sql) / 1024, 1);
-echo "Ejecutando migración: " . basename($migrationFile) . " ({$size} KB)...\n";
+echo "Ejecutando SQL: " . basename($migrationFile) . " ({$size} KB)...\n";
 
 if ($mysqli->multi_query($sql)) {
     $i = 0;
@@ -47,10 +53,10 @@ if ($mysqli->multi_query($sql)) {
     if ($mysqli->errno) {
         echo "Error en statement #{$i}: " . $mysqli->error . "\n";
     } else {
-        echo "Migración completada! ({$i} statements procesados)\n\n";
+        echo "Ejecución completada! ({$i} statements procesados)\n\n";
     }
 } else {
-    die("Error ejecutando migración: " . $mysqli->error . "\n");
+    die("Error ejecutando SQL: " . $mysqli->error . "\n");
 }
 
 // Verificar conteo de cohorts

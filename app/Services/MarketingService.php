@@ -15,10 +15,13 @@ class MarketingService
     private AuditRepository          $auditRepo;
 
     public const STAGE_LABELS = [
-        'workflow_campaign' => 'Workflow Campaña',
-        'campaign_build'    => 'Construcción de Campaña y Workflow',
-        'campaign_start'    => 'Inicio de Campaña',
-        'lead_funnel'       => 'Funnel de Leads',
+        'strategy'      => 'Estrategia',
+        'content'       => 'Contenido',
+        'ads'           => 'Paid Ads',
+        'organic'       => 'Orgánico',
+        'events'        => 'Eventos',
+        'partnerships'  => 'Partnerships',
+        'analytics'     => 'Analítica',
     ];
 
     public const STATUS_LABELS = [
@@ -76,7 +79,7 @@ class MarketingService
             'user_id'     => Auth::id(),
             'action'      => 'update_marketing_stage',
             'entity_type' => 'marketing_stage',
-            'entity_id'   => $cohortId,
+            'entity_key'  => (string) $cohortId,
             'old_values'  => $oldStage ? ['status' => $oldStage['status']] : null,
             'new_values'  => ['stage' => $stageName, 'status' => $status],
         ]);

@@ -52,7 +52,7 @@ class AuthService
             'user_id'     => $user['id'],
             'action'      => 'login',
             'entity_type' => 'user',
-            'entity_id'   => $user['id'],
+            'entity_key'  => (string) $user['id'],
         ]);
 
         return $user;
@@ -67,7 +67,7 @@ class AuthService
                 'user_id'     => $userId,
                 'action'      => 'logout',
                 'entity_type' => 'user',
-                'entity_id'   => $userId,
+                'entity_key'  => (string) $userId,
             ]);
         }
         Auth::logout();

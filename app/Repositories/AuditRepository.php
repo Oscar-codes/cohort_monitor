@@ -19,14 +19,16 @@ class AuditRepository
     /** Record an audit entry. */
     public function log(array $data): void
     {
+        $entityKey = $data['entity_key'] ?? ($data['entity_id'] ?? null);
+
         $this->db->execute(
-            'INSERT INTO audit_log (user_id, action, entity_type, entity_id, old_values, new_values, ip_address, created_at)
-             VALUES (:user_id, :action, :entity_type, :entity_id, :old_values, :new_values, :ip, NOW())',
+            'INSERT INTO audit_log (user_id, action, entity_type, entity_key, old_values, new_values, ip_address, created_at)
+             VALUES (:user_id, :action, :entity_type, :entity_key, :old_values, :new_values, :ip, NOW())',
             [
                 'user_id'     => $data['user_id'] ?? null,
                 'action'      => $data['action'],
                 'entity_type' => $data['entity_type'],
-                'entity_id'   => $data['entity_id'] ?? null,
+                'entity_key'  => $entityKey !== null ? (string) $entityKey : null,
                 'old_values'  => isset($data['old_values']) ? json_encode($data['old_values']) : null,
                 'new_values'  => isset($data['new_values']) ? json_encode($data['new_values']) : null,
                 'ip'          => $_SERVER['REMOTE_ADDR'] ?? null,
@@ -47,15 +49,15 @@ class AuditRepository
     }
 
     /** Entries for a specific entity. */
-    public function findByEntity(string $type, int $id): array
+    public function findByEntity(string $type, int|string $id): array
     {
         return $this->db->query(
             'SELECT al.*, u.full_name AS user_name
              FROM audit_log al
              LEFT JOIN users u ON u.id = al.user_id
-             WHERE al.entity_type = :t AND al.entity_id = :eid
+             WHERE al.entity_type = :t AND al.entity_key = :ek
              ORDER BY al.created_at DESC',
-            ['t' => $type, 'eid' => $id]
+            ['t' => $type, 'ek' => (string) $id]
         );
     }
 }
