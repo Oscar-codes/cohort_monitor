@@ -36,6 +36,12 @@
                     <span>Cohortes</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/cohorts/master" class="nav-link <?= $active('cohorts-master') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Plan Maestro Cohort">
+                    <i class="bi bi-grid-1x2"></i>
+                    <span>Plan Maestro</span>
+                </a>
+            </li>
 
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">

@@ -233,7 +233,7 @@ class CohortService
         $dateFields = ['start_date', 'end_date', 'admission_deadline_date'];
         foreach ($dateFields as $field) {
             if (!empty($data[$field])) {
-                $date = \DateTime::createFromFormat('Y-m-d', $data[$field]);
+                $date = DateTime::createFromFormat('Y-m-d', $data[$field]);
                 if (!$date) {
                     throw new \InvalidArgumentException("El campo {$field} debe ser una fecha válida (YYYY-MM-DD).");
                 }
@@ -281,14 +281,14 @@ class CohortService
 
         // Validate date format (YYYY-MM-DD) before passing to repository
         if (!empty($filters['start_date'])) {
-            $date = \DateTime::createFromFormat('Y-m-d', (string) $filters['start_date']);
+            $date = DateTime::createFromFormat('Y-m-d', (string) $filters['start_date']);
             if ($date && $date->format('Y-m-d') === (string) $filters['start_date']) {
                 $normalized['start_date'] = (string) $filters['start_date'];
             }
         }
 
         if (!empty($filters['end_date'])) {
-            $date = \DateTime::createFromFormat('Y-m-d', (string) $filters['end_date']);
+            $date = DateTime::createFromFormat('Y-m-d', (string) $filters['end_date']);
             if ($date && $date->format('Y-m-d') === (string) $filters['end_date']) {
                 $normalized['end_date'] = (string) $filters['end_date'];
             }

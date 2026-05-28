@@ -66,6 +66,67 @@ class CohortController extends Controller
     }
 
     /**
+     * Master cohort plan view with full operational visibility.
+     */
+    public function master(): void
+    {
+        $filters = [
+            'search'          => (string) $this->input('search', ''),
+            'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
+            'related_project' => (string) $this->input('related_project', ''),
+            'start_date'      => (string) $this->input('start_date', ''),
+            'end_date'        => (string) $this->input('end_date', ''),
+            'business_model'  => (string) $this->input('business_model', ''),
+            'cohort_status'   => (string) $this->input('cohort_status', ''),
+        ];
+
+        $cohorts = $this->cohortService->getFilteredCohorts($filters);
+        $bootcampTypes = $this->cohortService->getBootcampTypes();
+        $projectNames = $this->cohortService->getProjectNames();
+        $activeFilters = array_filter($filters, static fn($value) => $value !== '');
+
+        $totalRows = count($cohorts);
+        $totalAdmissionsTarget = 0;
+        $totalAdmissionsActual = 0;
+        $totalRevenueTarget = 0.0;
+        $totalRevenueActual = 0.0;
+        $atRiskAdmissionsCount = 0;
+
+        foreach ($cohorts as $cohort) {
+            $target = max(0, (int) ($cohort['total_admission_target'] ?? 0));
+            $actual = max(0, (int) ($cohort['b2b_admissions'] ?? 0)) + max(0, (int) ($cohort['b2c_admissions'] ?? 0));
+
+            $totalAdmissionsTarget += $target;
+            $totalAdmissionsActual += $actual;
+            $totalRevenueTarget += max(0.0, (float) ($cohort['financial_target_revenue'] ?? 0));
+            $totalRevenueActual += max(0.0, (float) ($cohort['financial_actual_revenue'] ?? 0));
+
+            if ($target > 0 && $actual < (int) floor($target * 0.7)) {
+                $atRiskAdmissionsCount++;
+            }
+        }
+
+        $this->view('cohorts.master', [
+            'pageTitle'              => 'Plan Maestro Cohort',
+            'activePage'             => 'cohorts-master',
+            'cohorts'                => $cohorts,
+            'filters'                => $filters,
+            'activeFilters'          => $activeFilters,
+            'bootcampTypes'          => $bootcampTypes,
+            'projectNames'           => $projectNames,
+            'canCreate'              => Auth::canCreateCohort(),
+            'canEdit'                => Auth::canEditCohort(),
+            'canDelete'              => Auth::canDeleteCohort(),
+            'totalRows'              => $totalRows,
+            'totalAdmissionsTarget'  => $totalAdmissionsTarget,
+            'totalAdmissionsActual'  => $totalAdmissionsActual,
+            'totalRevenueTarget'     => $totalRevenueTarget,
+            'totalRevenueActual'     => $totalRevenueActual,
+            'atRiskAdmissionsCount'  => $atRiskAdmissionsCount,
+        ]);
+    }
+
+    /**
      * Show form to create a new cohort.
      * Only Admin can create.
      */
