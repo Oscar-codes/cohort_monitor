@@ -36,6 +36,18 @@ class UserRepository
         return $rows[0] ?? null;
     }
 
+    public function findByLoginIdentifier(string $identifier): ?array
+    {
+        $rows = $this->db->query(
+            'SELECT * FROM users
+             WHERE LOWER(username) = LOWER(:identifier)
+                OR LOWER(email) = LOWER(:identifier)
+             LIMIT 1',
+            ['identifier' => trim($identifier)]
+        );
+        return $rows[0] ?? null;
+    }
+
     public function findByEmail(string $email): ?array
     {
         $rows = $this->db->query(
@@ -99,6 +111,17 @@ class UserRepository
         $this->db->execute(
             'UPDATE users SET last_login_at = NOW() WHERE id = :id',
             ['id' => $id]
+        );
+    }
+
+    public function updatePasswordHash(int $id, string $passwordHash): void
+    {
+        $this->db->execute(
+            'UPDATE users SET password_hash = :password_hash, updated_at = NOW() WHERE id = :id',
+            [
+                'id' => $id,
+                'password_hash' => $passwordHash,
+            ]
         );
     }
 

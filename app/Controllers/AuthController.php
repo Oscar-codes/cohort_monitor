@@ -36,16 +36,16 @@ class AuthController extends Controller
     /** Handle login POST. */
     public function login(): void
     {
-        $username = trim($this->input('username', ''));
+        $identifier = trim($this->input('username', ''));
         $password = $this->input('password', '');
 
-        if (empty($username) || empty($password)) {
-            Auth::flash('login_error', 'Ingrese usuario y contraseña.');
+        if (empty($identifier) || empty($password)) {
+            Auth::flash('login_error', 'Ingrese usuario/correo y contraseña.');
             $this->redirect('/login');
             return;
         }
 
-        $user = $this->authService->attempt($username, $password);
+        $user = $this->authService->attempt($identifier, $password);
 
         if (!$user) {
             Auth::flash('login_error', 'Credenciales incorrectas o cuenta desactivada.');

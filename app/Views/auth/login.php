@@ -47,11 +47,11 @@
 
             <form method="POST" action="/login" class="needs-validation auth-login-form" novalidate>
                 <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
+                    <label for="username" class="form-label">Usuario o correo</label>
                     <div class="input-group auth-input-group">
                         <span class="input-group-text"><i class="bi bi-person"></i></span>
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Nombre de usuario" required autofocus autocomplete="username">
-                        <div class="invalid-feedback">Ingresa tu usuario.</div>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Nombre de usuario o correo" required autofocus autocomplete="username">
+                        <div class="invalid-feedback">Ingresa tu usuario o correo.</div>
                     </div>
                 </div>
 

@@ -25,19 +25,32 @@ class AuthService
      *
      * @return array|null  User row on success, null on failure.
      */
-    public function attempt(string $username, string $password): ?array
+    public function attempt(string $identifier, string $password): ?array
     {
-        $user = $this->userRepo->findByUsername($username);
+        $normalizedIdentifier = trim($identifier);
+        $user = $this->userRepo->findByLoginIdentifier($normalizedIdentifier);
 
         if (!$user) {
+            error_log('[auth] login failed: user not found for identifier=' . $normalizedIdentifier);
             return null;
         }
 
         if (empty($user['is_active'])) {
+            error_log('[auth] login failed: inactive user id=' . (string) ($user['id'] ?? 'unknown'));
             return null;
         }
 
-        if (!password_verify($password, $user['password_hash'])) {
+        $passwordHash = (string) ($user['password_hash'] ?? '');
+        $isValidPassword = password_verify($password, $passwordHash);
+
+        // Compatibility path for legacy plain-text rows: migrate to bcrypt after first valid login.
+        if (!$isValidPassword && $passwordHash !== '' && hash_equals($passwordHash, $password)) {
+            $isValidPassword = true;
+            $this->userRepo->updatePasswordHash((int) $user['id'], password_hash($password, PASSWORD_DEFAULT));
+        }
+
+        if (!$isValidPassword) {
+            error_log('[auth] login failed: invalid password for user id=' . (string) ($user['id'] ?? 'unknown'));
             return null;
         }
 
