@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Auth;
 use App\Services\AuthService;
+use Throwable;
 
 /**
  * AuthController — Login / Logout.
@@ -45,7 +46,14 @@ class AuthController extends Controller
             return;
         }
 
-        $user = $this->authService->attempt($identifier, $password);
+        try {
+            $user = $this->authService->attempt($identifier, $password);
+        } catch (Throwable $e) {
+            error_log('[auth] login error: ' . $e->getMessage());
+            Auth::flash('login_error', 'No se pudo procesar la solicitud. Intenta nuevamente en unos segundos.');
+            $this->redirect('/login');
+            return;
+        }
 
         if (!$user) {
             Auth::flash('login_error', 'Credenciales incorrectas o cuenta desactivada.');

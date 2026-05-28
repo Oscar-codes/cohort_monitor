@@ -11,13 +11,29 @@ use App\Repositories\AuditRepository;
  */
 class AuthService
 {
-    private UserRepository  $userRepo;
-    private AuditRepository $auditRepo;
+    private ?UserRepository  $userRepo = null;
+    private ?AuditRepository $auditRepo = null;
 
     public function __construct()
     {
-        $this->userRepo  = new UserRepository();
-        $this->auditRepo = new AuditRepository();
+    }
+
+    private function userRepo(): UserRepository
+    {
+        if ($this->userRepo === null) {
+            $this->userRepo = new UserRepository();
+        }
+
+        return $this->userRepo;
+    }
+
+    private function auditRepo(): AuditRepository
+    {
+        if ($this->auditRepo === null) {
+            $this->auditRepo = new AuditRepository();
+        }
+
+        return $this->auditRepo;
     }
 
     /**
@@ -28,7 +44,7 @@ class AuthService
     public function attempt(string $identifier, string $password): ?array
     {
         $normalizedIdentifier = trim($identifier);
-        $user = $this->userRepo->findByLoginIdentifier($normalizedIdentifier);
+        $user = $this->userRepo()->findByLoginIdentifier($normalizedIdentifier);
 
         if (!$user) {
             error_log('[auth] login failed: user not found for identifier=' . $normalizedIdentifier);
@@ -46,7 +62,7 @@ class AuthService
         // Compatibility path for legacy plain-text rows: migrate to bcrypt after first valid login.
         if (!$isValidPassword && $passwordHash !== '' && hash_equals($passwordHash, $password)) {
             $isValidPassword = true;
-            $this->userRepo->updatePasswordHash((int) $user['id'], password_hash($password, PASSWORD_DEFAULT));
+            $this->userRepo()->updatePasswordHash((int) $user['id'], password_hash($password, PASSWORD_DEFAULT));
         }
 
         if (!$isValidPassword) {
@@ -58,10 +74,10 @@ class AuthService
         Auth::login($user);
 
         // Update last_login timestamp
-        $this->userRepo->updateLastLogin((int) $user['id']);
+        $this->userRepo()->updateLastLogin((int) $user['id']);
 
         // Audit
-        $this->auditRepo->log([
+        $this->auditRepo()->log([
             'user_id'     => $user['id'],
             'action'      => 'login',
             'entity_type' => 'user',
@@ -76,12 +92,16 @@ class AuthService
     {
         $userId = Auth::id();
         if ($userId) {
-            $this->auditRepo->log([
-                'user_id'     => $userId,
-                'action'      => 'logout',
-                'entity_type' => 'user',
-                'entity_key'  => (string) $userId,
-            ]);
+            try {
+                $this->auditRepo()->log([
+                    'user_id'     => $userId,
+                    'action'      => 'logout',
+                    'entity_type' => 'user',
+                    'entity_key'  => (string) $userId,
+                ]);
+            } catch (\Throwable $e) {
+                error_log('[auth] logout audit failed: ' . $e->getMessage());
+            }
         }
         Auth::logout();
     }

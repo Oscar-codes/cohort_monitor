@@ -4,17 +4,32 @@
  * Uso: php run_migration_railway.php [archivo_sql_1] [archivo_sql_2] ...
  */
 
-$mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
+$mysqlUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL');
 $parsed = null;
 if ($mysqlUrl && str_starts_with($mysqlUrl, 'mysql://')) {
     $parsed = parse_url($mysqlUrl) ?: null;
 }
 
-$host     = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: ($parsed['host'] ?? '127.0.0.1');
-$port     = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: ($parsed['port'] ?? 3306));
-$user     = getenv('DB_USERNAME') ?: getenv('MYSQLUSER') ?: ($parsed['user'] ?? 'root');
-$password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: ($parsed['pass'] ?? '');
-$database = getenv('DB_DATABASE') ?: getenv('MYSQLDATABASE') ?: ltrim((string) ($parsed['path'] ?? '/cohort_monitor'), '/');
+$pick = static function (...$values): string {
+    foreach ($values as $value) {
+        if ($value === null || $value === false) {
+            continue;
+        }
+
+        $candidate = trim((string) $value);
+        if ($candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    return '';
+};
+
+$host = $pick(getenv('DB_HOST'), getenv('MYSQLHOST'), $parsed['host'] ?? null, '127.0.0.1');
+$port = (int) $pick(getenv('DB_PORT'), getenv('MYSQLPORT'), $parsed['port'] ?? null, '3306');
+$user = $pick(getenv('DB_USERNAME'), getenv('MYSQLUSER'), $parsed['user'] ?? null, 'root');
+$password = $pick(getenv('DB_PASSWORD'), getenv('MYSQLPASSWORD'), $parsed['pass'] ?? null, '');
+$database = $pick(getenv('DB_DATABASE'), getenv('MYSQLDATABASE'), ltrim((string) ($parsed['path'] ?? ''), '/'), 'cohort_monitor');
 
 // Archivos SQL por argumentos o por defecto esquema + registros
 $migrationFiles = array_slice($argv, 1);
