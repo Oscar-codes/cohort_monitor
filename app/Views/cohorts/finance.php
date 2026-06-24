@@ -32,7 +32,7 @@ if (!function_exists('moneyFmt')) {
             Finanzas ejecutivas
         </div>
         <h2 class="cohorts-hero__title">Finanzas Cohort Plan</h2>
-        <p class="cohorts-hero__copy">Seguimiento de revenue por periodo y por bootcamp name para detectar brechas y priorizar acciones.</p>
+        <p class="cohorts-hero__copy">Seguimiento de revenue por periodo y por cohorte para detectar brechas y priorizar acciones.</p>
     </div>
     <div class="cohorts-hero__actions">
         <a href="/cohorts/master<?= !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '' ?>" class="btn btn-outline-secondary">
@@ -80,6 +80,16 @@ if (!function_exists('moneyFmt')) {
     </div>
 </div>
 
+<div class="alert alert-light border d-flex align-items-start gap-2 mb-4">
+    <i class="bi bi-info-circle-fill text-primary fs-5 mt-1"></i>
+    <div class="small">
+        <strong class="d-block mb-1">Reglas de ingreso de revenue por fuente</strong>
+        <span class="d-inline-block"><span class="badge bg-info-subtle text-info me-1">INCAF</span> Se ingresa el revenue cuando Academia haya emitido el reporte y el valor definitivo a cobrar.</span>
+        <span class="d-inline-block ms-md-3"><span class="badge bg-success-subtle text-success me-1">Student Revenue / Other SF</span> Se ingresa al emitir la factura, con actualizaciones semanales.</span>
+        <span class="d-block mt-1 text-muted"><i class="bi bi-calendar-event me-1"></i> Período: mes de facturación. Para INCAF se alinea con el compromiso presupuestario.</span>
+    </div>
+</div>
+
 <div class="row g-4 mb-4">
     <div class="col-xl-7">
         <section class="app-panel h-100">
@@ -109,7 +119,7 @@ if (!function_exists('moneyFmt')) {
         <section class="app-panel h-100">
             <div class="app-panel__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por bootcamp name</h3>
+                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por cohorte</h3>
                     <p class="app-panel__subtitle">Top de revenue actual con referencia de meta.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -143,13 +153,13 @@ if (!function_exists('moneyFmt')) {
     <div class="app-panel__header">
         <div>
             <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros financieros</h3>
-            <p class="app-panel__subtitle">Filtra por búsqueda, bootcamp, proyecto, fechas, población o estado para análisis de revenue.</p>
+            <p class="app-panel__subtitle">Filtra por búsqueda, cohorte, proyecto, fechas, población o estado para análisis de revenue.</p>
         </div>
     </div>
     <form method="GET" action="/cohorts/finance" class="row g-3">
         <div class="col-12 col-lg-4">
             <label for="search" class="form-label">Buscar</label>
-            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, bootcamp name, coach, proyecto...">
+            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">
         </div>
         <div class="col-12 col-md-6 col-lg-4">
             <label for="bootcamp_type" class="form-label">Bootcamp name</label>
@@ -257,7 +267,7 @@ if (!function_exists('moneyFmt')) {
         <section class="app-panel h-100">
             <div class="app-panel__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por bootcamp name</h3>
+                    <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por cohorte</h3>
                     <p class="app-panel__subtitle">Ranking financiero por cohorte.</p>
                 </div>
             </div>

@@ -277,7 +277,7 @@
         <div class="app-panel h-100">
             <div class="app-panel__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-layers text-secondary"></i> Bootcamps por tipo</h3>
+                    <h3 class="app-panel__title"><i class="bi bi-layers text-secondary"></i> Cohortes por tipo</h3>
                     <p class="app-panel__subtitle">Top <?= count($typeRows) ?> categorias con mas cohortes.</p>
                 </div>
             </div>

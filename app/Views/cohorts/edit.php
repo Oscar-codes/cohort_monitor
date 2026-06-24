@@ -228,10 +228,20 @@ if (!$isMarketingBlocked) {
                             <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
                             <?php endif; ?>
                         </div>
+                        <div class="alert alert-light border small mb-3">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <strong>Reglas de ingreso por fuente:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li><strong>INCAF:</strong> Se ingresa el revenue cuando se tiene el reporte emitido por Academia y el valor definitivo a cobrar.</li>
+                                <li><strong>Student Revenue / Other SF:</strong> Se ingresa al emitir la factura, con actualizaciones semanales.</li>
+                                <li>El período de revenue corresponde al mes de facturación.</li>
+                            </ul>
+                        </div>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="financial_target_revenue" class="form-label">
                                     Meta de ingresos (USD)
+                                    <i class="bi bi-question-circle text-muted small" data-bs-toggle="tooltip" title="Valor esperado de revenue para esta cohorte."></i>
                                     <?php if ($canEdit('financial_target_revenue')): ?>
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>
@@ -246,6 +256,7 @@ if (!$isMarketingBlocked) {
                             <div class="col-md-6">
                                 <label for="financial_actual_revenue" class="form-label">
                                     Ingreso actual (USD)
+                                    <i class="bi bi-question-circle text-muted small" data-bs-toggle="tooltip" title="Revenue facturado o confirmado al mes en curso."></i>
                                     <?php if ($canEdit('financial_actual_revenue')): ?>
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>

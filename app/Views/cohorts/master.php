@@ -136,7 +136,7 @@ if (!function_exists('masterStatusLabel')) {
     <div class="app-panel__header">
         <div>
             <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros del plan maestro</h3>
-            <p class="app-panel__subtitle">Filtra por busqueda, bootcamp name, proyecto, fechas, poblacion o sub canal y estado.</p>
+            <p class="app-panel__subtitle">Filtra por busqueda, cohorte, proyecto, fechas, poblacion o sub canal y estado.</p>
         </div>
     </div>
     <form method="GET" action="/cohorts/master" class="row g-3">
