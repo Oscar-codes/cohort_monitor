@@ -58,7 +58,7 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-sm-6 col-md-3">
-                                <label for="total_admission_target" class="form-label">Meta Total</label>
+                                <label for="total_admission_target" class="form-label">Meta a inscribir</label>
                                 <input type="number" class="form-control" id="total_admission_target" name="total_admission_target"
                                        min="0" value="0">
                             </div>
@@ -68,12 +68,12 @@
                                        min="0" value="0">
                             </div>
                             <div class="col-sm-6 col-md-3">
-                                <label for="b2b_admissions" class="form-label">Admisiones B2B</label>
+                                <label for="b2b_admissions" class="form-label">Inscritos B2B</label>
                                 <input type="number" class="form-control" id="b2b_admissions" name="b2b_admissions"
                                        min="0" value="0">
                             </div>
                             <div class="col-sm-6 col-md-3">
-                                <label for="b2c_admissions" class="form-label">Admisiones B2C</label>
+                                <label for="b2c_admissions" class="form-label">Inscritos B2C</label>
                                 <input type="number" class="form-control" id="b2c_admissions" name="b2c_admissions"
                                        min="0" value="0">
                             </div>
@@ -124,7 +124,7 @@
                                        placeholder="ej. María González">
                             </div>
                             <div class="col-md-6">
-                                <label for="bootcamp_type" class="form-label">Tipo de Bootcamp</label>
+                                <label for="bootcamp_type" class="form-label">Bootcamp name</label>
                                 <input type="text" class="form-control" id="bootcamp_type" name="bootcamp_type"
                                        placeholder="ej. Full Stack, Data Science, UX/UI">
                             </div>
@@ -152,13 +152,11 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <label for="training_status" class="form-label">Estado del Entrenamiento</label>
-                                <select class="form-select" id="training_status" name="training_status">
-                                    <option value="not_started" selected>Sin iniciar</option>
-                                    <option value="in_progress">En progreso</option>
-                                    <option value="completed">Completado</option>
-                                    <option value="cancelled">Cancelado</option>
+                                <label for="training_status" class="form-label">Estado de la cohorte</label>
+                                <select class="form-select bg-light text-muted" id="training_status" name="training_status" readonly>
+                                    <option value="planned" selected>Planificado</option>
                                 </select>
+                                <div class="form-text">Las cohortes nuevas entran al Cohort Plan como planificadas.</div>
                             </div>
                         </div>
                     </div>

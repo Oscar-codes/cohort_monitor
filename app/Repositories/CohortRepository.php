@@ -135,7 +135,7 @@ class CohortRepository
                     'total_target'     => (int) ($data['total_admission_target'] ?? 0),
                     'calendar_pattern' => $data['assigned_class_schedule'] ?? null,
                     'source_row_number'=> (int) ($data['correlative_number'] ?? 0),
-                    'training_status'  => $data['training_status'] ?? 'not_started',
+                    'training_status'  => $data['training_status'] ?? 'planned',
                 ]
             );
 
@@ -253,7 +253,7 @@ class CohortRepository
                 COUNT(*)                                                          AS total,
                 SUM(CASE WHEN cs.training_status = "in_progress" THEN 1 ELSE 0 END)  AS in_progress,
                 SUM(CASE WHEN cs.training_status = "completed" THEN 1 ELSE 0 END)    AS completed,
-                SUM(CASE WHEN cs.training_status = "not_started" THEN 1 ELSE 0 END)  AS not_started,
+                SUM(CASE WHEN cs.training_status IN ("planned", "not_started") THEN 1 ELSE 0 END)  AS planned,
                 COALESCE(SUM(cs.total_students_target), 0)                              AS total_target,
                 COALESCE(SUM(m.b2b_admissions), 0)                                       AS total_b2b,
                 COALESCE(SUM(m.b2c_admissions), 0)                                       AS total_b2c
@@ -272,7 +272,7 @@ class CohortRepository
             'total' => 0,
             'in_progress' => 0,
             'completed' => 0,
-            'not_started' => 0,
+            'planned' => 0,
             'total_target' => 0,
             'total_b2b' => 0,
             'total_b2c' => 0,
@@ -322,6 +322,7 @@ class CohortRepository
             LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
             LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
             LEFT JOIN projects p ON p.id = cs.project_id
+            LEFT JOIN coaches ch ON ch.id = cs.coach_id
             LEFT JOIN (
                 SELECT section_id, SUM(target_revenue) AS target_revenue, SUM(actual_revenue) AS actual_revenue
                 FROM cohort_section_memberships
@@ -357,6 +358,7 @@ class CohortRepository
             LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
             LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
             LEFT JOIN projects p ON p.id = cs.project_id
+            LEFT JOIN coaches ch ON ch.id = cs.coach_id
             LEFT JOIN (
                 SELECT section_id, SUM(target_revenue) AS target_revenue, SUM(actual_revenue) AS actual_revenue
                 FROM cohort_section_memberships
@@ -491,12 +493,13 @@ class CohortRepository
 
         if (!empty($filters['search'])) {
             $where[] = '(
-                cs.section_code LIKE :search
-                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :search
-                OR ch.coach_name LIKE :search
-                OR p.project_name LIKE :search
+                cs.section_code LIKE :search ESCAPE "\\"
+                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :search ESCAPE "\\"
+                OR CONCAT_WS(" - ", NULLIF(cs.section_code, ""), COALESCE(b.bootcamp_name, bf.family_name)) LIKE :search ESCAPE "\\"
+                OR ch.coach_name LIKE :search ESCAPE "\\"
+                OR p.project_name LIKE :search ESCAPE "\\"
             )';
-            $params['search'] = '%' . $filters['search'] . '%';
+            $params['search'] = '%' . $this->escapeLike((string) $filters['search']) . '%';
         }
 
         if (!empty($filters['bootcamp_type'])) {
@@ -529,18 +532,33 @@ class CohortRepository
         }
 
         if (!empty($filters['cohort_status'])) {
-            if ($filters['cohort_status'] === 'upcoming') {
-                $where[] = 'cs.start_date IS NOT NULL AND cs.start_date > CURDATE()';
+            if ($filters['cohort_status'] === 'planned') {
+                $where[] = '(cs.training_status IN ("planned", "not_started") AND (cs.start_date IS NULL OR cs.start_date > CURDATE()))';
             }
             if ($filters['cohort_status'] === 'in_progress') {
-                $where[] = 'cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE())';
+                $where[] = '(cs.training_status = "in_progress" OR (cs.training_status NOT IN ("cancelled", "pending_reschedule") AND cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE())))';
             }
             if ($filters['cohort_status'] === 'completed') {
-                $where[] = 'cs.end_date IS NOT NULL AND cs.end_date < CURDATE()';
+                $where[] = '(cs.training_status = "completed" OR (cs.training_status NOT IN ("cancelled", "pending_reschedule") AND cs.end_date IS NOT NULL AND cs.end_date < CURDATE()))';
+            }
+            if ($filters['cohort_status'] === 'cancelled') {
+                $where[] = 'cs.training_status = "cancelled"';
+            }
+            if ($filters['cohort_status'] === 'pending_reschedule') {
+                $where[] = 'cs.training_status = "pending_reschedule"';
             }
         }
 
         return [$where, $params];
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return strtr($value, [
+            '\\' => '\\\\',
+            '%' => '\\%',
+            '_' => '\\_',
+        ]);
     }
 
     private function upsertMemberships(int $sectionId, int $familyId, array $data): void

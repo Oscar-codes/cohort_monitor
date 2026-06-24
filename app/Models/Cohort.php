@@ -28,7 +28,7 @@ class Cohort
         public ?string          $assignedCoach = null,
         public ?string          $bootcampType = null,
         public ?string          $assignedClassSchedule = null,
-        public string           $trainingStatus = 'not_started',
+        public string           $trainingStatus = 'planned',
         public ?string          $createdAt = null,
         public ?string          $updatedAt = null,
         // ─── Calculated fields (NOT persisted) ──────────────
@@ -56,7 +56,7 @@ class Cohort
             assignedCoach:         $row['assigned_coach'] ?? null,
             bootcampType:          $row['bootcamp_type'] ?? null,
             assignedClassSchedule: $row['assigned_class_schedule'] ?? null,
-            trainingStatus:        $row['training_status'] ?? 'not_started',
+            trainingStatus:        $row['training_status'] ?? 'planned',
             createdAt:             $row['created_at'] ?? null,
             updatedAt:             $row['updated_at'] ?? null,
             trainingDate50:        $row['training_date_50'] ?? null,

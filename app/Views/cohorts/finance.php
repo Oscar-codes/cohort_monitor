@@ -32,7 +32,7 @@ if (!function_exists('moneyFmt')) {
             Finanzas ejecutivas
         </div>
         <h2 class="cohorts-hero__title">Finanzas Cohort Plan</h2>
-        <p class="cohorts-hero__copy">Seguimiento de revenue por periodo y por bootcamp para detectar brechas y priorizar acciones.</p>
+        <p class="cohorts-hero__copy">Seguimiento de revenue por periodo y por bootcamp name para detectar brechas y priorizar acciones.</p>
     </div>
     <div class="cohorts-hero__actions">
         <a href="/cohorts/master<?= !empty($activeFilters) ? ('?' . http_build_query($activeFilters)) : '' ?>" class="btn btn-outline-secondary">
@@ -109,7 +109,7 @@ if (!function_exists('moneyFmt')) {
         <section class="app-panel h-100">
             <div class="app-panel__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por bootcamp</h3>
+                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por bootcamp name</h3>
                     <p class="app-panel__subtitle">Top de revenue actual con referencia de meta.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -134,8 +134,12 @@ if (!function_exists('moneyFmt')) {
         </div>
     </div>
     <form method="GET" action="/cohorts/finance" class="row g-3">
-        <div class="col-12 col-md-4">
-            <label for="bootcamp_type" class="form-label">Bootcamp</label>
+        <div class="col-12 col-lg-4">
+            <label for="search" class="form-label">Buscar</label>
+            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, bootcamp, coach, proyecto...">
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <label for="bootcamp_type" class="form-label">Bootcamp name</label>
             <select class="form-select" id="bootcamp_type" name="bootcamp_type">
                 <option value="">Todos</option>
                 <?php foreach (($bootcampTypes ?? []) as $type): ?>
@@ -143,7 +147,7 @@ if (!function_exists('moneyFmt')) {
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-lg-4">
             <label for="related_project" class="form-label">Proyecto</label>
             <select class="form-select" id="related_project" name="related_project">
                 <option value="">Todos</option>
@@ -152,11 +156,11 @@ if (!function_exists('moneyFmt')) {
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-6 col-md-2">
+        <div class="col-6 col-md-3 col-lg-2">
             <label for="start_date" class="form-label">Desde</label>
             <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars((string) ($filters['start_date'] ?? '')) ?>">
         </div>
-        <div class="col-6 col-md-2">
+        <div class="col-6 col-md-3 col-lg-2">
             <label for="end_date" class="form-label">Hasta</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
@@ -221,7 +225,7 @@ if (!function_exists('moneyFmt')) {
         <section class="app-panel h-100">
             <div class="app-panel__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por bootcamp</h3>
+                    <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por bootcamp name</h3>
                     <p class="app-panel__subtitle">Ranking financiero por tipo de bootcamp.</p>
                 </div>
             </div>
@@ -229,7 +233,7 @@ if (!function_exists('moneyFmt')) {
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Bootcamp</th>
+                            <th>Bootcamp name</th>
                             <th class="text-end">Meta</th>
                             <th class="text-end">Actual</th>
                             <th class="text-end">Brecha</th>

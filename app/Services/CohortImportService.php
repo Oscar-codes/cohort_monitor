@@ -44,6 +44,8 @@ class CohortImportService
         'área'           => 'area',
         'type'           => 'bootcamp_type',
         'tipo'           => 'bootcamp_type',
+        'bootcamp_name'  => 'bootcamp_type',
+        'bootcamp name'  => 'bootcamp_type',
         'project'        => 'related_project',
         'proyecto'       => 'related_project',
         'start_date'     => 'start_date',
@@ -51,8 +53,12 @@ class CohortImportService
         'end_date'       => 'end_date',
         'fecha_fin'      => 'end_date',
         'meta_total'     => 'total_admission_target',
+        'meta_a_inscribir' => 'total_admission_target',
+        'meta a inscribir' => 'total_admission_target',
         'meta_b2b'       => 'b2b_admission_target',
         'admissions_b2c' => 'b2c_admissions',
+        'inscritos_b2c'  => 'b2c_admissions',
+        'inscritos b2c'  => 'b2c_admissions',
         'b2c'            => 'b2c_admissions',
         'status'         => 'training_status',
         'estado'         => 'training_status',
@@ -68,6 +74,8 @@ class CohortImportService
 
     /** Status text mappings (flexible input → DB value) */
     public const STATUS_MAP = [
+        'planificado'  => 'planned',
+        'planned'      => 'planned',
         'completado'   => 'completed',
         'completed'    => 'completed',
         'en ejecución' => 'in_progress',
@@ -75,12 +83,14 @@ class CohortImportService
         'en progreso'  => 'in_progress',
         'in_progress'  => 'in_progress',
         'in progress'  => 'in_progress',
-        'en proceso'   => 'not_started',
-        'pendiente'    => 'not_started',
-        'not_started'  => 'not_started',
-        'not started'  => 'not_started',
+        'en proceso'   => 'planned',
+        'pendiente'    => 'planned',
+        'not_started'  => 'planned',
+        'not started'  => 'planned',
         'cancelado'    => 'cancelled',
         'cancelled'    => 'cancelled',
+        'pendiente de reprogramar' => 'pending_reschedule',
+        'pending_reschedule' => 'pending_reschedule',
     ];
 
     /** Area text mappings (flexible input → DB value) */
@@ -379,7 +389,7 @@ class CohortImportService
             $errors[] = [
                 'row'     => $rowNumber,
                 'field'   => 'status',
-                'message' => "Estado no válido: \"{$data['training_status']}\". Valores permitidos: Completado, En ejecución, Pendiente, Cancelado.",
+                'message' => "Estado no válido: \"{$data['training_status']}\". Valores permitidos: Planificado, En progreso, Completado, Cancelado, Pendiente de reprogramar.",
             ];
         }
 
@@ -439,7 +449,7 @@ class CohortImportService
 
         // Status
         $status = strtolower(trim($data['training_status'] ?? ''));
-        $normalized['training_status'] = self::STATUS_MAP[$status] ?? 'not_started';
+        $normalized['training_status'] = self::STATUS_MAP[$status] ?? 'planned';
 
         // At risk
         $risk = strtolower(trim($data['at_risk'] ?? ''));
@@ -503,7 +513,7 @@ class CohortImportService
         $abbr  = '';
         foreach ($words as $w) {
             if ($w !== '') {
-                $abbr .= strtoupper(mb_substr($w, 0, 1));
+                $abbr .= strtoupper(function_exists('mb_substr') ? mb_substr($w, 0, 1) : substr($w, 0, 1));
             }
         }
         $abbr = substr($abbr, 0, 5);
@@ -581,13 +591,13 @@ class CohortImportService
         $headers = [
             'A' => 'name',
             'B' => 'area',
-            'C' => 'type',
+            'C' => 'bootcamp_name',
             'D' => 'project',
             'E' => 'start_date',
             'F' => 'end_date',
-            'G' => 'meta_total',
+            'G' => 'meta_a_inscribir',
             'H' => 'meta_b2b',
-            'I' => 'admissions_b2c',
+            'I' => 'inscritos_b2c',
             'J' => 'status',
             'K' => 'at_risk',
         ];
@@ -612,7 +622,7 @@ class CohortImportService
         $sheet->setCellValue('G2', 30);
         $sheet->setCellValue('H2', 10);
         $sheet->setCellValue('I2', 20);
-        $sheet->setCellValue('J2', 'Pendiente');
+        $sheet->setCellValue('J2', 'Planificado');
         $sheet->setCellValue('K2', 'No');
 
         // Second example

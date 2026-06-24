@@ -157,7 +157,7 @@ class ReportRepository
      * Get global metrics by training_status, applying filters.
      *
      * @param array $filters
-     * @return array ['completed' => int, 'in_progress' => int, 'not_started' => int, 'cancelled' => int]
+     * @return array ['completed' => int, 'in_progress' => int, 'planned' => int, 'cancelled' => int, 'pending_reschedule' => int]
      */
     public function getMetricsByStatus(array $filters = []): array
     {
@@ -165,8 +165,9 @@ class ReportRepository
             SELECT
                 SUM(CASE WHEN cs.training_status = 'completed'   THEN 1 ELSE 0 END) AS completed,
                 SUM(CASE WHEN cs.training_status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
-                SUM(CASE WHEN cs.training_status = 'not_started' THEN 1 ELSE 0 END) AS not_started,
-                SUM(CASE WHEN cs.training_status = 'cancelled'   THEN 1 ELSE 0 END) AS cancelled
+                SUM(CASE WHEN cs.training_status IN ('planned', 'not_started') THEN 1 ELSE 0 END) AS planned,
+                SUM(CASE WHEN cs.training_status = 'cancelled'   THEN 1 ELSE 0 END) AS cancelled,
+                SUM(CASE WHEN cs.training_status = 'pending_reschedule' THEN 1 ELSE 0 END) AS pending_reschedule
             FROM cohort_sections cs
             LEFT JOIN bootcamps b ON b.id = cs.bootcamp_id
             LEFT JOIN bootcamp_families bf ON bf.id = b.family_id
@@ -196,8 +197,9 @@ class ReportRepository
         return $rows[0] ?? [
             'completed'   => 0,
             'in_progress' => 0,
-            'not_started' => 0,
+            'planned' => 0,
             'cancelled'   => 0,
+            'pending_reschedule' => 0,
         ];
     }
 

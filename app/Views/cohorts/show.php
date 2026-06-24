@@ -1,19 +1,52 @@
 <!-- Cohort Show View -->
 <?php
+use App\Core\Auth;
+
 /** @var array<string, mixed> $cohort */
 $cohort = isset($cohort) && is_array($cohort) ? $cohort : [];
 
 /** @var array<int, array<string, mixed>> $comments */
 $comments = isset($comments) && is_array($comments) ? $comments : [];
 
+$workflowTransitions = isset($workflowTransitions) && is_array($workflowTransitions) ? $workflowTransitions : [];
+$isAdmin = (bool) ($isAdmin ?? false);
+
 $statusMap = [
-    'not_started' => ['bg-secondary-subtle text-secondary', 'Sin iniciar', 'bi-hourglass-split'],
+    'planned' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
+    'not_started' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
     'in_progress' => ['bg-primary-subtle text-primary', 'En progreso', 'bi-play-circle'],
     'completed' => ['bg-success-subtle text-success', 'Completado', 'bi-check-circle'],
     'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado', 'bi-x-circle'],
+    'pending_reschedule' => ['bg-warning-subtle text-warning', 'Pendiente de reprogramar', 'bi-calendar2-week'],
 ];
 
-$ts = $cohort['training_status'] ?? 'not_started';
+if (!function_exists('cohortDetailStatus')) {
+    function cohortDetailStatus(array $cohort): string
+    {
+        $status = $cohort['training_status'] ?? 'planned';
+        if ($status === 'not_started') {
+            $status = 'planned';
+        }
+        if (in_array($status, ['cancelled', 'pending_reschedule', 'completed'], true)) {
+            return $status;
+        }
+
+        $today = date('Y-m-d');
+        $startDate = $cohort['start_date'] ?? null;
+        $endDate = $cohort['end_date'] ?? null;
+
+        if ($endDate && $endDate < $today) {
+            return 'completed';
+        }
+        if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
+            return 'in_progress';
+        }
+
+        return 'planned';
+    }
+}
+
+$ts = cohortDetailStatus($cohort);
 [$badgeClass, $badgeLabel, $badgeIcon] = $statusMap[$ts] ?? ['bg-info-subtle text-info', ucfirst($ts), 'bi-info-circle'];
 
 if (!function_exists('cohortDetailDate')) {
@@ -78,14 +111,55 @@ $today = date('Y-m-d');
 $catBadges = [
     'risk' => 'bg-danger-subtle text-danger',
     'general' => 'bg-secondary-subtle text-secondary',
+    'change_request' => 'bg-info-subtle text-info',
     'admission' => 'bg-info-subtle text-info',
-    'marketing' => 'bg-warning-subtle text-warning',
+    'marketing' => 'bg-info-subtle text-info',
 ];
 $catLabels = [
     'risk' => 'Riesgo',
     'general' => 'General',
-    'admission' => 'Admision',
-    'marketing' => 'Marketing',
+    'change_request' => 'Solicitud de cambio',
+    'admission' => 'Solicitud de cambio',
+    'marketing' => 'Solicitud de cambio',
+];
+$canDeleteThisCohort = in_array($ts, ['planned', 'cancelled', 'pending_reschedule'], true);
+$workflowActionMap = [
+    'completed' => [
+        'title' => 'Marcar como completada',
+        'description' => 'Cierra la cohorte como finalizada para seguimiento operativo y reportes.',
+        'buttonClass' => 'btn-success',
+        'icon' => 'bi-check2-circle',
+        'requiresReason' => false,
+        'reasonLabel' => '',
+        'placeholder' => '',
+    ],
+    'cancelled' => [
+        'title' => 'Cancelar cohorte',
+        'description' => 'Usa esta acción cuando la cohorte no se ejecutará y debe quedar fuera del flujo activo.',
+        'buttonClass' => 'btn-danger',
+        'icon' => 'bi-x-circle',
+        'requiresReason' => true,
+        'reasonLabel' => 'Motivo de cancelación',
+        'placeholder' => 'Ej. No alcanzó estudiantes mínimos o se pausó el proyecto.',
+    ],
+    'pending_reschedule' => [
+        'title' => 'Enviar a pendiente de reprogramar',
+        'description' => 'Mantiene la cohorte disponible para venta, pero fuera del calendario activo actual.',
+        'buttonClass' => 'btn-warning',
+        'icon' => 'bi-calendar2-week',
+        'requiresReason' => true,
+        'reasonLabel' => 'Motivo de reprogramación',
+        'placeholder' => 'Ej. Se moverá la fecha por baja demanda o ajuste operativo.',
+    ],
+    'planned' => [
+        'title' => 'Volver a planificado',
+        'description' => 'Usa esta acción después de actualizar fecha, coach y horario para reactivar la cohorte.',
+        'buttonClass' => 'btn-secondary',
+        'icon' => 'bi-arrow-counterclockwise',
+        'requiresReason' => false,
+        'reasonLabel' => '',
+        'placeholder' => '',
+    ],
 ];
 ?>
 
@@ -95,6 +169,20 @@ $catLabels = [
         <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($cohort['name']) ?></li>
     </ol>
 </nav>
+
+<?php if ($msg = Auth::getFlash('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<?php if ($msg = Auth::getFlash('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
 
 <section class="cohort-detail-hero mb-4">
     <div class="cohort-detail-hero__content">
@@ -122,7 +210,7 @@ $catLabels = [
                     <i class="bi bi-pencil me-1"></i> Editar
                 </a>
             <?php endif; ?>
-            <?php if ($canDelete ?? false): ?>
+            <?php if (($canDelete ?? false) && $canDeleteThisCohort): ?>
                 <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>" data-confirm="Estas seguro de que deseas eliminar esta cohorte?">
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="btn btn-outline-light btn-sm">
@@ -146,9 +234,9 @@ $catLabels = [
     <article class="cohort-detail-kpi">
         <span class="cohort-detail-kpi__icon is-info"><i class="bi bi-building"></i></span>
         <div>
-            <p>B2B</p>
-            <strong><?= $b2bAdmissions ?> / <?= $b2bTarget ?></strong>
-            <small>Actual vs meta</small>
+            <p>Inscritos B2B/B2C</p>
+            <strong><?= $b2bAdmissions ?> / <?= $b2cAdmissions ?></strong>
+            <small>Meta <?= $b2bTarget ?> / <?= $b2cTarget ?></small>
         </div>
     </article>
     <article class="cohort-detail-kpi">
@@ -225,7 +313,7 @@ $catLabels = [
                     <strong><?= htmlspecialchars($classTimeLabel) ?></strong>
                 </div>
                 <div>
-                    <span>Tipo de bootcamp</span>
+                    <span>Bootcamp name</span>
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['bootcamp_type'] ?? null)) ?></strong>
                 </div>
                 <div>
@@ -347,6 +435,59 @@ $catLabels = [
                 </div>
             </dl>
         </section>
+
+        <?php if ($isAdmin): ?>
+            <section class="app-panel cohort-detail-panel mt-4">
+                <div class="app-panel__header">
+                    <div>
+                        <h2 class="app-panel__title"><i class="bi bi-arrow-repeat"></i> Workflow de estado</h2>
+                        <p class="app-panel__subtitle">Acciones controladas para mover la cohorte entre estados permitidos.</p>
+                    </div>
+                </div>
+
+                <div class="mb-3 p-3 rounded border bg-light-subtle">
+                    <div class="small text-uppercase text-muted fw-semibold mb-1">Estado actual</div>
+                    <span class="badge badge-status <?= $badgeClass ?>">
+                        <i class="bi <?= $badgeIcon ?> me-1"></i><?= htmlspecialchars($badgeLabel) ?>
+                    </span>
+                </div>
+
+                <?php if ($workflowTransitions === []): ?>
+                    <div class="alert alert-secondary mb-0" role="alert">
+                        No hay acciones de workflow disponibles para esta cohorte en su estado actual.
+                    </div>
+                <?php else: ?>
+                    <div class="d-grid gap-3">
+                        <?php foreach ($workflowTransitions as $targetStatus): ?>
+                            <?php $action = $workflowActionMap[$targetStatus] ?? null; ?>
+                            <?php if (!$action): ?>
+                                <?php continue; ?>
+                            <?php endif; ?>
+                            <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/status" class="border rounded p-3 bg-body-tertiary">
+                                <input type="hidden" name="target_status" value="<?= htmlspecialchars($targetStatus) ?>">
+                                <div class="d-flex flex-column gap-2">
+                                    <div>
+                                        <div class="fw-semibold"><?= htmlspecialchars($action['title']) ?></div>
+                                        <div class="small text-muted"><?= htmlspecialchars($action['description']) ?></div>
+                                    </div>
+                                    <?php if ($action['requiresReason']): ?>
+                                        <div>
+                                            <label class="form-label"><?= htmlspecialchars($action['reasonLabel']) ?></label>
+                                            <textarea name="status_reason" class="form-control" rows="2" required placeholder="<?= htmlspecialchars($action['placeholder']) ?>"></textarea>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div>
+                                        <button type="submit" class="btn <?= htmlspecialchars($action['buttonClass']) ?> btn-sm">
+                                            <i class="bi <?= htmlspecialchars($action['icon']) ?> me-1"></i><?= htmlspecialchars($action['title']) ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -370,8 +511,7 @@ $catLabels = [
                         <select name="category" class="form-select" required>
                             <option value="general">General</option>
                             <option value="risk">Riesgo</option>
-                            <option value="admission">Admision</option>
-                            <option value="marketing">Marketing</option>
+                            <option value="change_request">Solicitud de cambio</option>
                         </select>
                     </div>
                     <div class="col-sm-6 col-lg-7">

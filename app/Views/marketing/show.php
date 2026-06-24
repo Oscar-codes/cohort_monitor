@@ -9,14 +9,16 @@ $cohort = isset($cohort) && is_array($cohort) ? $cohort : [];
 $stages = isset($stages) && is_array($stages) ? $stages : [];
 
 $statusBadge = [
+    'active' => 'bg-primary-subtle text-primary',
     'completed' => 'bg-success-subtle text-success',
-    'pending' => 'bg-secondary-subtle text-secondary',
-    'at_risk' => 'bg-danger-subtle text-danger',
+    'pending' => 'bg-primary-subtle text-primary',
+    'at_risk' => 'bg-primary-subtle text-primary',
 ];
 $statusIcon = [
+    'active' => 'bi-broadcast',
     'completed' => 'bi-check-circle',
-    'pending' => 'bi-clock',
-    'at_risk' => 'bi-exclamation-triangle',
+    'pending' => 'bi-broadcast',
+    'at_risk' => 'bi-broadcast',
 ];
 
 $completedCount = 0;
@@ -25,8 +27,6 @@ $riskCount = 0;
 foreach ($stages as $stage) {
     if (($stage['status'] ?? '') === 'completed') {
         $completedCount++;
-    } elseif (($stage['status'] ?? '') === 'at_risk') {
-        $riskCount++;
     } else {
         $pendingCount++;
     }
@@ -91,17 +91,17 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
     <article class="marketing-summary-card">
         <span class="marketing-summary-card__icon is-warning"><i class="bi bi-hourglass-split"></i></span>
         <div>
-            <p>Pendientes</p>
+            <p>Active</p>
             <strong><?= $pendingCount ?></strong>
-            <small>Requieren seguimiento</small>
+            <small>Campos manuales activos</small>
         </div>
     </article>
     <article class="marketing-summary-card">
         <span class="marketing-summary-card__icon is-danger"><i class="bi bi-exclamation-triangle"></i></span>
         <div>
-            <p>En riesgo</p>
+            <p>Solicitud de cambio</p>
             <strong><?= $riskCount ?></strong>
-            <small>Con notas documentadas</small>
+            <small>Gestionar desde comentarios</small>
         </div>
     </article>
 </div>
@@ -122,10 +122,13 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
         <?php foreach ($stages as $index => $stage): ?>
             <?php
             $stageName = (string) $stage['stage_name'];
-            $stageStatus = (string) ($stage['status'] ?? 'pending');
+            $stageStatus = (string) ($stage['status'] ?? 'active');
+            if (in_array($stageStatus, ['pending', 'at_risk'], true)) {
+                $stageStatus = 'active';
+            }
             $modalId = 'modal-' . preg_replace('/[^a-z0-9_-]/i', '-', $stageName);
             ?>
-            <article class="marketing-stage-card <?= $stageStatus === 'at_risk' ? 'is-risk' : '' ?>">
+            <article class="marketing-stage-card">
                 <div class="marketing-stage-card__top">
                     <span class="marketing-stage-card__step"><?= $index + 1 ?></span>
                     <span class="badge badge-status <?= $statusBadge[$stageStatus] ?? 'bg-info-subtle text-info' ?>">
@@ -137,7 +140,7 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
                 <?php if (!empty($stage['risk_notes'])): ?>
                     <p class="marketing-stage-card__risk"><?= htmlspecialchars($stage['risk_notes']) ?></p>
                 <?php else: ?>
-                    <p class="marketing-stage-card__muted">Sin notas de riesgo registradas.</p>
+                    <p class="marketing-stage-card__muted">Campo manual.</p>
                 <?php endif; ?>
                 <div class="marketing-stage-card__footer">
                     <div>
@@ -167,16 +170,10 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
 
                                 <div class="mb-3">
                                     <label class="form-label">Estado</label>
-                                    <select class="form-select js-risk-status" name="status" id="status-<?= htmlspecialchars($stageName) ?>" data-risk-target="risk-notes-<?= htmlspecialchars($stageName) ?>">
-                                        <option value="completed" <?= $stageStatus === 'completed' ? 'selected' : '' ?>>Completada</option>
-                                        <option value="pending" <?= $stageStatus === 'pending' ? 'selected' : '' ?>>Pendiente a iniciar</option>
-                                        <option value="at_risk" <?= $stageStatus === 'at_risk' ? 'selected' : '' ?>>En riesgo</option>
+                                    <select class="form-select" name="status" id="status-<?= htmlspecialchars($stageName) ?>">
+                                        <option value="active" <?= $stageStatus === 'active' ? 'selected' : '' ?>>Active</option>
+                                        <option value="completed" <?= $stageStatus === 'completed' ? 'selected' : '' ?>>Completed</option>
                                     </select>
-                                </div>
-
-                                <div class="mb-3 <?= $stageStatus === 'at_risk' ? '' : 'd-none' ?>" id="risk-notes-<?= htmlspecialchars($stageName) ?>">
-                                    <label class="form-label">Documentar condicion de riesgo <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" name="risk_notes" rows="3" placeholder="Describe por que esta etapa esta en riesgo..."><?= htmlspecialchars($stage['risk_notes'] ?? '') ?></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -192,5 +189,3 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
         <?php endforeach; ?>
     </div>
 </section>
-
-

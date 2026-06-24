@@ -96,7 +96,7 @@ class MarketingStageRepository
         foreach ($stages as $s) {
             $this->db->execute(
                 'INSERT IGNORE INTO marketing_stages (bootcamp_family_id, cohort_type_code, cohort_year, cohort_month, stage_code, status)
-                 VALUES (:family_id, :type_code, :cohort_year, :cohort_month, :stage, "pending")',
+                 VALUES (:family_id, :type_code, :cohort_year, :cohort_month, :stage, "active")',
                 [
                     'family_id'   => $cohortRef['bootcamp_family_id'],
                     'type_code'   => $cohortRef['cohort_type_code'],

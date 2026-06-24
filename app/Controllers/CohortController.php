@@ -507,9 +507,15 @@ class CohortController extends Controller
             return;
         }
 
-        $data = $this->collectFormData();
-        $this->cohortService->createCohort($data);
-        $this->redirect('/cohorts');
+        try {
+            $data = $this->collectFormData();
+            $this->cohortService->createCohort($data);
+            Auth::flash('success', 'Cohorte creada con estado Planificado.');
+            $this->redirect('/cohorts');
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+            $this->redirect('/cohorts/create');
+        }
     }
 
     /**
@@ -535,6 +541,8 @@ class CohortController extends Controller
             'canEdit'         => Auth::canEditCohort(),
             'canDelete'       => Auth::canDeleteCohort(),
             'editableFields'  => Auth::getEditableCohortFields(),
+            'isAdmin'         => Auth::isAdmin(),
+            'workflowTransitions' => $this->cohortService->getAllowedStatusTransitions($cohort),
         ]);
     }
 
@@ -612,8 +620,14 @@ class CohortController extends Controller
             return;
         }
 
-        $this->cohortService->updateCohortPartial((int) $id, $filteredData);
-        $this->redirect('/cohorts/' . $id);
+        try {
+            $this->cohortService->updateCohortPartial((int) $id, $filteredData);
+            Auth::flash('success', 'Cohorte actualizada.');
+            $this->redirect('/cohorts/' . $id);
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+            $this->redirect('/cohorts/' . $id . '/edit');
+        }
     }
 
     /**
@@ -628,8 +642,43 @@ class CohortController extends Controller
             return;
         }
 
-        $this->cohortService->deleteCohort((int) $id);
+        try {
+            $this->cohortService->deleteCohort((int) $id);
+            Auth::flash('success', 'Cohorte eliminada.');
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+        }
+
         $this->redirect('/cohorts');
+    }
+
+    public function transitionStatus(string $id): void
+    {
+        if (!Auth::isAdmin()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No tienes permiso para cambiar el estado de cohortes.']);
+            return;
+        }
+
+        $cohort = $this->cohortService->getCohortById((int) $id);
+        if (!$cohort) {
+            Auth::flash('error', 'Cohorte no encontrada.');
+            $this->redirect('/cohorts');
+        }
+
+        $targetStatus = (string) $this->input('target_status', '');
+        $reason = $this->normalizeTextInput($this->input('status_reason'));
+
+        try {
+            $this->cohortService->transitionCohortStatus((int) $id, $targetStatus, $reason);
+            $normalizedStatus = $this->cohortService->normalizeTrainingStatus($targetStatus);
+            $label = CohortService::STATUS_LABELS[$normalizedStatus] ?? $normalizedStatus;
+            Auth::flash('success', 'Estado de cohorte actualizado a ' . $label . '.');
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+        }
+
+        $this->redirect('/cohorts/' . $id);
     }
 
     // ─── Private helpers ─────────────────────────────────
@@ -648,8 +697,8 @@ class CohortController extends Controller
             'b2c_admission_target'     => (int) $this->input('b2c_admission_target', '0'),
             'b2b_admissions'           => (int) $this->input('b2b_admissions', '0'),
             'b2c_admissions'           => (int) $this->input('b2c_admissions', '0'),
-            'financial_target_revenue' => (float) $this->input('financial_target_revenue', '0'),
-            'financial_actual_revenue' => (float) $this->input('financial_actual_revenue', '0'),
+            'financial_target_revenue' => $this->normalizeDecimalInput($this->input('financial_target_revenue', '0')),
+            'financial_actual_revenue' => $this->normalizeDecimalInput($this->input('financial_actual_revenue', '0')),
             'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
             'start_date'               => $this->input('start_date') ?: null,
             'end_date'                 => $this->input('end_date') ?: null,
@@ -658,8 +707,13 @@ class CohortController extends Controller
             'bootcamp_type'            => $this->normalizeTextInput($this->input('bootcamp_type')),
             'area'                     => $this->input('area') ?: null,
             'assigned_class_schedule'  => $this->normalizeTextInput($this->input('assigned_class_schedule')),
-            'training_status'          => $this->input('training_status', 'not_started'),
+            'training_status'          => $this->input('training_status', 'planned'),
         ];
+    }
+
+    private function normalizeDecimalInput(mixed $value): string
+    {
+        return trim(str_replace(',', '.', (string) $value));
     }
 
     /**

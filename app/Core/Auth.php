@@ -143,7 +143,6 @@ class Auth
         'bootcamp_type',
         'area',
         'assigned_class_schedule',
-        'training_status',
     ];
 
     /**

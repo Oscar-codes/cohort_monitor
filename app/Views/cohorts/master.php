@@ -27,6 +27,22 @@ if (!function_exists('masterCurrency')) {
         return '$' . number_format($value, 2);
     }
 }
+
+if (!function_exists('masterStatusLabel')) {
+    function masterStatusLabel(?string $status): string
+    {
+        $labels = [
+            'planned' => 'Planificado',
+            'not_started' => 'Planificado',
+            'in_progress' => 'En progreso',
+            'completed' => 'Completado',
+            'cancelled' => 'Cancelado',
+            'pending_reschedule' => 'Pendiente de reprogramar',
+        ];
+
+        return $labels[$status ?? ''] ?? (string) ($status ?? '—');
+    }
+}
 ?>
 
 <section class="cohorts-hero mb-4">
@@ -80,7 +96,7 @@ if (!function_exists('masterCurrency')) {
             <span><i class="bi bi-people"></i></span>
             <div>
                 <strong><?= $totalAdmissionsActual ?> / <?= $totalAdmissionsTarget ?></strong>
-                <small>Admisiones (<?= $admissionsPct ?>%)</small>
+                <small>Inscritos (<?= $admissionsPct ?>%)</small>
             </div>
         </article>
     </div>
@@ -108,7 +124,7 @@ if (!function_exists('masterCurrency')) {
     <div class="app-panel__header">
         <div>
             <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros del plan maestro</h3>
-            <p class="app-panel__subtitle">Filtra por busqueda, bootcamp, proyecto, fechas, modelo y estado.</p>
+            <p class="app-panel__subtitle">Filtra por busqueda, bootcamp name, proyecto, fechas, poblacion o sub canal y estado.</p>
         </div>
     </div>
     <form method="GET" action="/cohorts/master" class="row g-3">
@@ -117,7 +133,7 @@ if (!function_exists('masterCurrency')) {
             <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">
         </div>
         <div class="col-12 col-md-6 col-xl-2">
-            <label for="bootcamp_type" class="form-label">Bootcamp</label>
+            <label for="bootcamp_type" class="form-label">Bootcamp name</label>
             <select class="form-select" id="bootcamp_type" name="bootcamp_type">
                 <option value="">Todos</option>
                 <?php foreach (($bootcampTypes ?? []) as $type): ?>
@@ -147,7 +163,7 @@ if (!function_exists('masterCurrency')) {
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-xl-2">
-            <label for="business_model" class="form-label">Modelo</label>
+            <label for="business_model" class="form-label">Poblacion o sub canal</label>
             <select class="form-select" id="business_model" name="business_model">
                 <option value="">Todos</option>
                 <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
@@ -158,9 +174,11 @@ if (!function_exists('masterCurrency')) {
             <label for="cohort_status" class="form-label">Estado</label>
             <select class="form-select" id="cohort_status" name="cohort_status">
                 <option value="">Todos</option>
-                <option value="upcoming" <?= (($filters['cohort_status'] ?? '') === 'upcoming') ? 'selected' : '' ?>>Upcoming</option>
-                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>In progress</option>
-                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completed</option>
+                <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>
+                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
+                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
+                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                <option value="pending_reschedule" <?= (($filters['cohort_status'] ?? '') === 'pending_reschedule') ? 'selected' : '' ?>>Pendiente de reprogramar</option>
             </select>
         </div>
         <div class="col-12">
@@ -191,12 +209,12 @@ if (!function_exists('masterCurrency')) {
                 <thead class="table-light">
                     <tr>
                         <th>Codigo</th>
-                        <th>Bootcamp</th>
+                        <th>Bootcamp name</th>
                         <th>Proyecto</th>
                         <th>Coach</th>
                         <th>Dias</th>
                         <th>Horario</th>
-                        <th>Admisiones</th>
+                        <th>Inscritos</th>
                         <th>Revenue</th>
                         <th>Semaforo</th>
                         <th>Estado</th>
@@ -263,7 +281,7 @@ if (!function_exists('masterCurrency')) {
                                 <div class="small text-muted mt-1">Adm <?= $admissionProgress ?>% | Rev <?= $revenueProgress ?>%</div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border"><?= htmlspecialchars((string) ($cohort['training_status'] ?? '—')) ?></span>
+                                <span class="badge bg-light text-dark border"><?= htmlspecialchars(masterStatusLabel($cohort['training_status'] ?? null)) ?></span>
                                 <div class="small text-muted mt-1"><?= htmlspecialchars(masterDate($cohort['start_date'] ?? null)) ?> - <?= htmlspecialchars(masterDate($cohort['end_date'] ?? null)) ?></div>
                             </td>
                             <td>

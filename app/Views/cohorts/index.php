@@ -1,4 +1,6 @@
 <?php
+use App\Core\Auth;
+
 /**
  * Cohorts Index View
  *
@@ -33,12 +35,20 @@ function formatMonthLabel(int $timestamp): string
 /** Helper: derive lifecycle status based on dates */
 function cohortLifecycleStatus(array $cohort): string
 {
+    $storedStatus = $cohort['training_status'] ?? 'planned';
+    if ($storedStatus === 'not_started') {
+        $storedStatus = 'planned';
+    }
+    if (in_array($storedStatus, ['cancelled', 'pending_reschedule', 'completed'], true)) {
+        return $storedStatus;
+    }
+
     $today = date('Y-m-d');
     $startDate = $cohort['start_date'] ?? null;
     $endDate = $cohort['end_date'] ?? null;
 
     if ($startDate && $startDate > $today) {
-        return 'upcoming';
+        return 'planned';
     }
 
     if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
@@ -49,7 +59,26 @@ function cohortLifecycleStatus(array $cohort): string
         return 'completed';
     }
 
-    return 'upcoming';
+    return 'planned';
+}
+
+function cohortStatusLabel(string $status): string
+{
+    $labels = [
+        'planned' => 'Planificado',
+        'in_progress' => 'En progreso',
+        'completed' => 'Completado',
+        'cancelled' => 'Cancelado',
+        'pending_reschedule' => 'Pendiente de reprogramar',
+        'not_started' => 'Planificado',
+    ];
+
+    return $labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
+}
+
+function cohortCanDelete(array $cohort): bool
+{
+    return in_array(cohortLifecycleStatus($cohort), ['planned', 'cancelled', 'pending_reschedule'], true);
 }
 
 /** Helper: render lifecycle badge */
@@ -58,9 +87,11 @@ function lifecycleBadge(array $cohort): string
     $status = cohortLifecycleStatus($cohort);
 
     $map = [
-        'upcoming' => ['bg-secondary-subtle text-secondary', 'Upcoming'],
-        'in_progress' => ['bg-primary-subtle text-primary', 'In progress'],
-        'completed' => ['bg-success-subtle text-success', 'Completed'],
+        'planned' => ['bg-secondary-subtle text-secondary', 'Planificado'],
+        'in_progress' => ['bg-primary-subtle text-primary', 'En progreso'],
+        'completed' => ['bg-success-subtle text-success', 'Completado'],
+        'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado'],
+        'pending_reschedule' => ['bg-warning-subtle text-warning', 'Pendiente de reprogramar'],
     ];
 
     [$class, $label] = $map[$status] ?? ['bg-light text-dark', ucfirst($status)];
@@ -92,7 +123,7 @@ function projectBadge(string $project): string
 function businessModelBadge(array $cohort): string
 {
     $hasB2B = ((int) ($cohort['b2b_admission_target'] ?? 0) > 0) || ((int) ($cohort['b2b_admissions'] ?? 0) > 0);
-    $hasB2C = (int) ($cohort['b2c_admissions'] ?? 0) > 0;
+    $hasB2C = ((int) ($cohort['b2c_admission_target'] ?? 0) > 0) || ((int) ($cohort['b2c_admissions'] ?? 0) > 0);
 
     if ($hasB2B && $hasB2C) {
         return '<span class="badge bg-warning-subtle text-warning">B2B + B2C</span>';
@@ -130,7 +161,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
     $typeCell = $type ? '<span class="badge bg-light text-dark border">' . $type . '</span>' : '<span class="text-muted">—</span>';
 
     $deleteBtn = '';
-    if ($canDelete) {
+    if ($canDelete && cohortCanDelete($cohort)) {
         $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
             . '<input type="hidden" name="_method" value="DELETE">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash"></i></button>'
@@ -186,7 +217,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canEdi
     $pct = $target > 0 ? min(100, (int) round(($actual / $target) * 100)) : 0;
 
     $deleteBtn = '';
-    if ($canDelete) {
+    if ($canDelete && cohortCanDelete($cohort)) {
         $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
             . '<input type="hidden" name="_method" value="DELETE">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" aria-label="Eliminar"><i class="bi bi-trash"></i></button>'
@@ -214,7 +245,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canEdi
             . '<span><i class="bi bi-calendar-event"></i>' . $startLabel . ' - ' . $endLabel . '</span>'
         . '</div>'
         . '<div class="cohort-mobile-card__progress">'
-            . '<div><strong>' . $actual . '/' . $target . '</strong><small>Admisiones</small></div>'
+            . '<div><strong>' . $actual . '/' . $target . '</strong><small>Inscritos</small></div>'
             . '<div class="dashboard-mini-progress"><span data-style-width="' . $pct . '%"></span></div>'
         . '</div>'
         . '<div class="cohort-mobile-card__actions">'
@@ -233,18 +264,20 @@ $canEditVal = $canEdit ?? false;
 $canDeleteVal = $canDelete ?? false;
 
 // Group cohorts by lifecycle status
-$grouped = ['upcoming' => [], 'in_progress' => [], 'completed' => []];
+$grouped = ['planned' => [], 'in_progress' => [], 'completed' => [], 'cancelled' => [], 'pending_reschedule' => []];
 foreach ($cohorts as $c) {
     $grouped[cohortLifecycleStatus($c)][] = $c;
 }
-$upcomingCount   = count($grouped['upcoming']);
+$upcomingCount   = count($grouped['planned']);
 $inProgressCount = count($grouped['in_progress']);
 $completedCount  = count($grouped['completed']);
+$cancelledCount  = count($grouped['cancelled']);
+$pendingRescheduleCount = count($grouped['pending_reschedule']);
 
 // Upcoming cohorts starting within 60 days (for Gantt view)
 $today60 = date('Y-m-d', strtotime('+60 days'));
 $todayStr = date('Y-m-d');
-$ganttCohorts = array_filter($grouped['upcoming'], function (array $c) use ($todayStr, $today60) {
+$ganttCohorts = array_filter($grouped['planned'], function (array $c) use ($todayStr, $today60) {
     $sd = $c['start_date'] ?? null;
     return $sd && $sd >= $todayStr && $sd <= $today60;
 });
@@ -266,11 +299,26 @@ $ganttSpanDays = max(1, (int) round(($ganttEndTs - $ganttStartTs) / 86400));
 
 // Status config for accordion
 $statusConfig = [
-    'upcoming'    => ['label' => 'Upcoming',    'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
-    'in_progress' => ['label' => 'In Progress', 'color' => '#0d6efd', 'icon' => 'bi-play-circle',    'defaultOpen' => false],
-    'completed'   => ['label' => 'Completed',   'color' => '#198754', 'icon' => 'bi-check-circle',   'defaultOpen' => false],
+    'planned'    => ['label' => 'Planificado',    'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
+    'in_progress' => ['label' => 'En progreso', 'color' => '#0d6efd', 'icon' => 'bi-play-circle',    'defaultOpen' => false],
+    'completed'   => ['label' => 'Completado',   'color' => '#198754', 'icon' => 'bi-check-circle',   'defaultOpen' => false],
+    'cancelled'   => ['label' => 'Cancelado',   'color' => '#dc3545', 'icon' => 'bi-x-circle',   'defaultOpen' => false],
+    'pending_reschedule'   => ['label' => 'Pendiente de reprogramar',   'color' => '#ffc107', 'icon' => 'bi-calendar2-week',   'defaultOpen' => false],
 ];
 ?>
+
+<?php if ($msg = Auth::getFlash('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i> <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+<?php if ($msg = Auth::getFlash('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i> <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
 
 <!-- ── Toolbar: filtros + toggle vista ──────────────────── -->
 <section class="cohorts-hero mb-4">
@@ -330,7 +378,7 @@ $statusConfig = [
             </div>
 
             <div class="col-12 col-md-6 col-xl-3">
-                <label for="bootcamp_type" class="form-label">Bootcamp Type</label>
+                <label for="bootcamp_type" class="form-label">Bootcamp name</label>
                 <select class="form-select" id="bootcamp_type" name="bootcamp_type">
                     <option value="">Todos</option>
                     <?php foreach (($bootcampTypes ?? []) as $type): ?>
@@ -364,7 +412,7 @@ $statusConfig = [
             </div>
 
             <div class="col-12 col-md-6 col-xl-2">
-                <label for="business_model" class="form-label">Business Model</label>
+                <label for="business_model" class="form-label">Poblacion o sub canal</label>
                 <select class="form-select" id="business_model" name="business_model">
                     <option value="">Todos</option>
                     <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
@@ -376,9 +424,11 @@ $statusConfig = [
                 <label for="cohort_status" class="form-label">Cohort Status</label>
                 <select class="form-select" id="cohort_status" name="cohort_status">
                     <option value="">Todos</option>
-                    <option value="upcoming" <?= (($filters['cohort_status'] ?? '') === 'upcoming') ? 'selected' : '' ?>>Upcoming</option>
-                    <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>In progress</option>
-                    <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completed</option>
+                    <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>
+                    <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
+                    <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
+                    <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                    <option value="pending_reschedule" <?= (($filters['cohort_status'] ?? '') === 'pending_reschedule') ? 'selected' : '' ?>>Pendiente de reprogramar</option>
                 </select>
             </div>
 
@@ -420,7 +470,7 @@ $statusConfig = [
             <span><i class="bi bi-clock"></i></span>
             <div>
                 <strong><?= $upcomingCount ?></strong>
-                <small>Upcoming</small>
+                <small>Planificado</small>
             </div>
         </div>
     </div>
@@ -429,7 +479,7 @@ $statusConfig = [
             <span><i class="bi bi-play-circle"></i></span>
             <div>
                 <strong><?= $inProgressCount ?></strong>
-                <small>In progress</small>
+                <small>En progreso</small>
             </div>
         </div>
     </div>
@@ -438,7 +488,7 @@ $statusConfig = [
             <span><i class="bi bi-check-circle"></i></span>
             <div>
                 <strong><?= $completedCount ?></strong>
-                <small>Completed</small>
+                <small>Completado</small>
             </div>
         </div>
     </div>
@@ -450,7 +500,7 @@ $statusConfig = [
 <div id="view-list">
 <?php if (!empty($cohorts)): ?>
 
-    <?php foreach (['upcoming' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount] as $status => $count): ?>
+    <?php foreach (['planned' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount, 'cancelled' => $cancelledCount, 'pending_reschedule' => $pendingRescheduleCount] as $status => $count): ?>
         <?php if ($count === 0) continue; ?>
         <?php
             $cfg = $statusConfig[$status];
@@ -489,8 +539,8 @@ $statusConfig = [
                                     <th class="d-none d-xl-table-cell">Coach</th>
                                     <th class="d-none d-xl-table-cell">Horario</th>
                                     <th class="d-none d-xl-table-cell">Dias</th>
-                                    <th class="d-none d-xl-table-cell text-center">B2B/B2C</th>
-                                    <th class="d-none d-lg-table-cell text-center">Business Model</th>
+                                    <th class="d-none d-xl-table-cell text-center">Inscritos B2B/B2C</th>
+                                    <th class="d-none d-lg-table-cell text-center">Poblacion o sub canal</th>
                                     <th class="text-end cohort-col-actions">Acciones</th>
                                 </tr>
                             </thead>
@@ -521,20 +571,20 @@ $statusConfig = [
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     VIEW 2: Gantt Timeline (Upcoming — next 60 days)
+     VIEW 2: Gantt Timeline (Planificado — next 60 days)
      ════════════════════════════════════════════════════════ -->
 <div id="view-gantt" class="d-none">
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Upcoming Timeline — próximos 60 días</h6>
-            <small class="text-muted"><?= count($ganttCohorts) ?> bootcamps</small>
+            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Timeline planificado — proximos 60 dias</h6>
+            <small class="text-muted"><?= count($ganttCohorts) ?> cohortes</small>
         </div>
         <div class="card-body p-0">
             <?php if (empty($ganttCohorts)): ?>
                 <div class="empty-state">
                     <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
-                    <h5 class="empty-state-title">Sin bootcamps próximos</h5>
-                    <p class="empty-state-text">No hay bootcamps que inicien en los próximos 60 días.</p>
+                    <h5 class="empty-state-title">Sin cohortes proximas</h5>
+                    <p class="empty-state-text">No hay cohortes que inicien en los proximos 60 dias.</p>
                 </div>
             <?php else: ?>
                 <div class="gantt-wrapper" id="gantt-wrapper">

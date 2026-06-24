@@ -7,7 +7,7 @@ use App\Repositories\MarketingStageRepository;
 use App\Repositories\AuditRepository;
 
 /**
- * MarketingService — Business logic for marketing workflow stages.
+ * MarketingService â€” Business logic for marketing workflow stages.
  */
 class MarketingService
 {
@@ -18,16 +18,17 @@ class MarketingService
         'strategy'      => 'Estrategia',
         'content'       => 'Contenido',
         'ads'           => 'Paid Ads',
-        'organic'       => 'Orgánico',
+        'organic'       => 'OrgÃ¡nico',
         'events'        => 'Eventos',
         'partnerships'  => 'Partnerships',
-        'analytics'     => 'Analítica',
+        'analytics'     => 'AnalÃ­tica',
     ];
 
     public const STATUS_LABELS = [
-        'completed' => 'Completada',
-        'pending'   => 'Pendiente a iniciar',
-        'at_risk'   => 'En riesgo',
+        'active'    => 'Active',
+        'completed' => 'Completed',
+        'pending'   => 'Active',
+        'at_risk'   => 'Active',
     ];
 
     public function __construct()
@@ -51,18 +52,15 @@ class MarketingService
     public function updateStage(int $cohortId, string $stageName, string $status, ?string $riskNotes = null): void
     {
         $validStages   = array_keys(self::STAGE_LABELS);
-        $validStatuses = array_keys(self::STATUS_LABELS);
+        $status = $this->normalizeStatus($status);
+        $validStatuses = ['active', 'completed'];
 
         if (!in_array($stageName, $validStages, true)) {
-            throw new \InvalidArgumentException('Etapa de marketing no válida.');
+            throw new \InvalidArgumentException('Etapa de marketing no vÃ¡lida.');
         }
         if (!in_array($status, $validStatuses, true)) {
-            throw new \InvalidArgumentException('Estado no válido.');
+            throw new \InvalidArgumentException('Estado no vÃ¡lido.');
         }
-        if ($status === 'at_risk' && empty($riskNotes)) {
-            throw new \InvalidArgumentException('Cuando el estado es "En riesgo" debe documentar la condición.');
-        }
-
         // Get old state for audit
         $old = $this->stageRepo->findByCohort($cohortId);
         $oldStage = null;
@@ -85,6 +83,15 @@ class MarketingService
         ]);
     }
 
+    private function normalizeStatus(string $status): string
+    {
+        return match ($status) {
+            'completed' => 'completed',
+            'active', 'pending', 'at_risk' => 'active',
+            default => $status,
+        };
+    }
+
     /**
      * Get all at-risk stages (for admin alerts).
      */
@@ -93,3 +100,4 @@ class MarketingService
         return $this->stageRepo->findAtRisk();
     }
 }
+

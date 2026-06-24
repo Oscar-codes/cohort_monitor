@@ -24,9 +24,11 @@ class ReportService
     /** Human-readable labels for training statuses */
     public const STATUS_LABELS = [
         'completed'   => 'Completado',
-        'in_progress' => 'En ejecución',
-        'not_started' => 'Pendiente',
+        'in_progress' => 'En progreso',
+        'planned'     => 'Planificado',
+        'not_started' => 'Planificado',
         'cancelled'   => 'Cancelado',
+        'pending_reschedule' => 'Pendiente de reprogramar',
     ];
 
     public function __construct()
@@ -34,7 +36,7 @@ class ReportService
         $this->reportRepo = new ReportRepository();
     }
 
-    // ─── Filtering ───────────────────────────────────────────
+    // â”€â”€â”€ Filtering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Validate and sanitize report filters.
@@ -52,7 +54,7 @@ class ReportService
         $area = trim($raw['area'] ?? '');
         if ($area !== '' && $area !== 'all') {
             if (!array_key_exists($area, $areaLabels)) {
-                throw new \InvalidArgumentException('Área no válida.');
+                throw new \InvalidArgumentException('Ãrea no vÃ¡lida.');
             }
             $filters['area'] = $area;
         }
@@ -63,14 +65,14 @@ class ReportService
 
         if ($dateFrom !== '') {
             if (!$this->isValidDate($dateFrom)) {
-                throw new \InvalidArgumentException('Fecha "Desde" no tiene formato válido (YYYY-MM-DD).');
+                throw new \InvalidArgumentException('Fecha "Desde" no tiene formato vÃ¡lido (YYYY-MM-DD).');
             }
             $filters['date_from'] = $dateFrom;
         }
 
         if ($dateTo !== '') {
             if (!$this->isValidDate($dateTo)) {
-                throw new \InvalidArgumentException('Fecha "Hasta" no tiene formato válido (YYYY-MM-DD).');
+                throw new \InvalidArgumentException('Fecha "Hasta" no tiene formato vÃ¡lido (YYYY-MM-DD).');
             }
             $filters['date_to'] = $dateTo;
         }
@@ -140,7 +142,7 @@ class ReportService
         return $labels;
     }
 
-    // ─── Excel Export ────────────────────────────────────────
+    // â”€â”€â”€ Excel Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Generate an Excel (.xlsx) file from filtered cohort data and force download.
@@ -161,15 +163,15 @@ class ReportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Reporte de Cohortes');
 
-        // ── Title row ────────────────────────────────
+        // â”€â”€ Title row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $sheet->mergeCells('A1:F1');
-        $sheet->setCellValue('A1', 'Reporte de Cohortes — Cohort Monitor');
+        $sheet->setCellValue('A1', 'Reporte de Cohortes â€” Cohort Monitor');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // ── Filter info ──────────────────────────────
+        // â”€â”€ Filter info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $filterText = 'Filtros: ';
-        $filterText .= !empty($filters['area']) ? 'Área: ' . ($areaLabels[$filters['area']] ?? $filters['area']) : 'Todas las áreas';
+        $filterText .= !empty($filters['area']) ? 'Ãrea: ' . ($areaLabels[$filters['area']] ?? $filters['area']) : 'Todas las Ã¡reas';
         $filterText .= !empty($filters['date_from']) ? ' | Desde: ' . $filters['date_from'] : '';
         $filterText .= !empty($filters['date_to'])   ? ' | Hasta: ' . $filters['date_to']   : '';
         $filterText .= ' | Generado: ' . date('d/m/Y H:i');
@@ -178,8 +180,8 @@ class ReportService
         $sheet->setCellValue('A2', $filterText);
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
 
-        // ── Column headers ───────────────────────────
-        $headers = ['Nombre del Cohort', 'Área', 'Estado', 'Fecha Inicio', 'Fecha Fin', 'En Riesgo'];
+        // â”€â”€ Column headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        $headers = ['Nombre del Cohort', 'Ãrea', 'Estado', 'Fecha Inicio', 'Fecha Fin', 'En Riesgo'];
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '4', $header);
@@ -197,15 +199,15 @@ class ReportService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // ── Data rows ────────────────────────────────
+        // â”€â”€ Data rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $row = 5;
         foreach ($cohorts as $c) {
             $sheet->setCellValue('A' . $row, $c['name']);
-            $sheet->setCellValue('B' . $row, $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? '—'));
-            $sheet->setCellValue('C' . $row, self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? '—'));
-            $sheet->setCellValue('D' . $row, $c['start_date'] ?? '—');
-            $sheet->setCellValue('E' . $row, $c['end_date']   ?? '—');
-            $sheet->setCellValue('F' . $row, ($c['at_risk'] ?? 0) ? 'Sí' : 'No');
+            $sheet->setCellValue('B' . $row, $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? 'â€”'));
+            $sheet->setCellValue('C' . $row, self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'â€”'));
+            $sheet->setCellValue('D' . $row, $c['start_date'] ?? 'â€”');
+            $sheet->setCellValue('E' . $row, $c['end_date']   ?? 'â€”');
+            $sheet->setCellValue('F' . $row, ($c['at_risk'] ?? 0) ? 'SÃ­' : 'No');
 
             // Highlight at-risk rows
             if (!empty($c['at_risk'])) {
@@ -220,12 +222,12 @@ class ReportService
             $row++;
         }
 
-        // ── Auto-size columns ────────────────────────
+        // â”€â”€ Auto-size columns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         foreach (range('A', 'F') as $colLetter) {
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
         }
 
-        // ── Borders ─────────────────────────────────
+        // â”€â”€ Borders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $lastRow = $row - 1;
         $sheet->getStyle("A4:F{$lastRow}")->applyFromArray([
             'borders' => [
@@ -236,7 +238,7 @@ class ReportService
             ],
         ]);
 
-        // ── Download ─────────────────────────────────
+        // â”€â”€ Download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $filename = 'reporte_cohortes_' . date('Y-m-d_His') . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -248,7 +250,7 @@ class ReportService
         exit;
     }
 
-    // ─── PDF Export ──────────────────────────────────────────
+    // â”€â”€â”€ PDF Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Generate a PDF report and either download or render inline for printing.
@@ -302,9 +304,9 @@ class ReportService
 
         $filterDesc = [];
         if (!empty($filters['area'])) {
-            $filterDesc[] = 'Área: ' . ($areaLabels[$filters['area']] ?? $filters['area']);
+            $filterDesc[] = 'Ãrea: ' . ($areaLabels[$filters['area']] ?? $filters['area']);
         } else {
-            $filterDesc[] = 'Área: Todas';
+            $filterDesc[] = 'Ãrea: Todas';
         }
         if (!empty($filters['date_from'])) {
             $filterDesc[] = 'Desde: ' . $filters['date_from'];
@@ -314,7 +316,7 @@ class ReportService
         }
         $filterStr = implode(' | ', $filterDesc);
 
-        // ── Area summary rows ────────────
+        // â”€â”€ Area summary rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $areaSummaryHtml = '';
         foreach ($areaLabels as $key => $label) {
             $a = $byArea[$key] ?? ['total' => 0, 'at_risk' => 0, 'completed' => 0, 'in_progress' => 0];
@@ -327,12 +329,12 @@ class ReportService
             </tr>";
         }
 
-        // ── Cohort rows ─────────────────
+        // â”€â”€ Cohort rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $cohortRowsHtml = '';
         foreach ($cohorts as $c) {
-            $areaLabel  = $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? '—');
-            $statusLabel = self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? '—');
-            $riskLabel  = ($c['at_risk'] ?? 0) ? '<span style="color:#dc3545;font-weight:bold">Sí</span>' : 'No';
+            $areaLabel  = $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? 'â€”');
+            $statusLabel = self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'â€”');
+            $riskLabel  = ($c['at_risk'] ?? 0) ? '<span style="color:#dc3545;font-weight:bold">SÃ­</span>' : 'No';
             $riskBg     = ($c['at_risk'] ?? 0) ? 'background-color:#fff3cd;' : '';
 
             $cohortRowsHtml .= "<tr style='{$riskBg}'>
@@ -353,7 +355,7 @@ class ReportService
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Cohortes — Cohort Monitor</title>
+    <title>Reporte de Cohortes â€” Cohort Monitor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #333; padding: 20px; }
@@ -379,22 +381,22 @@ class ReportService
 <body>
     <div class="header">
         <h1>Reporte de Cohortes</h1>
-        <p>Cohort Monitor — Generado: {$now}</p>
+        <p>Cohort Monitor â€” Generado: {$now}</p>
     </div>
 
     <div class="filters">
         <strong>Filtros aplicados:</strong> {$filterStr} &nbsp;|&nbsp; <strong>Total de cohortes:</strong> {$totalCohorts}
     </div>
 
-    <div class="section-title">Resumen por Área</div>
+    <div class="section-title">Resumen por Ãrea</div>
     <table>
         <thead>
             <tr>
-                <th>Área</th>
+                <th>Ãrea</th>
                 <th>Total</th>
                 <th>En Riesgo</th>
                 <th>Completadas</th>
-                <th>En Ejecución</th>
+                <th>En EjecuciÃ³n</th>
             </tr>
         </thead>
         <tbody>
@@ -408,8 +410,9 @@ class ReportService
             <thead>
                 <tr>
                     <th>Completado</th>
-                    <th>En Ejecución</th>
-                    <th>Pendiente</th>
+                    <th>En EjecuciÃ³n</th>
+                    <th>Planificado</th>
+                    <th>Pendiente de reprogramar</th>
                     <th>Cancelado</th>
                 </tr>
             </thead>
@@ -417,7 +420,8 @@ class ReportService
                 <tr>
                     <td><strong>{$byStatus['completed']}</strong></td>
                     <td><strong>{$byStatus['in_progress']}</strong></td>
-                    <td><strong>{$byStatus['not_started']}</strong></td>
+                    <td><strong>{$byStatus['planned']}</strong></td>
+                    <td><strong>{$byStatus['pending_reschedule']}</strong></td>
                     <td><strong>{$byStatus['cancelled']}</strong></td>
                 </tr>
             </tbody>
@@ -429,7 +433,7 @@ class ReportService
         <thead>
             <tr>
                 <th style="text-align:left">Nombre del Cohort</th>
-                <th>Área</th>
+                <th>Ãrea</th>
                 <th>Estado</th>
                 <th>Fecha Inicio</th>
                 <th>Fecha Fin</th>
@@ -442,14 +446,14 @@ class ReportService
     </table>
 
     <div class="footer">
-        Cohort Monitor v1.2 — Este reporte fue generado automáticamente. Los datos reflejan el estado al momento de la generación.
+        Cohort Monitor v1.2 â€” Este reporte fue generado automÃ¡ticamente. Los datos reflejan el estado al momento de la generaciÃ³n.
     </div>
 </body>
 </html>
 HTML;
     }
 
-    // ─── Helpers ─────────────────────────────────────────────
+    // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Validate that a string is a valid date in Y-m-d format.
@@ -460,3 +464,5 @@ HTML;
         return $d && $d->format('Y-m-d') === $date;
     }
 }
+
+

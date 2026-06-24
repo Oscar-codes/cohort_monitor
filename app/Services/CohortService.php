@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Core\Auth;
+use App\Repositories\AuditRepository;
 use App\Repositories\CohortRepository;
 use DateTime;
 
@@ -14,11 +16,56 @@ use DateTime;
  */
 class CohortService
 {
+    public const STATUS_PLANNED = 'planned';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_PENDING_RESCHEDULE = 'pending_reschedule';
+
+    public const STATUS_LABELS = [
+        self::STATUS_PLANNED => 'Planificado',
+        self::STATUS_IN_PROGRESS => 'En progreso',
+        self::STATUS_COMPLETED => 'Completado',
+        self::STATUS_CANCELLED => 'Cancelado',
+        self::STATUS_PENDING_RESCHEDULE => 'Pendiente de reprogramar',
+        'not_started' => 'Planificado',
+    ];
+
+    private const DELETABLE_STATUSES = [
+        self::STATUS_PLANNED,
+        self::STATUS_CANCELLED,
+        self::STATUS_PENDING_RESCHEDULE,
+        'not_started',
+    ];
+
+    private const WORKFLOW_TRANSITIONS = [
+        self::STATUS_PLANNED => [
+            self::STATUS_CANCELLED,
+            self::STATUS_PENDING_RESCHEDULE,
+            self::STATUS_COMPLETED,
+        ],
+        self::STATUS_IN_PROGRESS => [
+            self::STATUS_COMPLETED,
+            self::STATUS_CANCELLED,
+        ],
+        self::STATUS_COMPLETED => [],
+        self::STATUS_CANCELLED => [
+            self::STATUS_PLANNED,
+            self::STATUS_PENDING_RESCHEDULE,
+        ],
+        self::STATUS_PENDING_RESCHEDULE => [
+            self::STATUS_PLANNED,
+            self::STATUS_CANCELLED,
+        ],
+    ];
+
     private CohortRepository $cohortRepo;
+    private AuditRepository $auditRepo;
 
     public function __construct()
     {
         $this->cohortRepo = new CohortRepository();
+        $this->auditRepo = new AuditRepository();
     }
 
     // ─── Reads ───────────────────────────────────────────
@@ -92,6 +139,17 @@ class CohortService
         return $row ? $this->enrichWithMilestones($row) : null;
     }
 
+    /**
+     * Get allowed workflow transitions for a cohort.
+     *
+     * @return string[]
+     */
+    public function getAllowedStatusTransitions(array $cohort): array
+    {
+        $currentStatus = $this->effectiveTrainingStatus($cohort);
+        return self::WORKFLOW_TRANSITIONS[$currentStatus] ?? [];
+    }
+
     // ─── Writes ──────────────────────────────────────────
 
     /**
@@ -99,6 +157,8 @@ class CohortService
      */
     public function createCohort(array $data): int
     {
+        $data = $this->normalizeCohortData($data);
+        $data['training_status'] = self::STATUS_PLANNED;
         $this->validate($data);
         return $this->cohortRepo->create($data);
     }
@@ -108,6 +168,8 @@ class CohortService
      */
     public function updateCohort(int $id, array $data): bool
     {
+        $this->assertStatusIsNotManuallyEditable($data);
+        $data = $this->normalizeCohortData($data);
         $this->validate($data);
         return $this->cohortRepo->update($id, $data);
     }
@@ -119,7 +181,10 @@ class CohortService
      */
     public function updateCohortPartial(int $id, array $data): bool
     {
+        $this->assertStatusIsNotManuallyEditable($data);
+
         // Validate only the fields that are being updated
+        $data = $this->normalizeCohortData($data);
         $this->validatePartial($data);
         return $this->cohortRepo->updatePartial($id, $data);
     }
@@ -129,7 +194,106 @@ class CohortService
      */
     public function deleteCohort(int $id): bool
     {
+        $cohort = $this->getCohortById($id);
+        if (!$cohort) {
+            return false;
+        }
+
+        $effectiveStatus = $this->effectiveTrainingStatus($cohort);
+        if (!in_array($effectiveStatus, self::DELETABLE_STATUSES, true)) {
+            throw new \InvalidArgumentException('No se pueden eliminar cohortes En progreso o Completadas.');
+        }
+
         return $this->cohortRepo->delete($id);
+    }
+
+    public function transitionCohortStatus(int $id, string $targetStatus, ?string $reason = null): bool
+    {
+        $cohort = $this->getCohortById($id);
+        if (!$cohort) {
+            throw new \InvalidArgumentException('Cohorte no encontrada.');
+        }
+
+        $targetStatus = $this->normalizeTrainingStatus($targetStatus);
+        $currentStatus = $this->effectiveTrainingStatus($cohort);
+        $allowedTransitions = $this->getAllowedStatusTransitions($cohort);
+        $reason = trim((string) ($reason ?? ''));
+
+        if (!isset(self::STATUS_LABELS[$targetStatus])) {
+            throw new \InvalidArgumentException('Estado de workflow no válido.');
+        }
+
+        if ($currentStatus === $targetStatus) {
+            throw new \InvalidArgumentException('La cohorte ya se encuentra en ese estado.');
+        }
+
+        if (!in_array($targetStatus, $allowedTransitions, true)) {
+            throw new \InvalidArgumentException('La transición de estado solicitada no está permitida para esta cohorte.');
+        }
+
+        if (in_array($targetStatus, [self::STATUS_CANCELLED, self::STATUS_PENDING_RESCHEDULE], true) && $reason === '') {
+            throw new \InvalidArgumentException('Debes ingresar un motivo para cancelar o reprogramar la cohorte.');
+        }
+
+        if ($targetStatus === self::STATUS_PLANNED) {
+            $this->assertPlanningDataReadyForPlanned($cohort);
+        }
+
+        $updated = $this->cohortRepo->updatePartial($id, ['training_status' => $targetStatus]);
+
+        if ($updated) {
+            $this->auditRepo->log([
+                'user_id'     => Auth::id(),
+                'action'      => 'transition_cohort_status',
+                'entity_type' => 'cohort',
+                'entity_id'   => $id,
+                'old_values'  => [
+                    'effective_status' => $currentStatus,
+                    'stored_status' => $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED)),
+                ],
+                'new_values'  => [
+                    'training_status' => $targetStatus,
+                    'reason' => $reason !== '' ? $reason : null,
+                ],
+            ]);
+        }
+
+        return $updated;
+    }
+
+    public function effectiveTrainingStatus(array $cohort): string
+    {
+        $status = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED));
+
+        if (in_array($status, [self::STATUS_CANCELLED, self::STATUS_PENDING_RESCHEDULE, self::STATUS_COMPLETED], true)) {
+            return $status;
+        }
+
+        $today = date('Y-m-d');
+        $startDate = $cohort['start_date'] ?? null;
+        $endDate = $cohort['end_date'] ?? null;
+
+        if ($endDate && $endDate < $today) {
+            return self::STATUS_COMPLETED;
+        }
+
+        if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
+            return self::STATUS_IN_PROGRESS;
+        }
+
+        return self::STATUS_PLANNED;
+    }
+
+    public function normalizeTrainingStatus(string $status): string
+    {
+        return match ($status) {
+            'not_started', 'upcoming', 'pending', 'pendiente', 'planificado' => self::STATUS_PLANNED,
+            'in_progress', 'en progreso', 'en ejecucion', 'en ejecución' => self::STATUS_IN_PROGRESS,
+            'completed', 'completado' => self::STATUS_COMPLETED,
+            'cancelled', 'cancelado' => self::STATUS_CANCELLED,
+            'pending_reschedule', 'pendiente de reprogramar' => self::STATUS_PENDING_RESCHEDULE,
+            default => $status,
+        };
     }
 
     // ─── Calculated fields ───────────────────────────────
@@ -189,6 +353,15 @@ class CohortService
         return array_merge($row, $milestones);
     }
 
+    private function normalizeCohortData(array $data): array
+    {
+        if (array_key_exists('training_status', $data) && !empty($data['training_status'])) {
+            $data['training_status'] = $this->normalizeTrainingStatus((string) $data['training_status']);
+        }
+
+        return $data;
+    }
+
     /**
      * Validate cohort data before create / update.
      *
@@ -210,10 +383,16 @@ class CohortService
             }
         }
 
-        $validStatuses = ['not_started', 'in_progress', 'completed', 'cancelled'];
+        if (!empty($data['training_status'])) {
+            $data['training_status'] = $this->normalizeTrainingStatus((string) $data['training_status']);
+        }
+
+        $validStatuses = array_keys(self::STATUS_LABELS);
         if (!empty($data['training_status']) && !in_array($data['training_status'], $validStatuses, true)) {
             throw new \InvalidArgumentException('Estado de entrenamiento no válido.');
         }
+
+        $this->validatePartial($data);
     }
 
     /**
@@ -236,7 +415,7 @@ class CohortService
 
         foreach ($numericFields as $field) {
             if (array_key_exists($field, $data)) {
-                if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
+                if (!$this->isNonNegativeInteger($data[$field])) {
                     throw new \InvalidArgumentException("El campo {$field} debe ser un número positivo.");
                 }
             }
@@ -245,7 +424,7 @@ class CohortService
         $revenueFields = ['financial_target_revenue', 'financial_actual_revenue'];
         foreach ($revenueFields as $field) {
             if (array_key_exists($field, $data)) {
-                if (!is_numeric($data[$field]) || (float) $data[$field] < 0) {
+                if (!$this->isNonNegativeDecimal($data[$field])) {
                     throw new \InvalidArgumentException("El campo {$field} debe ser un monto positivo.");
                 }
             }
@@ -264,8 +443,9 @@ class CohortService
 
         // Validate training status if present
         if (array_key_exists('training_status', $data) && !empty($data['training_status'])) {
-            $validStatuses = ['not_started', 'in_progress', 'completed', 'cancelled'];
-            if (!in_array($data['training_status'], $validStatuses, true)) {
+            $status = $this->normalizeTrainingStatus((string) $data['training_status']);
+            $validStatuses = array_keys(self::STATUS_LABELS);
+            if (!in_array($status, $validStatuses, true)) {
                 throw new \InvalidArgumentException('Estado de entrenamiento no válido.');
             }
         }
@@ -289,7 +469,8 @@ class CohortService
         if (!empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             if ($search !== '') {
-                $normalized['search'] = mb_substr($search, 0, 80);
+                $search = (string) preg_replace('/\s+/u', ' ', $search);
+                $normalized['search'] = function_exists('mb_substr') ? mb_substr($search, 0, 80) : substr($search, 0, 80);
             }
         }
 
@@ -327,11 +508,59 @@ class CohortService
             $normalized['business_model'] = $filters['business_model'];
         }
 
-        $validStatuses = ['upcoming', 'in_progress', 'completed'];
+        $validStatuses = [
+            self::STATUS_PLANNED,
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_COMPLETED,
+            self::STATUS_CANCELLED,
+            self::STATUS_PENDING_RESCHEDULE,
+            'upcoming',
+        ];
         if (!empty($filters['cohort_status']) && in_array($filters['cohort_status'], $validStatuses, true)) {
-            $normalized['cohort_status'] = $filters['cohort_status'];
+            $normalized['cohort_status'] = $this->normalizeTrainingStatus((string) $filters['cohort_status']);
         }
 
         return $normalized;
+    }
+
+    private function assertStatusIsNotManuallyEditable(array $data): void
+    {
+        if (array_key_exists('training_status', $data)) {
+            throw new \InvalidArgumentException('El estado de la cohorte no se puede editar libremente. Usa una accion controlada del workflow.');
+        }
+    }
+
+    private function assertPlanningDataReadyForPlanned(array $cohort): void
+    {
+        $requiredFields = [
+            'start_date' => 'fecha de inicio',
+            'end_date' => 'fecha de fin',
+            'assigned_coach' => 'coach asignado',
+            'assigned_class_schedule' => 'horario asignado',
+        ];
+
+        $missing = [];
+        foreach ($requiredFields as $field => $label) {
+            $value = trim((string) ($cohort[$field] ?? ''));
+            if ($value === '') {
+                $missing[] = $label;
+            }
+        }
+
+        if ($missing !== []) {
+            throw new \InvalidArgumentException('Antes de volver a Planificado debes completar: ' . implode(', ', $missing) . '.');
+        }
+    }
+
+    private function isNonNegativeInteger(mixed $value): bool
+    {
+        $value = trim((string) $value);
+        return $value !== '' && preg_match('/^\d+$/', $value) === 1;
+    }
+
+    private function isNonNegativeDecimal(mixed $value): bool
+    {
+        $value = trim((string) $value);
+        return $value !== '' && preg_match('/^\d+(\.\d{1,2})?$/', $value) === 1;
     }
 }

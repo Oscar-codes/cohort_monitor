@@ -164,7 +164,7 @@ if (!$isMarketingBlocked) {
                         </div>
                         <div class="row g-3">
                             <div class="col-sm-6 col-md-3">
-                                <label for="total_admission_target" class="form-label">Meta Total</label>
+                                <label for="total_admission_target" class="form-label">Meta a inscribir</label>
                                 <input type="number" class="<?= $fieldClass('total_admission_target') ?>" id="total_admission_target" name="total_admission_target"
                                        min="0" <?= $disabled('total_admission_target') ?>
                                        value="<?= htmlspecialchars($cohort['total_admission_target'] ?? 0) ?>">
@@ -183,7 +183,7 @@ if (!$isMarketingBlocked) {
                             </div>
                             <div class="col-sm-6 col-md-3">
                                 <label for="b2b_admissions" class="form-label">
-                                    Admisiones B2B
+                                    Inscritos B2B
                                     <?php if ($canEdit('b2b_admissions')): ?>
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>
@@ -195,7 +195,7 @@ if (!$isMarketingBlocked) {
                             </div>
                             <div class="col-sm-6 col-md-3">
                                 <label for="b2c_admissions" class="form-label">
-                                    Admisiones B2C
+                                    Inscritos B2C
                                     <?php if ($canEdit('b2c_admissions')): ?>
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>
@@ -236,7 +236,8 @@ if (!$isMarketingBlocked) {
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>
                                 </label>
-                                <input type="number" step="0.01" min="0"
+                                <input type="text" inputmode="decimal" pattern="^\d+(\.\d{1,2})?$"
+                                       data-decimal-input
                                        class="<?= $fieldClass('financial_target_revenue') ?> <?= $canEdit('financial_target_revenue') ? 'border-success' : '' ?>"
                                        id="financial_target_revenue" name="financial_target_revenue"
                                        <?= $disabled('financial_target_revenue') ?>
@@ -249,7 +250,8 @@ if (!$isMarketingBlocked) {
                                     <i class="bi bi-pencil-fill text-success small" title="Campo editable"></i>
                                     <?php endif; ?>
                                 </label>
-                                <input type="number" step="0.01" min="0"
+                                <input type="text" inputmode="decimal" pattern="^\d+(\.\d{1,2})?$"
+                                       data-decimal-input
                                        class="<?= $fieldClass('financial_actual_revenue') ?> <?= $canEdit('financial_actual_revenue') ? 'border-success' : '' ?>"
                                        id="financial_actual_revenue" name="financial_actual_revenue"
                                        <?= $disabled('financial_actual_revenue') ?>
@@ -316,7 +318,7 @@ if (!$isMarketingBlocked) {
                                        value="<?= htmlspecialchars($cohort['assigned_coach'] ?? '') ?>">
                             </div>
                             <div class="col-md-6">
-                                <label for="bootcamp_type" class="form-label">Tipo de Bootcamp</label>
+                                <label for="bootcamp_type" class="form-label">Bootcamp name</label>
                                 <input type="text" class="<?= $fieldClass('bootcamp_type') ?>" id="bootcamp_type" name="bootcamp_type"
                                        <?= $disabled('bootcamp_type') ?>
                                        value="<?= htmlspecialchars($cohort['bootcamp_type'] ?? '') ?>">
@@ -353,21 +355,21 @@ if (!$isMarketingBlocked) {
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-flag"></i> Estado
-                            <?php if (!$canEdit('training_status')): ?>
                             <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
-                            <?php endif; ?>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <label for="training_status" class="form-label">Estado del Entrenamiento</label>
-                                <select class="form-select <?= $canEdit('training_status') ? '' : 'bg-light text-muted' ?>" 
+                                <label for="training_status" class="form-label">Estado de la cohorte</label>
+                                <select class="form-select bg-light text-muted" 
                                         id="training_status" name="training_status"
-                                        <?= $disabled('training_status') ?>>
-                                    <option value="not_started" <?= ($cohort['training_status'] ?? '') === 'not_started' ? 'selected' : '' ?>>Sin iniciar</option>
+                                        disabled readonly>
+                                    <option value="planned" <?= in_array(($cohort['training_status'] ?? ''), ['planned', 'not_started'], true) ? 'selected' : '' ?>>Planificado</option>
                                     <option value="in_progress" <?= ($cohort['training_status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>En progreso</option>
                                     <option value="completed"   <?= ($cohort['training_status'] ?? '') === 'completed'   ? 'selected' : '' ?>>Completado</option>
                                     <option value="cancelled"   <?= ($cohort['training_status'] ?? '') === 'cancelled'   ? 'selected' : '' ?>>Cancelado</option>
+                                    <option value="pending_reschedule"   <?= ($cohort['training_status'] ?? '') === 'pending_reschedule'   ? 'selected' : '' ?>>Pendiente de reprogramar</option>
                                 </select>
+                                <div class="form-text">El estado se actualiza por reglas de ciclo de vida o acciones controladas.</div>
                             </div>
                         </div>
                     </div>

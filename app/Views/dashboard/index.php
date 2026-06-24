@@ -5,7 +5,8 @@
     $statusLabels = [
         'in_progress' => ['En progreso', 'success', '#16a34a'],
         'completed'   => ['Completadas', 'primary', '#2563eb'],
-        'not_started' => ['No iniciadas', 'secondary', '#64748b'],
+        'planned' => ['Planificadas', 'secondary', '#64748b'],
+        'not_started' => ['Planificadas', 'secondary', '#64748b'],
     ];
 
     $roleLabels = [
@@ -299,7 +300,7 @@
                     <h3 class="app-panel__title"><i class="bi bi-calendar-event text-primary"></i> Proximos inicios</h3>
                     <p class="app-panel__subtitle">Cohortes que inician en los proximos 30 dias.</p>
                 </div>
-                <a href="/cohorts?cohort_status=upcoming" class="btn btn-sm btn-outline-primary">Ver agenda</a>
+                <a href="/cohorts?cohort_status=planned" class="btn btn-sm btn-outline-primary">Ver agenda</a>
             </div>
             <?php if (!empty($upcomingCohorts)): ?>
                 <div class="dashboard-upcoming-list">
@@ -392,7 +393,7 @@
                         <tr>
                             <th>Codigo</th>
                             <th class="d-none d-md-table-cell">Tipo</th>
-                            <th class="text-center">Admisiones</th>
+                            <th class="text-center">Inscritos</th>
                             <th class="text-center">Estado</th>
                         </tr>
                     </thead>

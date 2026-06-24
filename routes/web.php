@@ -51,6 +51,7 @@ $router->post('/cohorts/import',          [ImportCohortController::class, 'handl
 $router->get('/cohorts/import/template',  [ImportCohortController::class, 'downloadTemplate'], 'cohorts.import.template');
 $router->post('/cohorts',                 [CohortController::class, 'store'],   'cohorts.store');
 $router->get('/cohorts/{id}',             [CohortController::class, 'show'],    'cohorts.show');
+$router->post('/cohorts/{id}/status',     [CohortController::class, 'transitionStatus'], 'cohorts.transition-status');
 $router->get('/cohorts/{id}/edit',        [CohortController::class, 'edit'],    'cohorts.edit');
 $router->put('/cohorts/{id}',             [CohortController::class, 'update'],  'cohorts.update');
 $router->delete('/cohorts/{id}',          [CohortController::class, 'destroy'], 'cohorts.destroy');
