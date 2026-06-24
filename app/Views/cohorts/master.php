@@ -1,8 +1,12 @@
 <?php
+use App\Core\Auth;
+
 /** @var array<int, array<string, mixed>> $cohorts */
 $cohorts = isset($cohorts) && is_array($cohorts) ? $cohorts : [];
 $filters = isset($filters) && is_array($filters) ? $filters : [];
 $activeFilters = isset($activeFilters) && is_array($activeFilters) ? $activeFilters : [];
+$bootcampTypes = isset($bootcampTypes) && is_array($bootcampTypes) ? $bootcampTypes : [];
+$projectNames = isset($projectNames) && is_array($projectNames) ? $projectNames : [];
 
 $totalRows = (int) ($totalRows ?? 0);
 $totalAdmissionsTarget = max(0, (int) ($totalAdmissionsTarget ?? 0));
