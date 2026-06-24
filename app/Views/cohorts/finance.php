@@ -7,6 +7,8 @@ $filters = isset($filters) && is_array($filters) ? $filters : [];
 $activeFilters = isset($activeFilters) && is_array($activeFilters) ? $activeFilters : [];
 $financeChartData = isset($financeChartData) && is_array($financeChartData) ? $financeChartData : [];
 $chartPrefs = isset($chartPrefs) && is_array($chartPrefs) ? $chartPrefs : [];
+$bootcampTypes = isset($bootcampTypes) && is_array($bootcampTypes) ? $bootcampTypes : [];
+$projectNames = isset($projectNames) && is_array($projectNames) ? $projectNames : [];
 
 $selectedTopN = (int) ($chartPrefs['top_n'] ?? 10);
 $selectedForecastHorizon = (int) ($chartPrefs['forecast_horizon'] ?? 3);

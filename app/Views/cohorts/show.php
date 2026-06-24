@@ -115,7 +115,7 @@ $catLabels = [
     'general' => 'General',
     'change_request' => 'Solicitud de cambio',
 ];
-$canDeleteThisCohort = function(array $cohort): bool {
+$canDeleteThisCohort = (static function(array $cohort): bool {
     // Check both stored status and effective lifecycle status
     $storedStatus = $cohort['training_status'] ?? 'planned';
     $lifecycleStatus = cohortDetailStatus($cohort);
@@ -132,7 +132,7 @@ $canDeleteThisCohort = function(array $cohort): bool {
     }
     
     return in_array($lifecycleStatus, ['planned', 'cancelled', 'pending_reschedule'], true);
-}($cohort);
+})($cohort);
 $workflowActionMap = [
     'completed' => [
         'title' => 'Marcar como completada',
