@@ -5007,3 +5007,308 @@ html.app-density-compact .empty-state {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ─── Master Plan View ─────────────────────────────── */
+.master-filter-panel {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    padding: 1.25rem;
+}
+
+.master-summary-cards {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.master-summary-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.master-summary-card:hover {
+    box-shadow: var(--app-shadow-md);
+    transform: translateY(-2px);
+}
+
+.master-summary-card .summary-card__title {
+    align-items: center;
+    color: var(--app-muted);
+    display: flex;
+    font-size: 0.82rem;
+    font-weight: 700;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+}
+
+.master-summary-card .summary-card__title i {
+    font-size: 1.25rem;
+}
+
+.master-summary-card .summary-card__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.master-summary-card .summary-card__stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.master-summary-card .stat-value {
+    color: var(--app-text);
+    font-size: 1.75rem;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.master-summary-card .stat-label {
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+}
+
+.master-table-section {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    overflow: hidden;
+}
+
+.master-table-section .app-panel__header {
+    padding: 1.25rem;
+}
+
+.master-table-section .table {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1199.98px) {
+    .master-summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .master-summary-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Finance View ─────────────────────────────── */
+.finance-hero {
+    align-items: center;
+    background:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(13, 110, 253, 0.9), rgba(20, 184, 166, 0.85)),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(20, 184, 166, 0.15));
+    border-radius: 18px;
+    box-shadow: var(--app-shadow-md);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 200px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.finance-hero__title {
+    color: #fff;
+    font-size: 2.25rem;
+    font-weight: 850;
+    margin-bottom: 0.75rem;
+}
+
+.finance-hero__subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.finance-summary-cards {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.finance-summary-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.finance-summary-card:hover {
+    box-shadow: var(--app-shadow-md);
+    transform: translateY(-2px);
+}
+
+.finance-summary-card .summary-card__label {
+    color: var(--app-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.finance-summary-card .summary-card__value {
+    color: var(--app-text);
+    font-size: 2rem;
+    font-weight: 850;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+}
+
+.finance-summary-card .summary-card__subtitle {
+    color: var(--app-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.finance-summary-card .summary-card__subtitle.success {
+    color: var(--app-success);
+}
+
+.finance-summary-card .summary-card__subtitle.warning {
+    color: var(--app-warning);
+}
+
+.finance-chart-section {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    padding: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    min-height: 300px;
+    width: 100%;
+}
+
+.finance-table-section {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    overflow: hidden;
+}
+
+.finance-table-section .app-panel__header {
+    padding: 1.25rem;
+}
+
+.finance-table-section .table {
+    margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+    .finance-hero__title {
+        font-size: 1.75rem;
+    }
+
+    .finance-hero__subtitle {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .finance-hero {
+        padding: 1.5rem;
+    }
+
+    .finance-hero__title {
+        font-size: 1.5rem;
+    }
+
+    .finance-summary-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Cohort Filter Panel Base ─────────────────────────────── */
+.cohort-filter-panel {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    padding: 1.25rem;
+}
+
+.cohort-filter-panel .app-panel__header {
+    margin-bottom: 1rem;
+}
+
+.cohort-filter-panel .form-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--app-text);
+}
+
+.cohort-filter-panel .btn {
+    min-width: 140px;
+}
+
+@media (max-width: 991.98px) {
+    .cohort-filter-panel .btn {
+        width: 100%;
+    }
+}
+
+/* ─── Reports View Enhancements ─────────────────────────────── */
+.reports-summary-cards {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reports-table-section {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-sm);
+    overflow: hidden;
+}
+
+.reports-table-section .app-panel__header {
+    padding: 1.25rem;
+}
+
+.reports-table-section .table {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1199.98px) {
+    .reports-summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .reports-summary-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+}
