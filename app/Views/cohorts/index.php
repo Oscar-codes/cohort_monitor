@@ -305,8 +305,14 @@ $statusConfig = [
 
 <?php if ($msg = Auth::getFlash('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-1"></i> <?= htmlspecialchars($msg) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+<?php if ($msg = Auth::getFlash('info')): ?>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 <?php if ($msg = Auth::getFlash('error')): ?>
@@ -529,7 +535,7 @@ $statusConfig = [
                                 <tr>
                                     <th class="cohort-col-id">ID</th>
                                     <th>Cohorte</th>
-                                    <th class="d-none d-md-table-cell">Bootcamp</th>
+                                    <th class="d-none d-md-table-cell">Bootcamp name</th>
                                     <th class="d-none d-md-table-cell">Proyecto</th>
                                     <th class="d-none d-lg-table-cell">Fechas</th>
                                     <th class="d-none d-xl-table-cell">Coach</th>

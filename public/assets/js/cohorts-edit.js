@@ -66,14 +66,45 @@ document.addEventListener('DOMContentLoaded', function () {
     const decimalInputs = document.querySelectorAll('[data-decimal-input]');
     decimalInputs.forEach(function (input) {
         input.addEventListener('keydown', function (event) {
-            if (event.key === 'e' || event.key === 'E' || event.key === '-' || event.key === '+') {
-                event.preventDefault();
+            const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                                'Home', 'End'];
+            const isNumber = /^[0-9]$/.test(event.key);
+            const isDecimal = event.key === '.';
+            const isCtrlKey = event.ctrlKey || event.metaKey;
+
+            if (allowedKeys.includes(event.key) || isNumber || isCtrlKey) {
+                return;
             }
+
+            if (isDecimal && !input.value.includes('.')) {
+                return;
+            }
+
+            event.preventDefault();
         });
 
         input.addEventListener('beforeinput', function (event) {
-            if (event.data && /[^0-9.,]/.test(event.data)) {
-                event.preventDefault();
+            if (event.inputType === 'deleteContentBackward' ||
+                event.inputType === 'deleteContentForward' ||
+                event.inputType === 'deleteByCut' ||
+                event.inputType === 'deleteByDrag') {
+                return;
+            }
+
+            if (event.data) {
+                const currentValue = input.value;
+                const hasDecimal = currentValue.includes('.');
+
+                if (!/^[0-9.]$/.test(event.data)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (event.data === '.' && hasDecimal) {
+                    event.preventDefault();
+                    return;
+                }
             }
         });
 

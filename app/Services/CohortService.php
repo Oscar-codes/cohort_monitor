@@ -503,10 +503,11 @@ class CohortService
             }
         }
 
-        // Cross-validate: start must be <= end
+        // Cross-validate: if both dates are valid but start > end, swap them
         if ($normalized['start_date'] && $normalized['end_date'] && $normalized['start_date'] > $normalized['end_date']) {
-            $normalized['start_date'] = null;
-            $normalized['end_date']   = null;
+            $temp = $normalized['start_date'];
+            $normalized['start_date'] = $normalized['end_date'];
+            $normalized['end_date'] = $temp;
         }
 
         $validBusinessModels = ['b2b', 'b2c'];

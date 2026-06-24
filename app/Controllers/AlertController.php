@@ -15,7 +15,7 @@ class AlertController extends Controller
 
     public function __construct()
     {
-        Auth::requireLogin();
+        Auth::requireAccess('alerts');
         $this->alertService = new AlertService();
     }
 

@@ -80,6 +80,19 @@ if (!function_exists('masterStatusLabel')) {
     </div>
 </section>
 
+<?php if ($msg = Auth::getFlash('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+<?php if ($msg = Auth::getFlash('info')): ?>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-xl-3">
         <article class="cohort-summary-card cohort-summary-card--primary h-100">
@@ -266,7 +279,7 @@ if (!function_exists('masterStatusLabel')) {
                                     <span><?= $admissionProgress ?>%</span>
                                 </div>
                                 <div class="dashboard-mini-progress mb-1"><span data-style-width="<?= $admissionProgress ?>%"></span></div>
-                                <small class="text-muted">B2B <?= $b2bActual ?>/<?= $b2bTarget ?> | B2C <?= $b2cActual ?>/<?= $b2cTarget ?></small>
+                                <small class="text-muted">Inscritos B2B <?= $b2bActual ?>/<?= $b2bTarget ?> | Inscritos B2C <?= $b2cActual ?>/<?= $b2cTarget ?></small>
                             </td>
                             <td style="min-width: 220px;">
                                 <div class="d-flex justify-content-between small mb-1">

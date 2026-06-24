@@ -10,8 +10,8 @@
 
     $roleLabels = [
         'admin'          => ['Admin', 'danger', 'bi-shield-check'],
-        'admissions_b2b' => ['B2B', 'info', 'bi-building'],
-        'admissions_b2c' => ['B2C', 'primary', 'bi-person-check'],
+        'admissions_b2b' => ['Admisiones B2B', 'info', 'bi-building'],
+        'admissions_b2c' => ['Admisiones B2C', 'primary', 'bi-person-check'],
         'finance'        => ['Finanzas', 'success', 'bi-cash-stack'],
         'marketing'      => ['Marketing', 'warning', 'bi-megaphone'],
     ];
@@ -241,8 +241,8 @@
                         <span data-style-width="<?= $admissionPct ?>%"></span>
                     </div>
                     <div class="dashboard-segments mt-3">
-                        <span><i class="bi bi-square-fill text-primary"></i> B2B <?= number_format($totalB2bAdmissions) ?></span>
-                        <span><i class="bi bi-square-fill text-info"></i> B2C <?= number_format($totalB2cAdmissions) ?></span>
+                        <span><i class="bi bi-square-fill text-primary"></i> Inscritos B2B <?= number_format($totalB2bAdmissions) ?></span>
+                        <span><i class="bi bi-square-fill text-info"></i> Inscritos B2C <?= number_format($totalB2cAdmissions) ?></span>
                     </div>
                 </div>
                 <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions"></div>

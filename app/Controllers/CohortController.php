@@ -35,6 +35,7 @@ class CohortController extends Controller
      */
     public function index(): void
     {
+        Auth::requireAccess('cohorts');
         $filters = [
             'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
@@ -48,6 +49,11 @@ class CohortController extends Controller
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
+
+        // Check if dates were swapped and show a warning
+        if (!empty($filters['start_date']) && !empty($filters['end_date']) && $filters['start_date'] > $filters['end_date']) {
+            Auth::flash('info', 'Las fechas estaban invertidas y fueron ajustadas automáticamente.');
+        }
 
         // Keep only active filter values for link/query persistence.
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
@@ -74,6 +80,7 @@ class CohortController extends Controller
      */
     public function master(): void
     {
+        Auth::requireAccess('cohorts_master');
         $filters = [
             'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
@@ -87,6 +94,12 @@ class CohortController extends Controller
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
+        
+        // Check if dates were swapped and show a warning
+        if (!empty($filters['start_date']) && !empty($filters['end_date']) && $filters['start_date'] > $filters['end_date']) {
+            Auth::flash('info', 'Las fechas estaban invertidas y fueron ajustadas automáticamente.');
+        }
+        
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
 
         $totalRows = count($cohorts);
@@ -135,6 +148,7 @@ class CohortController extends Controller
      */
     public function finance(): void
     {
+        Auth::requireAccess('cohorts_finance');
         $chartPrefs = $this->resolveFinanceChartPreferences();
 
         $defaultFilters = $this->financeFilterDefaults();
@@ -177,6 +191,12 @@ class CohortController extends Controller
 
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
+        
+        // Check if dates were swapped and show a warning
+        if (!empty($filters['start_date']) && !empty($filters['end_date']) && $filters['start_date'] > $filters['end_date']) {
+            Auth::flash('info', 'Las fechas estaban invertidas y fueron ajustadas automáticamente.');
+        }
+        
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
 
         $byMonth = $this->cohortService->getFinancialByMonth($filters);
@@ -249,6 +269,7 @@ class CohortController extends Controller
      */
     public function updateFinancePreferences(): void
     {
+        Auth::requireAccess('cohorts_finance');
         $prefs = $_SESSION['finance_chart_preferences'] ?? [
             'top_n' => 10,
             'forecast_horizon' => 3,
@@ -335,6 +356,7 @@ class CohortController extends Controller
      */
     public function exportMasterCsv(): void
     {
+        Auth::requireAccess('cohorts_master');
         $filters = [
             'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
@@ -399,6 +421,7 @@ class CohortController extends Controller
      */
     public function exportMasterXlsx(): void
     {
+        Auth::requireAccess('cohorts_master');
         $filters = [
             'search'          => (string) $this->input('search', ''),
             'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
@@ -525,6 +548,7 @@ class CohortController extends Controller
      */
     public function show(string $id): void
     {
+        Auth::requireAccess('cohorts');
         $cohort = $this->cohortService->getCohortById((int) $id);
 
         if (!$cohort) {

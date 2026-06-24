@@ -350,7 +350,7 @@ class CohortRepository
     {
         $sql = '
             SELECT
-                COALESCE(b.bootcamp_name, bf.family_name, "Sin bootcamp") AS bootcamp_name,
+                COALESCE(b.bootcamp_name, bf.family_name, "Sin cohorte") AS bootcamp_name,
                 COALESCE(SUM(m.target_revenue), 0) AS target_revenue,
                 COALESCE(SUM(m.actual_revenue), 0) AS actual_revenue,
                 COUNT(DISTINCT cs.id) AS cohorts_total
@@ -371,7 +371,7 @@ class CohortRepository
         }
 
         $sql .= '
-            GROUP BY COALESCE(b.bootcamp_name, bf.family_name, "Sin bootcamp")
+            GROUP BY COALESCE(b.bootcamp_name, bf.family_name, "Sin cohorte")
             ORDER BY actual_revenue DESC, bootcamp_name ASC';
 
         return $this->db->query($sql, $params);
@@ -492,14 +492,19 @@ class CohortRepository
         $params = [];
 
         if (!empty($filters['search'])) {
+            $searchValue = '%' . $this->escapeLike((string) $filters['search']) . '%';
             $where[] = '(
-                cs.section_code LIKE :search
-                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :search
-                OR CONCAT_WS(" - ", NULLIF(cs.section_code, ""), COALESCE(b.bootcamp_name, bf.family_name)) LIKE :search
-                OR ch.coach_name LIKE :search
-                OR p.project_name LIKE :search
+                cs.section_code LIKE :s0
+                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :s1
+                OR CONCAT_WS(" - ", NULLIF(cs.section_code, ""), COALESCE(b.bootcamp_name, bf.family_name)) LIKE :s2
+                OR ch.coach_name LIKE :s3
+                OR p.project_name LIKE :s4
             )';
-            $params['search'] = '%' . $this->escapeLike((string) $filters['search']) . '%';
+            $params['s0'] = $searchValue;
+            $params['s1'] = $searchValue;
+            $params['s2'] = $searchValue;
+            $params['s3'] = $searchValue;
+            $params['s4'] = $searchValue;
         }
 
         if (!empty($filters['bootcamp_type'])) {
@@ -720,7 +725,7 @@ class CohortRepository
     {
         $name = trim((string) $bootcampName);
         if ($name === '') {
-            $name = 'Bootcamp ' . $familyId;
+            $name = 'Cohorte ' . $familyId;
         }
 
         $rows = $this->db->query(

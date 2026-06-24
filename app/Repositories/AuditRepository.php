@@ -100,12 +100,17 @@ class AuditRepository
         }
 
         if (!empty($filters['q'])) {
-            $params['q_like'] = '%' . trim((string) $filters['q']) . '%';
+            $qLike = '%' . trim((string) $filters['q']) . '%';
             if ($this->auditUsesEntityKey()) {
-                $where[] = '(u.full_name LIKE :q_like OR u.username LIKE :q_like OR al.action LIKE :q_like OR al.entity_type LIKE :q_like OR al.entity_key LIKE :q_like)';
+                $where[] = '(u.full_name LIKE :q0 OR u.username LIKE :q1 OR al.action LIKE :q2 OR al.entity_type LIKE :q3 OR al.entity_key LIKE :q4)';
             } else {
-                $where[] = '(u.full_name LIKE :q_like OR u.username LIKE :q_like OR al.action LIKE :q_like OR al.entity_type LIKE :q_like OR CAST(al.entity_id AS CHAR) LIKE :q_like)';
+                $where[] = '(u.full_name LIKE :q0 OR u.username LIKE :q1 OR al.action LIKE :q2 OR al.entity_type LIKE :q3 OR CAST(al.entity_id AS CHAR) LIKE :q4)';
             }
+            $params['q0'] = $qLike;
+            $params['q1'] = $qLike;
+            $params['q2'] = $qLike;
+            $params['q3'] = $qLike;
+            $params['q4'] = $qLike;
         }
 
         $entityRefSelect = $this->auditUsesEntityKey()

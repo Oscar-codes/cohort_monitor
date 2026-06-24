@@ -126,11 +126,24 @@ if (!function_exists('moneyFmt')) {
     </div>
 </div>
 
+<?php if ($msg = Auth::getFlash('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+<?php if ($msg = Auth::getFlash('info')): ?>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 <div class="app-panel cohort-filter-panel mb-4">
     <div class="app-panel__header">
         <div>
             <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros financieros</h3>
-            <p class="app-panel__subtitle">Filtra por bootcamp name, proyecto y fechas para análisis de revenue.</p>
+            <p class="app-panel__subtitle">Filtra por búsqueda, bootcamp, proyecto, fechas, población o estado para análisis de revenue.</p>
         </div>
     </div>
     <form method="GET" action="/cohorts/finance" class="row g-3">
@@ -163,6 +176,25 @@ if (!function_exists('moneyFmt')) {
         <div class="col-6 col-md-3 col-lg-2">
             <label for="end_date" class="form-label">Hasta</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="business_model" class="form-label">Población o sub canal</label>
+            <select class="form-select" id="business_model" name="business_model">
+                <option value="">Todos</option>
+                <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
+                <option value="b2c" <?= (($filters['business_model'] ?? '') === 'b2c') ? 'selected' : '' ?>>B2C</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="cohort_status" class="form-label">Estado</label>
+            <select class="form-select" id="cohort_status" name="cohort_status">
+                <option value="">Todos</option>
+                <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>
+                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
+                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
+                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                <option value="pending_reschedule" <?= (($filters['cohort_status'] ?? '') === 'pending_reschedule') ? 'selected' : '' ?>>Pendiente de reprogramar</option>
+            </select>
         </div>
         <div class="col-12">
             <button type="submit" class="btn btn-primary">

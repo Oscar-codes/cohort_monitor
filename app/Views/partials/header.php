@@ -10,8 +10,8 @@
     ];
     $roleLabels = [
         'admin'           => 'Admin',
-        'admissions_b2b'  => 'B2B',
-        'admissions_b2c'  => 'B2C',
+        'admissions_b2b'  => 'Admisiones B2B',
+        'admissions_b2c'  => 'Admisiones B2C',
         'finance'         => 'Finanzas',
         'marketing'       => 'Marketing',
     ];
@@ -49,12 +49,14 @@
             </div>
         </div>
 
+        <?php if (Auth::canAccess('cohorts')): ?>
         <form action="/cohorts" method="GET" class="header-search d-none d-xl-flex" role="search">
             <i class="bi bi-search"></i>
             <input type="search" name="search" value="<?= htmlspecialchars($headerSearch) ?>"
                    placeholder="Buscar cohorte, coach, proyecto..." aria-label="Buscar cohortes">
             <button type="submit" class="btn btn-sm btn-primary">Buscar</button>
         </form>
+        <?php endif; ?>
 
         <div class="header-right">
             <?php if (Auth::canCreateCohort()): ?>
@@ -64,9 +66,11 @@
                 </a>
             <?php endif; ?>
 
+            <?php if (Auth::canAccess('alerts')): ?>
             <a href="/alerts" class="header-icon-btn" aria-label="Ver alertas" data-bs-toggle="tooltip" title="Alertas">
                 <i class="bi bi-bell"></i>
             </a>
+            <?php endif; ?>
 
             <button type="button" class="header-icon-btn d-xl-none" data-bs-toggle="collapse" data-bs-target="#headerMobileSearch" aria-controls="headerMobileSearch" aria-expanded="false" aria-label="Abrir busqueda">
                 <i class="bi bi-search"></i>
@@ -100,12 +104,14 @@
                             Mi cuenta
                         </a>
                     </li>
+                    <?php if (Auth::canAccess('reports')): ?>
                     <li>
                         <a class="dropdown-item d-flex align-items-center" href="/reports">
                             <i class="bi bi-bar-chart me-2"></i>
                             Reportes
                         </a>
                     </li>
+                    <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item d-flex align-items-center text-danger" href="/logout">
@@ -118,6 +124,7 @@
         </div>
     </div>
 
+    <?php if (Auth::canAccess('cohorts')): ?>
     <div class="collapse header-mobile-search d-xl-none" id="headerMobileSearch">
         <form action="/cohorts" method="GET" class="header-search header-search--mobile" role="search">
             <i class="bi bi-search"></i>
@@ -126,4 +133,5 @@
             <button type="submit" class="btn btn-sm btn-primary">Buscar</button>
         </form>
     </div>
+    <?php endif; ?>
 </header>

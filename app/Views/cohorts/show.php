@@ -343,11 +343,11 @@ $workflowActionMap = [
             </div>
             <div class="cohort-admission-breakdown">
                 <div>
-                    <span>B2B actual</span>
+                    <span>Inscritos B2B</span>
                     <strong><?= $b2bAdmissions ?></strong>
                 </div>
                 <div>
-                    <span>B2C actual</span>
+                    <span>Inscritos B2C</span>
                     <strong><?= $b2cAdmissions ?></strong>
                 </div>
                 <div>

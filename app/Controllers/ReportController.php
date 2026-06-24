@@ -18,7 +18,7 @@ class ReportController extends Controller
 
     public function __construct()
     {
-        Auth::requireLogin();
+        Auth::requireAccess('reports');
         $this->reportService = new ReportService();
     }
 

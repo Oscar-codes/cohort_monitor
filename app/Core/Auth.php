@@ -119,6 +119,48 @@ class Auth
         return in_array(self::role(), $roles, true);
     }
 
+    // ─── Section Permissions ────────────────────────────
+
+    private const ROLE_SECTIONS = [
+        'admin'          => ['dashboard', 'cohorts', 'cohorts_master', 'cohorts_finance', 'import', 'marketing', 'alerts', 'coaches', 'reports', 'users', 'admin'],
+        'finance'        => ['cohorts_master', 'cohorts_finance'],
+        'admissions_b2b' => ['cohorts', 'alerts', 'coaches', 'reports'],
+        'admissions_b2c' => ['cohorts', 'alerts', 'coaches', 'reports'],
+        'marketing'      => ['marketing', 'reports'],
+    ];
+
+    public static function canAccess(string $section): bool
+    {
+        $role = self::role();
+        if ($role === null) {
+            return false;
+        }
+        $sections = self::ROLE_SECTIONS[$role] ?? [];
+        return in_array($section, $sections, true);
+    }
+
+    public static function requireAccess(string $section): void
+    {
+        self::requireLogin();
+        if (!self::canAccess($section)) {
+            http_response_code(403);
+            echo '<h1>403 — Acceso denegado</h1><p>No tienes permiso para acceder a esta sección.</p>';
+            exit;
+        }
+    }
+
+    public static function defaultPath(): string
+    {
+        return match (self::role()) {
+            'admin'          => '/',
+            'finance'        => '/cohorts/master',
+            'admissions_b2b',
+            'admissions_b2c' => '/cohorts',
+            'marketing'      => '/marketing',
+            default          => '/',
+        };
+    }
+
     // ─── Cohort Field Permissions ───────────────────────
 
     /**

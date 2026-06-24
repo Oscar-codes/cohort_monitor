@@ -342,7 +342,7 @@ $phaseBarColors = [
                     <thead>
                         <tr>
                             <th>Cohorte</th>
-                            <th class="d-none d-md-table-cell">Bootcamp</th>
+                            <th class="d-none d-md-table-cell">Bootcamp name</th>
                             <th>Progreso</th>
                             <th class="d-none d-lg-table-cell">Inicio</th>
                             <th class="d-none d-lg-table-cell">Fin</th>

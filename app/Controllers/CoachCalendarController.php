@@ -18,8 +18,7 @@ class CoachCalendarController extends Controller
 
     public function __construct()
     {
-        Auth::requireLogin();
-        Auth::requireRole('admin');
+        Auth::requireAccess('coaches');
         $this->calendarService = new CoachCalendarService();
     }
 

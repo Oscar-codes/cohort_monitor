@@ -21,6 +21,7 @@
 
     <div class="sidebar-nav">
         <ul class="nav flex-column">
+            <?php if (Auth::canAccess('dashboard')): ?>
             <li class="nav-section-label"><span>Principal</span></li>
             <li class="nav-item">
                 <a href="/" class="nav-link <?= $active('dashboard') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
@@ -28,20 +29,27 @@
                     <span>Dashboard</span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <?php if (Auth::canAccess('cohorts') || Auth::canAccess('cohorts_master') || Auth::canAccess('import') || Auth::canAccess('marketing') || Auth::canAccess('alerts') || Auth::canAccess('coaches')): ?>
             <li class="nav-section-label"><span>Operacion</span></li>
+            <?php endif; ?>
+            <?php if (Auth::canAccess('cohorts')): ?>
             <li class="nav-item">
                 <a href="/cohorts" class="nav-link <?= $active('cohorts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Cohortes">
                     <i class="bi bi-people"></i>
                     <span>Cohortes</span>
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (Auth::canAccess('cohorts_master')): ?>
             <li class="nav-item">
                 <a href="/cohorts/master" class="nav-link <?= $active('cohorts-master') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Plan Maestro Cohort">
                     <i class="bi bi-grid-1x2"></i>
                     <span>Plan Maestro</span>
                 </a>
             </li>
+            <?php endif; ?>
 
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">
@@ -61,6 +69,7 @@
             </li>
             <?php endif; ?>
 
+            <?php if (Auth::canAccess('alerts')): ?>
             <li class="nav-item">
                 <a href="/alerts" class="nav-link <?= $active('alerts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -68,8 +77,9 @@
                     <span class="nav-alert-dot" aria-hidden="true"></span>
                 </a>
             </li>
+            <?php endif; ?>
 
-            <?php if (Auth::isAdmin()): ?>
+            <?php if (Auth::canAccess('coaches')): ?>
             <li class="nav-item">
                 <a href="/coaches" class="nav-link <?= $active('coaches') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
                     <i class="bi bi-calendar-range"></i>
@@ -78,19 +88,25 @@
             </li>
             <?php endif; ?>
 
+            <?php if (Auth::canAccess('reports') || Auth::canAccess('cohorts_finance')): ?>
             <li class="nav-section-label"><span>Analitica</span></li>
+            <?php endif; ?>
+            <?php if (Auth::canAccess('reports')): ?>
             <li class="nav-item">
                 <a href="/reports" class="nav-link <?= $active('reports') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (Auth::canAccess('cohorts_finance')): ?>
             <li class="nav-item">
                 <a href="/cohorts/finance" class="nav-link <?= $active('cohorts-finance') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Finanzas Cohort Plan">
                     <i class="bi bi-cash-coin"></i>
                     <span>Finanzas</span>
                 </a>
             </li>
+            <?php endif; ?>
 
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-section-label"><span>Administracion</span></li>

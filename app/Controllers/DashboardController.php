@@ -18,6 +18,10 @@ class DashboardController extends Controller
     public function __construct()
     {
         Auth::requireLogin();
+        if (!Auth::isAdmin()) {
+            header('Location: ' . Auth::defaultPath());
+            exit;
+        }
         $this->dashboardService = new DashboardService();
     }
 
