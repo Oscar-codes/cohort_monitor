@@ -1,4 +1,6 @@
 <?php
+use App\Core\Auth;
+
 /** @var array<int, array<string, mixed>> $byMonth */
 $byMonth = isset($byMonth) && is_array($byMonth) ? $byMonth : [];
 /** @var array<int, array<string, mixed>> $byBootcamp */
