@@ -109,15 +109,11 @@ $catBadges = [
     'risk' => 'bg-danger-subtle text-danger',
     'general' => 'bg-secondary-subtle text-secondary',
     'change_request' => 'bg-info-subtle text-info',
-    'admission' => 'bg-info-subtle text-info',
-    'marketing' => 'bg-info-subtle text-info',
 ];
 $catLabels = [
     'risk' => 'Riesgo',
     'general' => 'General',
     'change_request' => 'Solicitud de cambio',
-    'admission' => 'Solicitud de cambio',
-    'marketing' => 'Solicitud de cambio',
 ];
 $canDeleteThisCohort = in_array($ts, ['planned', 'cancelled', 'pending_reschedule'], true);
 $workflowActionMap = [
