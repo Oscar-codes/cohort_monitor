@@ -126,7 +126,7 @@ class Auth
         'finance'        => ['cohorts_master', 'cohorts_finance'],
         'admissions_b2b' => ['cohorts', 'alerts', 'coaches', 'reports'],
         'admissions_b2c' => ['cohorts', 'alerts', 'coaches', 'reports'],
-        'marketing'      => ['marketing', 'reports'],
+        'marketing'      => ['marketing', 'cohorts_master', 'reports'],
     ];
 
     public static function canAccess(string $section): bool
