@@ -28,14 +28,12 @@ class CohortService
         self::STATUS_COMPLETED => 'Completado',
         self::STATUS_CANCELLED => 'Cancelado',
         self::STATUS_PENDING_RESCHEDULE => 'Pendiente de reprogramar',
-        'not_started' => 'Planificado',
     ];
 
     private const DELETABLE_STATUSES = [
         self::STATUS_PLANNED,
         self::STATUS_CANCELLED,
         self::STATUS_PENDING_RESCHEDULE,
-        'not_started',
     ];
 
     private const WORKFLOW_TRANSITIONS = [
@@ -183,10 +181,18 @@ class CohortService
     {
         $this->assertStatusIsNotManuallyEditable($data);
 
+        $old = $this->getCohortById($id);
+
         // Validate only the fields that are being updated
         $data = $this->normalizeCohortData($data);
         $this->validatePartial($data);
-        return $this->cohortRepo->updatePartial($id, $data);
+        $updated = $this->cohortRepo->updatePartial($id, $data);
+
+        if ($updated && $old !== null) {
+            $this->auditPartialChanges($old, $data);
+        }
+
+        return $updated;
     }
 
     /**
@@ -562,5 +568,40 @@ class CohortService
     {
         $value = trim((string) $value);
         return $value !== '' && preg_match('/^\d+(\.\d{1,2})?$/', $value) === 1;
+    }
+
+    private function auditPartialChanges(array $old, array $new): void
+    {
+        $fields = [
+            'financial_target_revenue' => 'Meta ingresos',
+            'financial_actual_revenue' => 'Ingreso actual',
+            'b2b_admissions' => 'Inscritos B2B',
+            'b2c_admissions' => 'Inscritos B2C',
+            'b2b_admission_target' => 'Meta B2B',
+            'b2c_admission_target' => 'Meta B2C',
+            'total_admission_target' => 'Meta a inscribir',
+        ];
+
+        $oldValues = [];
+        $newValues = [];
+        foreach ($fields as $key => $label) {
+            if (array_key_exists($key, $new) && (string) ($old[$key] ?? '') !== (string) $new[$key]) {
+                $oldValues[$label] = $old[$key] ?? null;
+                $newValues[$label] = $new[$key] ?? null;
+            }
+        }
+
+        if ($oldValues === []) {
+            return;
+        }
+
+        $this->auditRepo->log([
+            'user_id'     => Auth::id(),
+            'action'      => 'update_cohort_partial',
+            'entity_type' => 'cohort',
+            'entity_id'   => (int) ($old['id'] ?? 0),
+            'old_values'  => $oldValues,
+            'new_values'  => $newValues,
+        ]);
     }
 }

@@ -130,13 +130,13 @@ if (!function_exists('moneyFmt')) {
     <div class="app-panel__header">
         <div>
             <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros financieros</h3>
-            <p class="app-panel__subtitle">Filtra por bootcamp, proyecto y fechas para análisis de revenue.</p>
+            <p class="app-panel__subtitle">Filtra por bootcamp name, proyecto y fechas para análisis de revenue.</p>
         </div>
     </div>
     <form method="GET" action="/cohorts/finance" class="row g-3">
         <div class="col-12 col-lg-4">
             <label for="search" class="form-label">Buscar</label>
-            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, bootcamp, coach, proyecto...">
+            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, bootcamp name, coach, proyecto...">
         </div>
         <div class="col-12 col-md-6 col-lg-4">
             <label for="bootcamp_type" class="form-label">Bootcamp name</label>
@@ -226,7 +226,7 @@ if (!function_exists('moneyFmt')) {
             <div class="app-panel__header">
                 <div>
                     <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por bootcamp name</h3>
-                    <p class="app-panel__subtitle">Ranking financiero por tipo de bootcamp.</p>
+                    <p class="app-panel__subtitle">Ranking financiero por cohorte.</p>
                 </div>
             </div>
             <div class="table-responsive">

@@ -144,7 +144,7 @@ $phaseBarColors = [
     <div class="app-panel__header">
         <div>
             <h2 class="app-panel__title"><i class="bi bi-funnel"></i> Filtros</h2>
-            <p class="app-panel__subtitle">Segmenta por coach o tipo de bootcamp sin perder el modo de vista.</p>
+            <p class="app-panel__subtitle">Segmenta por coach o tipo de cohorte sin perder el modo de vista.</p>
         </div>
     </div>
     <form method="GET" action="/coaches" class="row g-3 align-items-end">
@@ -160,7 +160,7 @@ $phaseBarColors = [
             </select>
         </div>
         <div class="col-12 col-md-4">
-            <label for="bootcamp_type" class="form-label">Bootcamp</label>
+            <label for="bootcamp_type" class="form-label">Cohorte</label>
             <select class="form-select" id="bootcamp_type" name="bootcamp_type">
                 <option value="">Todos</option>
                 <?php foreach (($bootcampTypes ?? []) as $type): ?>

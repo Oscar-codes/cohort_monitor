@@ -363,7 +363,7 @@ if (!$isMarketingBlocked) {
                                 <select class="form-select bg-light text-muted" 
                                         id="training_status" name="training_status"
                                         disabled readonly>
-                                    <option value="planned" <?= in_array(($cohort['training_status'] ?? ''), ['planned', 'not_started'], true) ? 'selected' : '' ?>>Planificado</option>
+                                    <option value="planned" <?= ($cohort['training_status'] ?? '') === 'planned' ? 'selected' : '' ?>>Planificado</option>
                                     <option value="in_progress" <?= ($cohort['training_status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>En progreso</option>
                                     <option value="completed"   <?= ($cohort['training_status'] ?? '') === 'completed'   ? 'selected' : '' ?>>Completado</option>
                                     <option value="cancelled"   <?= ($cohort['training_status'] ?? '') === 'cancelled'   ? 'selected' : '' ?>>Cancelado</option>

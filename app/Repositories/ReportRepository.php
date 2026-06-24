@@ -163,9 +163,9 @@ class ReportRepository
     {
         $sql = "
             SELECT
-                SUM(CASE WHEN cs.training_status = 'completed'   THEN 1 ELSE 0 END) AS completed,
-                SUM(CASE WHEN cs.training_status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
-                SUM(CASE WHEN cs.training_status IN ('planned', 'not_started') THEN 1 ELSE 0 END) AS planned,
+                SUM(CASE WHEN cs.training_status = 'completed' OR (cs.training_status NOT IN ('completed', 'cancelled', 'pending_reschedule') AND cs.end_date IS NOT NULL AND cs.end_date < CURDATE()) THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN cs.training_status NOT IN ('completed', 'cancelled', 'pending_reschedule') AND cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE()) THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN cs.training_status NOT IN ('completed', 'cancelled', 'pending_reschedule') AND (cs.start_date IS NULL OR cs.start_date > CURDATE()) THEN 1 ELSE 0 END) AS planned,
                 SUM(CASE WHEN cs.training_status = 'cancelled'   THEN 1 ELSE 0 END) AS cancelled,
                 SUM(CASE WHEN cs.training_status = 'pending_reschedule' THEN 1 ELSE 0 END) AS pending_reschedule
             FROM cohort_sections cs

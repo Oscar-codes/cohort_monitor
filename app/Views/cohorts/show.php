@@ -13,7 +13,6 @@ $isAdmin = (bool) ($isAdmin ?? false);
 
 $statusMap = [
     'planned' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
-    'not_started' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
     'in_progress' => ['bg-primary-subtle text-primary', 'En progreso', 'bi-play-circle'],
     'completed' => ['bg-success-subtle text-success', 'Completado', 'bi-check-circle'],
     'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado', 'bi-x-circle'],
@@ -24,9 +23,6 @@ if (!function_exists('cohortDetailStatus')) {
     function cohortDetailStatus(array $cohort): string
     {
         $status = $cohort['training_status'] ?? 'planned';
-        if ($status === 'not_started') {
-            $status = 'planned';
-        }
         if (in_array($status, ['cancelled', 'pending_reschedule', 'completed'], true)) {
             return $status;
         }

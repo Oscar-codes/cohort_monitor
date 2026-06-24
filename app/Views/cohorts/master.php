@@ -33,7 +33,6 @@ if (!function_exists('masterStatusLabel')) {
     {
         $labels = [
             'planned' => 'Planificado',
-            'not_started' => 'Planificado',
             'in_progress' => 'En progreso',
             'completed' => 'Completado',
             'cancelled' => 'Cancelado',

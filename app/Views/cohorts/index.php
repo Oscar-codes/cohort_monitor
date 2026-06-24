@@ -36,9 +36,6 @@ function formatMonthLabel(int $timestamp): string
 function cohortLifecycleStatus(array $cohort): string
 {
     $storedStatus = $cohort['training_status'] ?? 'planned';
-    if ($storedStatus === 'not_started') {
-        $storedStatus = 'planned';
-    }
     if (in_array($storedStatus, ['cancelled', 'pending_reschedule', 'completed'], true)) {
         return $storedStatus;
     }
@@ -70,7 +67,6 @@ function cohortStatusLabel(string $status): string
         'completed' => 'Completado',
         'cancelled' => 'Cancelado',
         'pending_reschedule' => 'Pendiente de reprogramar',
-        'not_started' => 'Planificado',
     ];
 
     return $labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
@@ -421,7 +417,7 @@ $statusConfig = [
             </div>
 
             <div class="col-12 col-md-6 col-xl-3">
-                <label for="cohort_status" class="form-label">Cohort Status</label>
+                <label for="cohort_status" class="form-label">Estado</label>
                 <select class="form-select" id="cohort_status" name="cohort_status">
                     <option value="">Todos</option>
                     <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>

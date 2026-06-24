@@ -58,7 +58,7 @@ class DashboardService
 
         $activeCohorts  = (int) $stats['in_progress'];
         $completedCohorts = (int) $stats['completed'];
-        $planned        = (int) ($stats['planned'] ?? $stats['not_started'] ?? 0);
+        $planned        = (int) ($stats['planned'] ?? 0);
 
         $statusBreakdown = [
             'in_progress' => $activeCohorts,
@@ -71,7 +71,7 @@ class DashboardService
             'totalStudents'     => 0,
             'activeCohorts'     => $activeCohorts,
             'completedCohorts'  => $completedCohorts,
-            'notStartedCohorts' => $planned,
+            'plannedCohorts'    => $planned,
             'totalTarget'       => $totalTarget,
             'totalAdmissions'   => $totalAdmissions,
             'totalB2bAdmissions'=> $totalB2bAdmissions,

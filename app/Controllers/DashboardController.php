@@ -38,7 +38,7 @@ class DashboardController extends Controller
                 'totalStudents'     => 0,
                 'activeCohorts'     => 0,
                 'completedCohorts'  => 0,
-                'notStartedCohorts' => 0,
+                'plannedCohorts'    => 0,
                 'totalTarget'       => 0,
                 'totalAdmissions'   => 0,
                 'totalB2bAdmissions'=> 0,

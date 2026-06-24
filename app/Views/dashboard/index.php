@@ -6,7 +6,6 @@
         'in_progress' => ['En progreso', 'success', '#16a34a'],
         'completed'   => ['Completadas', 'primary', '#2563eb'],
         'planned' => ['Planificadas', 'secondary', '#64748b'],
-        'not_started' => ['Planificadas', 'secondary', '#64748b'],
     ];
 
     $roleLabels = [
@@ -22,7 +21,7 @@
     $totalCohorts       = (int) ($totalCohorts ?? 0);
     $activeCohorts      = (int) ($activeCohorts ?? 0);
     $completedCohorts   = (int) ($completedCohorts ?? 0);
-    $notStartedCohorts  = (int) ($notStartedCohorts ?? 0);
+    $plannedCohorts     = (int) ($plannedCohorts ?? 0);
     $totalAlerts        = (int) ($totalAlerts ?? 0);
     $totalTarget        = (int) ($totalTarget ?? 0);
     $totalAdmissions    = (int) ($totalAdmissions ?? 0);
@@ -60,8 +59,8 @@
         'status' => $statusChart,
         'types' => $typeChart,
         'sparklines' => [
-            'total'     => [$notStartedCohorts, $activeCohorts, $completedCohorts],
-            'active'    => [$notStartedCohorts, $activeCohorts],
+            'total'     => [$plannedCohorts, $activeCohorts, $completedCohorts],
+            'active'    => [$plannedCohorts, $activeCohorts],
             'completed' => [$activeCohorts, $completedCohorts],
             'alerts'    => [$riskStageCount, $riskCommentCount, $totalAlerts],
         ],
@@ -112,7 +111,7 @@
             </div>
             <div id="kpiTotalSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
             <div class="metric-card__footer">
-                <span><?= number_format($notStartedCohorts) ?> sin iniciar</span>
+                <span><?= number_format($plannedCohorts) ?> planificadas</span>
                 <span><?= number_format($activeCohorts) ?> activas</span>
             </div>
         </article>
@@ -287,7 +286,7 @@
             <?php else: ?>
                 <div class="empty-state py-4">
                     <i class="bi bi-bar-chart empty-state-icon"></i>
-                    <p class="empty-state-text mb-0">No hay tipos de bootcamp para graficar.</p>
+                    <p class="empty-state-text mb-0">No hay cohortes para graficar.</p>
                 </div>
             <?php endif; ?>
         </div>

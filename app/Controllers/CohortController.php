@@ -359,7 +359,7 @@ class CohortController extends Controller
         fwrite($output, "\xEF\xBB\xBF");
 
         fputcsv($output, [
-            'Codigo', 'Cohorte', 'Bootcamp', 'Proyecto', 'Coach', 'Dias', 'Horario',
+            'Codigo', 'Cohorte', 'Bootcamp name', 'Proyecto', 'Coach', 'Dias', 'Horario',
             'Meta Total', 'Meta B2B', 'Meta B2C', 'Actual B2B', 'Actual B2C', 'Actual Total',
             'Revenue Meta', 'Revenue Actual', 'Estado', 'Inicio', 'Fin'
         ]);
@@ -367,6 +367,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
+            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'planned'));
             fputcsv($output, [
                 (string) ($cohort['cohort_code'] ?? ''),
                 (string) ($cohort['name'] ?? ''),
@@ -383,7 +384,7 @@ class CohortController extends Controller
                 $b2b + $b2c,
                 (float) ($cohort['financial_target_revenue'] ?? 0),
                 (float) ($cohort['financial_actual_revenue'] ?? 0),
-                (string) ($cohort['training_status'] ?? ''),
+                CohortService::STATUS_LABELS[$statusKey] ?? $statusKey,
                 (string) ($cohort['start_date'] ?? ''),
                 (string) ($cohort['end_date'] ?? ''),
             ]);
@@ -414,7 +415,7 @@ class CohortController extends Controller
         $sheet->setTitle('Plan Maestro');
 
         $headers = [
-            'Codigo', 'Cohorte', 'Bootcamp', 'Proyecto', 'Coach', 'Dias', 'Horario',
+            'Codigo', 'Cohorte', 'Bootcamp name', 'Proyecto', 'Coach', 'Dias', 'Horario',
             'Meta Total', 'Meta B2B', 'Meta B2C', 'Actual B2B', 'Actual B2C', 'Actual Total',
             'Revenue Meta', 'Revenue Actual', 'Estado', 'Inicio', 'Fin'
         ];
@@ -440,6 +441,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
+            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'planned'));
 
             $sheet->setCellValue('A' . $row, (string) ($cohort['cohort_code'] ?? ''));
             $sheet->setCellValue('B' . $row, (string) ($cohort['name'] ?? ''));
@@ -456,7 +458,7 @@ class CohortController extends Controller
             $sheet->setCellValue('M' . $row, $b2b + $b2c);
             $sheet->setCellValue('N' . $row, (float) ($cohort['financial_target_revenue'] ?? 0));
             $sheet->setCellValue('O' . $row, (float) ($cohort['financial_actual_revenue'] ?? 0));
-            $sheet->setCellValue('P' . $row, (string) ($cohort['training_status'] ?? ''));
+            $sheet->setCellValue('P' . $row, CohortService::STATUS_LABELS[$statusKey] ?? $statusKey);
             $sheet->setCellValue('Q' . $row, (string) ($cohort['start_date'] ?? ''));
             $sheet->setCellValue('R' . $row, (string) ($cohort['end_date'] ?? ''));
 

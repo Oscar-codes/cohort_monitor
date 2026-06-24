@@ -26,7 +26,6 @@ class ReportService
         'completed'   => 'Completado',
         'in_progress' => 'En progreso',
         'planned'     => 'Planificado',
-        'not_started' => 'Planificado',
         'cancelled'   => 'Cancelado',
         'pending_reschedule' => 'Pendiente de reprogramar',
     ];

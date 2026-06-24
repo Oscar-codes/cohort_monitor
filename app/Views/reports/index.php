@@ -32,7 +32,6 @@ $statusBadge = [
     'completed' => 'bg-success-subtle text-success',
     'in_progress' => 'bg-primary-subtle text-primary',
     'planned' => 'bg-warning-subtle text-warning',
-    'not_started' => 'bg-warning-subtle text-warning',
     'cancelled' => 'bg-danger-subtle text-danger',
     'pending_reschedule' => 'bg-warning-subtle text-warning',
 ];
@@ -334,4 +333,3 @@ if (!function_exists('reportDate')) {
         </div>
     <?php endif; ?>
 </section>
-

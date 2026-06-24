@@ -251,9 +251,9 @@ class CohortRepository
         $rows = $this->db->query('
             SELECT
                 COUNT(*)                                                          AS total,
-                SUM(CASE WHEN cs.training_status = "in_progress" THEN 1 ELSE 0 END)  AS in_progress,
-                SUM(CASE WHEN cs.training_status = "completed" THEN 1 ELSE 0 END)    AS completed,
-                SUM(CASE WHEN cs.training_status IN ("planned", "not_started") THEN 1 ELSE 0 END)  AS planned,
+                SUM(CASE WHEN cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE()) THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN cs.training_status = "completed" OR (cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND cs.end_date IS NOT NULL AND cs.end_date < CURDATE()) THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND (cs.start_date IS NULL OR cs.start_date > CURDATE()) THEN 1 ELSE 0 END) AS planned,
                 COALESCE(SUM(cs.total_students_target), 0)                              AS total_target,
                 COALESCE(SUM(m.b2b_admissions), 0)                                       AS total_b2b,
                 COALESCE(SUM(m.b2c_admissions), 0)                                       AS total_b2c
@@ -493,11 +493,11 @@ class CohortRepository
 
         if (!empty($filters['search'])) {
             $where[] = '(
-                cs.section_code LIKE :search ESCAPE "\\"
-                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :search ESCAPE "\\"
-                OR CONCAT_WS(" - ", NULLIF(cs.section_code, ""), COALESCE(b.bootcamp_name, bf.family_name)) LIKE :search ESCAPE "\\"
-                OR ch.coach_name LIKE :search ESCAPE "\\"
-                OR p.project_name LIKE :search ESCAPE "\\"
+                cs.section_code LIKE :search
+                OR COALESCE(b.bootcamp_name, bf.family_name) LIKE :search
+                OR CONCAT_WS(" - ", NULLIF(cs.section_code, ""), COALESCE(b.bootcamp_name, bf.family_name)) LIKE :search
+                OR ch.coach_name LIKE :search
+                OR p.project_name LIKE :search
             )';
             $params['search'] = '%' . $this->escapeLike((string) $filters['search']) . '%';
         }
@@ -533,13 +533,13 @@ class CohortRepository
 
         if (!empty($filters['cohort_status'])) {
             if ($filters['cohort_status'] === 'planned') {
-                $where[] = '(cs.training_status IN ("planned", "not_started") AND (cs.start_date IS NULL OR cs.start_date > CURDATE()))';
+                $where[] = '(cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND (cs.start_date IS NULL OR cs.start_date > CURDATE()))';
             }
             if ($filters['cohort_status'] === 'in_progress') {
-                $where[] = '(cs.training_status = "in_progress" OR (cs.training_status NOT IN ("cancelled", "pending_reschedule") AND cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE())))';
+                $where[] = '(cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND cs.start_date IS NOT NULL AND cs.start_date <= CURDATE() AND (cs.end_date IS NULL OR cs.end_date >= CURDATE()))';
             }
             if ($filters['cohort_status'] === 'completed') {
-                $where[] = '(cs.training_status = "completed" OR (cs.training_status NOT IN ("cancelled", "pending_reschedule") AND cs.end_date IS NOT NULL AND cs.end_date < CURDATE()))';
+                $where[] = '(cs.training_status = "completed" OR (cs.training_status NOT IN ("completed", "cancelled", "pending_reschedule") AND cs.end_date IS NOT NULL AND cs.end_date < CURDATE()))';
             }
             if ($filters['cohort_status'] === 'cancelled') {
                 $where[] = 'cs.training_status = "cancelled"';
