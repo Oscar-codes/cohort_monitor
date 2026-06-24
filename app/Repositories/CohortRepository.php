@@ -585,49 +585,47 @@ class CohortRepository
 
         $this->db->execute('DELETE FROM cohort_section_memberships WHERE section_id = :sid', ['sid' => $sectionId]);
 
-        if ($b2bTarget > 0 || $b2bActual > 0) {
-            $this->ensureCohortExists($familyId, 'B2B', $year, $month);
-            $this->db->execute(
-                'INSERT INTO cohort_section_memberships (
-                    section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
-                    target_students, actual_students, target_revenue, actual_revenue
-                ) VALUES (
-                    :section_id, :family_id, "B2B", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
-                )',
-                [
-                    'section_id'     => $sectionId,
-                    'family_id'      => $familyId,
-                    'cohort_year'    => $year,
-                    'cohort_month'   => $month,
-                    'target_students'=> $b2bTarget,
-                    'actual_students'=> $b2bActual,
-                    'target_revenue' => $b2bTargetRevenue,
-                    'actual_revenue' => $b2bActualRevenue,
-                ]
-            );
-        }
+        // Siempre crear registro B2B (incluso con valores 0)
+        $this->ensureCohortExists($familyId, 'B2B', $year, $month);
+        $this->db->execute(
+            'INSERT INTO cohort_section_memberships (
+                section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
+                target_students, actual_students, target_revenue, actual_revenue
+            ) VALUES (
+                :section_id, :family_id, "B2B", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
+            )',
+            [
+                'section_id'     => $sectionId,
+                'family_id'      => $familyId,
+                'cohort_year'    => $year,
+                'cohort_month'   => $month,
+                'target_students'=> $b2bTarget,
+                'actual_students'=> $b2bActual,
+                'target_revenue' => $b2bTargetRevenue,
+                'actual_revenue' => $b2bActualRevenue,
+            ]
+        );
 
-        if ($b2cTarget > 0 || $b2cActual > 0 || ($b2bTarget === 0 && $b2bActual === 0)) {
-            $this->ensureCohortExists($familyId, 'B2C', $year, $month);
-            $this->db->execute(
-                'INSERT INTO cohort_section_memberships (
-                    section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
-                    target_students, actual_students, target_revenue, actual_revenue
-                ) VALUES (
-                    :section_id, :family_id, "B2C", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
-                )',
-                [
-                    'section_id'     => $sectionId,
-                    'family_id'      => $familyId,
-                    'cohort_year'    => $year,
-                    'cohort_month'   => $month,
-                    'target_students'=> $b2cTarget,
-                    'actual_students'=> $b2cActual,
-                    'target_revenue' => $b2cTargetRevenue,
-                    'actual_revenue' => $b2cActualRevenue,
-                ]
-            );
-        }
+        // Siempre crear registro B2C (incluso con valores 0)
+        $this->ensureCohortExists($familyId, 'B2C', $year, $month);
+        $this->db->execute(
+            'INSERT INTO cohort_section_memberships (
+                section_id, bootcamp_family_id, cohort_type_code, cohort_year, cohort_month,
+                target_students, actual_students, target_revenue, actual_revenue
+            ) VALUES (
+                :section_id, :family_id, "B2C", :cohort_year, :cohort_month, :target_students, :actual_students, :target_revenue, :actual_revenue
+            )',
+            [
+                'section_id'     => $sectionId,
+                'family_id'      => $familyId,
+                'cohort_year'    => $year,
+                'cohort_month'   => $month,
+                'target_students'=> $b2cTarget,
+                'actual_students'=> $b2cActual,
+                'target_revenue' => $b2cTargetRevenue,
+                'actual_revenue' => $b2cActualRevenue,
+            ]
+        );
     }
 
     /**
