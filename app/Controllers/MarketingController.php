@@ -33,12 +33,14 @@ class MarketingController extends Controller
         }
 
         $stages = $this->mktService->getStagesForCohort((int) $cohortId);
+        $marketingInfo = $this->mktService->getMarketingInfo((int) $cohortId);
 
         $this->view('marketing.show', [
             'pageTitle'   => 'Marketing — ' . $cohort['name'],
             'activePage'  => 'marketing',
             'cohort'      => $cohort,
             'stages'      => $stages,
+            'marketingInfo' => $marketingInfo,
             'stageLabels' => MarketingService::STAGE_LABELS,
             'statusLabels'=> MarketingService::STATUS_LABELS,
             'scripts'     => [
@@ -57,6 +59,30 @@ class MarketingController extends Controller
         try {
             $this->mktService->updateStage((int) $cohortId, $stageName, $status, $riskNotes);
             Auth::flash('success', 'Etapa actualizada correctamente.');
+        } catch (\InvalidArgumentException $e) {
+            Auth::flash('error', $e->getMessage());
+        }
+
+        $this->redirect('/cohorts/' . $cohortId . '/marketing');
+    }
+
+    /** Update marketing info (POST). */
+    public function updateInfo(string $cohortId): void
+    {
+        $data = [
+            'campaign_status'    => $this->input('campaign_status'),
+            'strategy_notes'     => $this->input('strategy_notes'),
+            'content_notes'      => $this->input('content_notes'),
+            'ads_notes'          => $this->input('ads_notes'),
+            'organic_notes'      => $this->input('organic_notes'),
+            'events_notes'       => $this->input('events_notes'),
+            'partnerships_notes' => $this->input('partnerships_notes'),
+            'analytics_notes'    => $this->input('analytics_notes'),
+        ];
+
+        try {
+            $this->mktService->updateMarketingInfo((int) $cohortId, $data);
+            Auth::flash('success', 'Información de marketing actualizada correctamente.');
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
         }

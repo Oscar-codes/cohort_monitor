@@ -71,6 +71,72 @@ $completionPct = (int) round(($completedCount / $totalStages) * 100);
     </div>
 </section>
 
+<!-- ─── Marketing Info (Manual Fields) ─────────────────── -->
+<section class="app-panel mb-4">
+    <div class="app-panel__header">
+        <div>
+            <h2 class="app-panel__title"><i class="bi bi-pencil-square"></i> Sección Marketing</h2>
+            <p class="app-panel__subtitle">Todos los campos son de input manual excepto Campaña marketing.</p>
+        </div>
+    </div>
+
+    <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info">
+        <div class="p-4">
+            <!-- Campaña marketing (selector) -->
+            <div class="card mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-megaphone me-2"></i>Campaña marketing</h5>
+                </div>
+                <div class="card-body">
+                    <select name="campaign_status" class="form-select" required>
+                        <option value="Active" <?= ($marketingInfo['campaign_status'] ?? 'Active') === 'Active' ? 'selected' : '' ?>>Active</option>
+                        <option value="Completed" <?= ($marketingInfo['campaign_status'] ?? '') === 'Completed' ? 'selected' : '' ?>>Completed</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Campos manuales -->
+            <h6 class="text-muted mb-3"><i class="bi bi-input-cursor-text me-2"></i>Campos de información (input manual)</h6>
+            
+            <div class="row g-3">
+                <?php
+                $fields = [
+                    'strategy_notes' => ['Estrategia', 'bi-lightbulb'],
+                    'content_notes' => ['Contenido', 'bi-file-text'],
+                    'ads_notes' => ['Paid Ads', 'bi-megaphone-fill'],
+                    'organic_notes' => ['Orgánico', 'bi-tree'],
+                    'events_notes' => ['Eventos', 'bi-calendar-event'],
+                    'partnerships_notes' => ['Partnerships', 'bi-people'],
+                    'analytics_notes' => ['Analítica', 'bi-graph-up'],
+                ];
+                
+                foreach ($fields as $fieldKey => $fieldMeta):
+                    [$label, $icon] = $fieldMeta;
+                ?>
+                <div class="col-md-6">
+                    <label for="<?= $fieldKey ?>" class="form-label">
+                        <i class="bi <?= $icon ?> me-1"></i> <?= $label ?>
+                    </label>
+                    <textarea 
+                        name="<?= $fieldKey ?>" 
+                        id="<?= $fieldKey ?>" 
+                        class="form-control" 
+                        rows="3"
+                        placeholder="Ingrese información sobre <?= strtolower($label) ?>..."
+                    ><?= htmlspecialchars($marketingInfo[$fieldKey] ?? '') ?></textarea>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Guardar información de marketing
+                </button>
+            </div>
+        </div>
+    </form>
+</section>
+
 <div class="marketing-summary mb-4">
     <article class="marketing-summary-card">
         <span class="marketing-summary-card__icon is-primary"><i class="bi bi-list-check"></i></span>

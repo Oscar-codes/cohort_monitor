@@ -75,6 +75,7 @@ $router->get('/admin/health', [AdminController::class, 'health'], 'admin.health'
 $router->get('/marketing',                    [MarketingController::class, 'index'],  'marketing.index');
 $router->get('/cohorts/{id}/marketing',       [MarketingController::class, 'show'],   'marketing.show');
 $router->post('/cohorts/{id}/marketing',      [MarketingController::class, 'update'], 'marketing.update');
+$router->post('/cohorts/{id}/marketing/info', [MarketingController::class, 'updateInfo'], 'marketing.update-info');
 
 // ─── Reports (all authenticated) ────────────────────────────
 $router->get('/reports',              [ReportController::class, 'index'],       'reports.index');

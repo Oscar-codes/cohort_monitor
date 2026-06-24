@@ -5,14 +5,16 @@ namespace App\Services;
 use App\Core\Auth;
 use App\Repositories\MarketingStageRepository;
 use App\Repositories\AuditRepository;
+use App\Repositories\CohortMarketingInfoRepository;
 
 /**
- * MarketingService â€” Business logic for marketing workflow stages.
+ * MarketingService — Business logic for marketing workflow stages.
  */
 class MarketingService
 {
     private MarketingStageRepository $stageRepo;
-    private AuditRepository          $auditRepo;
+    private AuditRepository $auditRepo;
+    private CohortMarketingInfoRepository $marketingInfoRepo;
 
     public const STAGE_LABELS = [
         'strategy'      => 'Estrategia',
@@ -35,6 +37,7 @@ class MarketingService
     {
         $this->stageRepo = new MarketingStageRepository();
         $this->auditRepo = new AuditRepository();
+        $this->marketingInfoRepo = new CohortMarketingInfoRepository();
     }
 
     /**
@@ -98,6 +101,52 @@ class MarketingService
     public function getAtRiskStages(): array
     {
         return $this->stageRepo->findAtRisk();
+    }
+
+    /**
+     * Get marketing info for a cohort
+     */
+    public function getMarketingInfo(int $cohortId): ?array
+    {
+        return $this->marketingInfoRepo->findByCohort($cohortId);
+    }
+
+    /**
+     * Update marketing info for a cohort
+     */
+    public function updateMarketingInfo(int $cohortId, array $data): void
+    {
+        $validCampaignStatuses = ['Completed', 'Active'];
+        
+        // Validate campaign_status
+        if (!isset($data['campaign_status']) || !in_array($data['campaign_status'], $validCampaignStatuses, true)) {
+            throw new \InvalidArgumentException('Estado de campaña no válido');
+        }
+
+        // Sanitize text fields
+        $textFields = [
+            'strategy_notes', 'content_notes', 'ads_notes', 'organic_notes',
+            'events_notes', 'partnerships_notes', 'analytics_notes'
+        ];
+        
+        $cleanData = ['campaign_status' => $data['campaign_status']];
+        foreach ($textFields as $field) {
+            if (isset($data[$field])) {
+                $cleanData[$field] = trim($data[$field]);
+            }
+        }
+
+        $this->marketingInfoRepo->upsert($cohortId, $cleanData);
+
+        // Log audit
+        $this->auditRepo->log([
+            'user_id'     => Auth::id(),
+            'action'      => 'update_marketing_info',
+            'entity_type' => 'cohort_marketing_info',
+            'entity_key'  => (string) $cohortId,
+            'old_values'  => null,
+            'new_values'  => $cleanData,
+        ]);
     }
 }
 
