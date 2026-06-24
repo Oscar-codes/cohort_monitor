@@ -74,7 +74,22 @@ function cohortStatusLabel(string $status): string
 
 function cohortCanDelete(array $cohort): bool
 {
-    return in_array(cohortLifecycleStatus($cohort), ['planned', 'cancelled', 'pending_reschedule'], true);
+    // Check both stored status and effective lifecycle status
+    $storedStatus = $cohort['training_status'] ?? 'planned';
+    $lifecycleStatus = cohortLifecycleStatus($cohort);
+    
+    // Block deletion if EITHER status is in_progress or completed
+    $protectedStatuses = ['in_progress', 'completed', 'En progreso', 'Completado'];
+    
+    if (in_array($storedStatus, $protectedStatuses, true)) {
+        return false;
+    }
+    
+    if (in_array($lifecycleStatus, $protectedStatuses, true)) {
+        return false;
+    }
+    
+    return in_array($lifecycleStatus, ['planned', 'cancelled', 'pending_reschedule'], true);
 }
 
 /** Helper: render lifecycle badge */

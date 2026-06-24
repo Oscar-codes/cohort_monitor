@@ -669,14 +669,30 @@ class CohortController extends Controller
             return;
         }
 
+        // Get cohort to check status before deletion
+        $cohort = $this->cohortService->getCohortById((int) $id);
+        if (!$cohort) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Cohorte no encontrada.']);
+            return;
+        }
+
+        // Check if cohort is in progress or completed - block deletion
+        $trainingStatus = $cohort['training_status'] ?? 'planned';
+        if (in_array($trainingStatus, ['in_progress', 'completed', 'En progreso', 'Completado'], true)) {
+            Auth::flash('error', 'No se pueden eliminar cohortes En progreso o Completadas.');
+            $this->redirect('/cohorts/' . $id);
+            return;
+        }
+
         try {
             $this->cohortService->deleteCohort((int) $id);
             Auth::flash('success', 'Cohorte eliminada.');
+            $this->redirect('/cohorts');
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
+            $this->redirect('/cohorts/' . $id);
         }
-
-        $this->redirect('/cohorts');
     }
 
     public function transitionStatus(string $id): void

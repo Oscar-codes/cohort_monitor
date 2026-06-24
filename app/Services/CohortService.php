@@ -205,8 +205,13 @@ class CohortService
             return false;
         }
 
+        // Validate both stored status and effective status
+        $storedStatus = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED));
         $effectiveStatus = $this->effectiveTrainingStatus($cohort);
-        if (!in_array($effectiveStatus, self::DELETABLE_STATUSES, true)) {
+        
+        // Block deletion if EITHER stored OR effective status is in_progress or completed
+        $protectedStatuses = [self::STATUS_IN_PROGRESS, self::STATUS_COMPLETED];
+        if (in_array($storedStatus, $protectedStatuses, true) || in_array($effectiveStatus, $protectedStatuses, true)) {
             throw new \InvalidArgumentException('No se pueden eliminar cohortes En progreso o Completadas.');
         }
 
