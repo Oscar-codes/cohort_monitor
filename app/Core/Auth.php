@@ -226,6 +226,15 @@ class Auth
     }
 
     /**
+     * Check if the current user can manage cohort status (transitions).
+     * Only admin and finance roles can change cohort status.
+     */
+    public static function canManageCohortStatus(): bool
+    {
+        return self::hasRole(['admin', 'finance']);
+    }
+
+    /**
      * Check if the current user can delete cohorts.
      */
     public static function canDeleteCohort(): bool

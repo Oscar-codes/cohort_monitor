@@ -10,6 +10,7 @@ $comments = isset($comments) && is_array($comments) ? $comments : [];
 
 $workflowTransitions = isset($workflowTransitions) && is_array($workflowTransitions) ? $workflowTransitions : [];
 $isAdmin = (bool) ($isAdmin ?? false);
+$canManageStatus = (bool) ($canManageStatus ?? false);
 
 $statusMap = [
     'planned' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
@@ -432,7 +433,7 @@ $workflowActionMap = [
             </dl>
         </section>
 
-        <?php if ($isAdmin): ?>
+        <?php if ($canManageStatus): ?>
             <section class="app-panel cohort-detail-panel mt-4">
                 <div class="app-panel__header">
                     <div>

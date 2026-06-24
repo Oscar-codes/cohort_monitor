@@ -293,7 +293,7 @@ class CohortService
     public function normalizeTrainingStatus(string $status): string
     {
         return match ($status) {
-            'not_started', 'upcoming', 'pending', 'pendiente', 'planificado' => self::STATUS_PLANNED,
+            'upcoming', 'planificado' => self::STATUS_PLANNED,
             'in_progress', 'en progreso', 'en ejecucion', 'en ejecución' => self::STATUS_IN_PROGRESS,
             'completed', 'completado' => self::STATUS_COMPLETED,
             'cancelled', 'cancelado' => self::STATUS_CANCELLED,

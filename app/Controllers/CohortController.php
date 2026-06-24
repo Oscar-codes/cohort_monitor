@@ -566,6 +566,7 @@ class CohortController extends Controller
             'comments'        => $comments,
             'canEdit'         => Auth::canEditCohort(),
             'canDelete'       => Auth::canDeleteCohort(),
+            'canManageStatus' => Auth::canManageCohortStatus(),
             'editableFields'  => Auth::getEditableCohortFields(),
             'isAdmin'         => Auth::isAdmin(),
             'workflowTransitions' => $this->cohortService->getAllowedStatusTransitions($cohort),
@@ -680,7 +681,7 @@ class CohortController extends Controller
 
     public function transitionStatus(string $id): void
     {
-        if (!Auth::isAdmin()) {
+        if (!Auth::canManageCohortStatus()) {
             http_response_code(403);
             echo json_encode(['error' => 'No tienes permiso para cambiar el estado de cohortes.']);
             return;
