@@ -25,9 +25,8 @@ class ReportService
     public const STATUS_LABELS = [
         'completed'   => 'Completado',
         'in_progress' => 'En progreso',
-        'planned'     => 'Planificado',
+        'not_started' => 'No iniciado',
         'cancelled'   => 'Cancelado',
-        'pending_reschedule' => 'Pendiente de reprogramar',
     ];
 
     public function __construct()
@@ -410,8 +409,7 @@ class ReportService
                 <tr>
                     <th>Completado</th>
                     <th>En EjecuciÃ³n</th>
-                    <th>Planificado</th>
-                    <th>Pendiente de reprogramar</th>
+                    <th>No iniciado</th>
                     <th>Cancelado</th>
                 </tr>
             </thead>
@@ -419,8 +417,7 @@ class ReportService
                 <tr>
                     <td><strong>{$byStatus['completed']}</strong></td>
                     <td><strong>{$byStatus['in_progress']}</strong></td>
-                    <td><strong>{$byStatus['planned']}</strong></td>
-                    <td><strong>{$byStatus['pending_reschedule']}</strong></td>
+                    <td><strong>{$byStatus['not_started']}</strong></td>
                     <td><strong>{$byStatus['cancelled']}</strong></td>
                 </tr>
             </tbody>

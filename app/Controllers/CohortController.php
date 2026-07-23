@@ -389,7 +389,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
-            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'planned'));
+            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'not_started'));
             fputcsv($output, [
                 (string) ($cohort['cohort_code'] ?? ''),
                 (string) ($cohort['name'] ?? ''),
@@ -464,7 +464,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
-            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'planned'));
+            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'not_started'));
 
             $sheet->setCellValue('A' . $row, (string) ($cohort['cohort_code'] ?? ''));
             $sheet->setCellValue('B' . $row, (string) ($cohort['name'] ?? ''));
@@ -678,7 +678,7 @@ class CohortController extends Controller
         }
 
         // Check if cohort is in progress or completed - block deletion
-        $trainingStatus = $cohort['training_status'] ?? 'planned';
+        $trainingStatus = $cohort['training_status'] ?? 'not_started';
         if (in_array($trainingStatus, ['in_progress', 'completed', 'En progreso', 'Completado'], true)) {
             Auth::flash('error', 'No se pueden eliminar cohortes En progreso o Completadas.');
             $this->redirect('/cohorts/' . $id);
@@ -750,7 +750,7 @@ class CohortController extends Controller
             'bootcamp_type'            => $this->normalizeTextInput($this->input('bootcamp_type')),
             'area'                     => $this->input('area') ?: null,
             'assigned_class_schedule'  => $this->normalizeTextInput($this->input('assigned_class_schedule')),
-            'training_status'          => $this->input('training_status', 'planned'),
+            'training_status'          => $this->input('training_status', 'not_started'),
         ];
     }
 

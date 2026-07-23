@@ -8,11 +8,26 @@ namespace App\Models;
  * Represents a cohort entity with all management fields.
  * Models are simple data containers — no database logic here.
  *
- * NOTE: training_date_50 and training_date_75 are calculated fields
- *       computed in the Service layer, never stored in the database.
+ * Matches the new `cohorts` table schema:
+ *   id, cohort_code, name, correlative_number,
+ *   total_admission_target, b2b_admission_target,
+ *   b2b_admissions, b2c_admissions,
+ *   admission_deadline_date, start_date, end_date,
+ *   related_project, assigned_coach, bootcamp_type, area,
+ *   assigned_class_schedule, training_status,
+ *   created_at, updated_at
  */
 class Cohort
 {
+    public const TRAINING_STATUS_NOT_STARTED = 'not_started';
+    public const TRAINING_STATUS_IN_PROGRESS = 'in_progress';
+    public const TRAINING_STATUS_COMPLETED   = 'completed';
+    public const TRAINING_STATUS_CANCELLED   = 'cancelled';
+
+    public const AREA_ACADEMIC   = 'academic';
+    public const AREA_MARKETING  = 'marketing';
+    public const AREA_ADMISSIONS = 'admissions';
+
     public function __construct(
         public readonly ?int    $id = null,
         public string           $cohortCode = '',
@@ -20,6 +35,7 @@ class Cohort
         public int              $correlativeNumber = 0,
         public int              $totalAdmissionTarget = 0,
         public int              $b2bAdmissionTarget = 0,
+        public int              $b2bAdmissions = 0,
         public int              $b2cAdmissions = 0,
         public ?string          $admissionDeadlineDate = null,
         public ?string          $startDate = null,
@@ -27,8 +43,9 @@ class Cohort
         public ?string          $relatedProject = null,
         public ?string          $assignedCoach = null,
         public ?string          $bootcampType = null,
+        public ?string          $area = null,
         public ?string          $assignedClassSchedule = null,
-        public string           $trainingStatus = 'planned',
+        public string           $trainingStatus = self::TRAINING_STATUS_NOT_STARTED,
         public ?string          $createdAt = null,
         public ?string          $updatedAt = null,
         // ─── Calculated fields (NOT persisted) ──────────────
@@ -42,12 +59,13 @@ class Cohort
     public static function fromArray(array $row): self
     {
         return new self(
-            id:                    (int) ($row['id'] ?? 0),
-            cohortCode:            $row['cohort_code'] ?? '',
-            name:                  $row['name'] ?? '',
+            id:                    isset($row['id']) ? (int) $row['id'] : null,
+            cohortCode:            (string) ($row['cohort_code'] ?? ''),
+            name:                  (string) ($row['name'] ?? ''),
             correlativeNumber:     (int) ($row['correlative_number'] ?? 0),
             totalAdmissionTarget:  (int) ($row['total_admission_target'] ?? 0),
             b2bAdmissionTarget:    (int) ($row['b2b_admission_target'] ?? 0),
+            b2bAdmissions:         (int) ($row['b2b_admissions'] ?? 0),
             b2cAdmissions:         (int) ($row['b2c_admissions'] ?? 0),
             admissionDeadlineDate: $row['admission_deadline_date'] ?? null,
             startDate:             $row['start_date'] ?? null,
@@ -55,8 +73,9 @@ class Cohort
             relatedProject:        $row['related_project'] ?? null,
             assignedCoach:         $row['assigned_coach'] ?? null,
             bootcampType:          $row['bootcamp_type'] ?? null,
+            area:                  $row['area'] ?? null,
             assignedClassSchedule: $row['assigned_class_schedule'] ?? null,
-            trainingStatus:        $row['training_status'] ?? 'planned',
+            trainingStatus:        (string) ($row['training_status'] ?? self::TRAINING_STATUS_NOT_STARTED),
             createdAt:             $row['created_at'] ?? null,
             updatedAt:             $row['updated_at'] ?? null,
             trainingDate50:        $row['training_date_50'] ?? null,
@@ -65,7 +84,7 @@ class Cohort
     }
 
     /**
-     * Convert the model to an associative array.
+     * Convert the model to an associative array using the database column names.
      */
     public function toArray(): array
     {
@@ -76,6 +95,7 @@ class Cohort
             'correlative_number'       => $this->correlativeNumber,
             'total_admission_target'   => $this->totalAdmissionTarget,
             'b2b_admission_target'     => $this->b2bAdmissionTarget,
+            'b2b_admissions'           => $this->b2bAdmissions,
             'b2c_admissions'           => $this->b2cAdmissions,
             'admission_deadline_date'  => $this->admissionDeadlineDate,
             'start_date'               => $this->startDate,
@@ -83,6 +103,7 @@ class Cohort
             'related_project'          => $this->relatedProject,
             'assigned_coach'           => $this->assignedCoach,
             'bootcamp_type'            => $this->bootcampType,
+            'area'                     => $this->area,
             'assigned_class_schedule'  => $this->assignedClassSchedule,
             'training_status'          => $this->trainingStatus,
             'created_at'               => $this->createdAt,
@@ -97,7 +118,7 @@ class Cohort
      */
     public function isInProgress(): bool
     {
-        return $this->trainingStatus === 'in_progress';
+        return $this->trainingStatus === self::TRAINING_STATUS_IN_PROGRESS;
     }
 
     /**
@@ -105,6 +126,22 @@ class Cohort
      */
     public function isCompleted(): bool
     {
-        return $this->trainingStatus === 'completed';
+        return $this->trainingStatus === self::TRAINING_STATUS_COMPLETED;
+    }
+
+    /**
+     * Check if the cohort training has been cancelled.
+     */
+    public function isCancelled(): bool
+    {
+        return $this->trainingStatus === self::TRAINING_STATUS_CANCELLED;
+    }
+
+    /**
+     * Check if the cohort has not yet started.
+     */
+    public function isNotStarted(): bool
+    {
+        return $this->trainingStatus === self::TRAINING_STATUS_NOT_STARTED;
     }
 }

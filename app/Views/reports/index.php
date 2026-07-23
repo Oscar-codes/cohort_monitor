@@ -24,16 +24,14 @@ $areaTone = [
 $statusCards = [
     ['key' => 'completed', 'label' => 'Completado', 'icon' => 'bi-check-circle', 'tone' => 'success'],
     ['key' => 'in_progress', 'label' => 'En ejecucion', 'icon' => 'bi-play-circle', 'tone' => 'primary'],
-    ['key' => 'planned', 'label' => 'Planificado', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
-    ['key' => 'pending_reschedule', 'label' => 'Pendiente de reprogramar', 'icon' => 'bi-calendar2-week', 'tone' => 'warning'],
+    ['key' => 'not_started', 'label' => 'No iniciado', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
     ['key' => 'cancelled', 'label' => 'Cancelado', 'icon' => 'bi-x-circle', 'tone' => 'danger'],
 ];
 $statusBadge = [
     'completed' => 'bg-success-subtle text-success',
     'in_progress' => 'bg-primary-subtle text-primary',
-    'planned' => 'bg-warning-subtle text-warning',
+    'not_started' => 'bg-warning-subtle text-warning',
     'cancelled' => 'bg-danger-subtle text-danger',
-    'pending_reschedule' => 'bg-warning-subtle text-warning',
 ];
 
 $totalCohorts = count($cohorts);

@@ -35,8 +35,8 @@ function formatMonthLabel(int $timestamp): string
 /** Helper: derive lifecycle status based on dates */
 function cohortLifecycleStatus(array $cohort): string
 {
-    $storedStatus = $cohort['training_status'] ?? 'planned';
-    if (in_array($storedStatus, ['cancelled', 'pending_reschedule', 'completed'], true)) {
+    $storedStatus = $cohort['training_status'] ?? 'not_started';
+    if (in_array($storedStatus, ['cancelled', 'completed'], true)) {
         return $storedStatus;
     }
 
@@ -45,7 +45,7 @@ function cohortLifecycleStatus(array $cohort): string
     $endDate = $cohort['end_date'] ?? null;
 
     if ($startDate && $startDate > $today) {
-        return 'planned';
+        return 'not_started';
     }
 
     if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
@@ -56,17 +56,16 @@ function cohortLifecycleStatus(array $cohort): string
         return 'completed';
     }
 
-    return 'planned';
+    return 'not_started';
 }
 
 function cohortStatusLabel(string $status): string
 {
     $labels = [
-        'planned' => 'Planificado',
+        'not_started' => 'No iniciado',
         'in_progress' => 'En progreso',
         'completed' => 'Completado',
         'cancelled' => 'Cancelado',
-        'pending_reschedule' => 'Pendiente de reprogramar',
     ];
 
     return $labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
@@ -74,22 +73,20 @@ function cohortStatusLabel(string $status): string
 
 function cohortCanDelete(array $cohort): bool
 {
-    // Check both stored status and effective lifecycle status
-    $storedStatus = $cohort['training_status'] ?? 'planned';
+    $storedStatus = $cohort['training_status'] ?? 'not_started';
     $lifecycleStatus = cohortLifecycleStatus($cohort);
-    
-    // Block deletion if EITHER status is in_progress or completed
+
     $protectedStatuses = ['in_progress', 'completed', 'En progreso', 'Completado'];
-    
+
     if (in_array($storedStatus, $protectedStatuses, true)) {
         return false;
     }
-    
+
     if (in_array($lifecycleStatus, $protectedStatuses, true)) {
         return false;
     }
-    
-    return in_array($lifecycleStatus, ['planned', 'cancelled', 'pending_reschedule'], true);
+
+    return in_array($lifecycleStatus, ['not_started', 'cancelled'], true);
 }
 
 /** Helper: render lifecycle badge */
@@ -98,11 +95,10 @@ function lifecycleBadge(array $cohort): string
     $status = cohortLifecycleStatus($cohort);
 
     $map = [
-        'planned' => ['bg-secondary-subtle text-secondary', 'Planificado'],
+        'not_started' => ['bg-secondary-subtle text-secondary', 'No iniciado'],
         'in_progress' => ['bg-primary-subtle text-primary', 'En progreso'],
         'completed' => ['bg-success-subtle text-success', 'Completado'],
         'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado'],
-        'pending_reschedule' => ['bg-warning-subtle text-warning', 'Pendiente de reprogramar'],
     ];
 
     [$class, $label] = $map[$status] ?? ['bg-light text-dark', ucfirst($status)];
@@ -275,20 +271,19 @@ $canEditVal = $canEdit ?? false;
 $canDeleteVal = $canDelete ?? false;
 
 // Group cohorts by lifecycle status
-$grouped = ['planned' => [], 'in_progress' => [], 'completed' => [], 'cancelled' => [], 'pending_reschedule' => []];
+$grouped = ['not_started' => [], 'in_progress' => [], 'completed' => [], 'cancelled' => []];
 foreach ($cohorts as $c) {
     $grouped[cohortLifecycleStatus($c)][] = $c;
 }
-$upcomingCount   = count($grouped['planned']);
+$upcomingCount   = count($grouped['not_started']);
 $inProgressCount = count($grouped['in_progress']);
 $completedCount  = count($grouped['completed']);
 $cancelledCount  = count($grouped['cancelled']);
-$pendingRescheduleCount = count($grouped['pending_reschedule']);
 
 // Upcoming cohorts starting within 60 days (for Gantt view)
 $today60 = date('Y-m-d', strtotime('+60 days'));
 $todayStr = date('Y-m-d');
-$ganttCohorts = array_filter($grouped['planned'], function (array $c) use ($todayStr, $today60) {
+$ganttCohorts = array_filter($grouped['not_started'], function (array $c) use ($todayStr, $today60) {
     $sd = $c['start_date'] ?? null;
     return $sd && $sd >= $todayStr && $sd <= $today60;
 });
@@ -310,11 +305,10 @@ $ganttSpanDays = max(1, (int) round(($ganttEndTs - $ganttStartTs) / 86400));
 
 // Status config for accordion
 $statusConfig = [
-    'planned'    => ['label' => 'Planificado',    'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
+    'not_started' => ['label' => 'No iniciado',   'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
     'in_progress' => ['label' => 'En progreso', 'color' => '#0d6efd', 'icon' => 'bi-play-circle',    'defaultOpen' => false],
     'completed'   => ['label' => 'Completado',   'color' => '#198754', 'icon' => 'bi-check-circle',   'defaultOpen' => false],
     'cancelled'   => ['label' => 'Cancelado',   'color' => '#dc3545', 'icon' => 'bi-x-circle',   'defaultOpen' => false],
-    'pending_reschedule'   => ['label' => 'Pendiente de reprogramar',   'color' => '#ffc107', 'icon' => 'bi-calendar2-week',   'defaultOpen' => false],
 ];
 ?>
 
@@ -441,11 +435,10 @@ $statusConfig = [
                 <label for="cohort_status" class="form-label">Estado</label>
                 <select class="form-select" id="cohort_status" name="cohort_status">
                     <option value="">Todos</option>
-                    <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>
+                    <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
                     <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
                     <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
                     <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
-                    <option value="pending_reschedule" <?= (($filters['cohort_status'] ?? '') === 'pending_reschedule') ? 'selected' : '' ?>>Pendiente de reprogramar</option>
                 </select>
             </div>
 
@@ -517,7 +510,7 @@ $statusConfig = [
 <div id="view-list">
 <?php if (!empty($cohorts)): ?>
 
-    <?php foreach (['planned' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount, 'cancelled' => $cancelledCount, 'pending_reschedule' => $pendingRescheduleCount] as $status => $count): ?>
+    <?php foreach (['not_started' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount, 'cancelled' => $cancelledCount] as $status => $count): ?>
         <?php if ($count === 0) continue; ?>
         <?php
             $cfg = $statusConfig[$status];

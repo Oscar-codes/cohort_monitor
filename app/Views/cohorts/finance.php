@@ -203,11 +203,10 @@ if (!function_exists('moneyFmt')) {
             <label for="cohort_status" class="form-label">Estado</label>
             <select class="form-select" id="cohort_status" name="cohort_status">
                 <option value="">Todos</option>
-                <option value="planned" <?= (($filters['cohort_status'] ?? '') === 'planned') ? 'selected' : '' ?>>Planificado</option>
+                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
                 <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
                 <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
                 <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
-                <option value="pending_reschedule" <?= (($filters['cohort_status'] ?? '') === 'pending_reschedule') ? 'selected' : '' ?>>Pendiente de reprogramar</option>
             </select>
         </div>
         <div class="col-12">

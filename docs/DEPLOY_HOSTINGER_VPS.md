@@ -291,28 +291,17 @@ rm /tmp/mi_dump_completo.sql
 
 Si prefieres empezar con una base limpia:
 
-**Paso 1 — Importar el esquema base** — 🌐 **SERVIDOR:**
+**Paso 1 — Importar el dump completo** — 🌐 **SERVIDOR:**
 
 ```bash
 cd /var/www/cohort_monitor
-mysql -u cohort_user -p cohort_monitor < database/schema.sql
+mysql -u cohort_user -p cohort_monitor < database/railway_dump_live.sql
 ```
 
-> Esto crea las tablas `cohorts` y `students` con datos de ejemplo.
+> Crea las 29 tablas del esquema con todos los datos seed. El archivo es
+> auto-contenido y reemplaza cualquier instalación previa.
 
-**Paso 2 — Ejecutar TODAS las migraciones (en orden)** — 🌐 **SERVIDOR:**
-
-```bash
-mysql -u cohort_user -p cohort_monitor < database/migrations/002_refactor_cohorts_table.sql
-mysql -u cohort_user -p cohort_monitor < database/migrations/003_auth_marketing_alerts.sql
-mysql -u cohort_user -p cohort_monitor < database/migrations/004_add_b2b_admissions.sql
-mysql -u cohort_user -p cohort_monitor < database/migrations/005_add_area_to_cohorts.sql
-mysql -u cohort_user -p cohort_monitor < database/migrations/006_seed_cohorts_feb2026.sql
-```
-
-> **El orden importa.** Cada migración depende de la anterior.
-
-**Paso 3 — Verificar que todo se creó bien** — 🌐 **SERVIDOR:**
+**Paso 2 — Verificar que todo se creó bien** — 🌐 **SERVIDOR:**
 
 ```bash
 mysql -u cohort_user -p cohort_monitor -e "SHOW TABLES;"

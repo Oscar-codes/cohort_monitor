@@ -43,7 +43,7 @@ cohort-monitor/
 │   └── web.php              ← Route definitions
 │
 ├── database/
-│   └── schema.sql           ← MySQL schema + seed data
+│   └── railway_dump_live.sql ← Single source of truth: schema + data (use with MySQL Workbench)
 │
 ├── storage/                 ← Logs, cache, uploads (gitignored)
 │   ├── logs/
@@ -114,9 +114,19 @@ cp .env.example .env
 
 ### 3. Create the database
 
+The project ships a single self-contained SQL file (`database/railway_dump_live.sql`)
+with all 29 tables and seed data. Use it directly:
+
 ```bash
-mysql -u root -p < database/schema.sql
+# Option A: MySQL CLI
+mysql -u root -p < database/railway_dump_live.sql
+
+# Option B: MySQL Workbench
+#   File → Open SQL Script → select database/railway_dump_live.sql → ⚡ Execute
 ```
+
+> ⚠️ The dump uses `DROP TABLE IF EXISTS` for every table — only run it on an
+> empty database or one you intend to fully replace.
 
 ### 4. Start the development server
 

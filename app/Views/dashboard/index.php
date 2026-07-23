@@ -5,7 +5,7 @@
     $statusLabels = [
         'in_progress' => ['En progreso', 'success', '#16a34a'],
         'completed'   => ['Completadas', 'primary', '#2563eb'],
-        'planned' => ['Planificadas', 'secondary', '#64748b'],
+        'not_started' => ['No iniciadas', 'secondary', '#64748b'],
     ];
 
     $roleLabels = [

@@ -74,19 +74,19 @@ class CohortImportService
 
     /** Status text mappings (flexible input → DB value) */
     public const STATUS_MAP = [
-        'planificado'  => 'planned',
-        'planned'      => 'planned',
-        'completado'   => 'completed',
-        'completed'    => 'completed',
-        'en ejecución' => 'in_progress',
-        'en ejecucion' => 'in_progress',
-        'en progreso'  => 'in_progress',
-        'in_progress'  => 'in_progress',
-        'in progress'  => 'in_progress',
-        'cancelado'    => 'cancelled',
-        'cancelled'    => 'cancelled',
-        'pendiente de reprogramar' => 'pending_reschedule',
-        'pending_reschedule' => 'pending_reschedule',
+        'planificado'   => 'not_started',
+        'no iniciado'   => 'not_started',
+        'planned'       => 'not_started',
+        'not_started'   => 'not_started',
+        'completado'    => 'completed',
+        'completed'     => 'completed',
+        'en ejecución'  => 'in_progress',
+        'en ejecucion'  => 'in_progress',
+        'en progreso'   => 'in_progress',
+        'in_progress'   => 'in_progress',
+        'in progress'   => 'in_progress',
+        'cancelado'     => 'cancelled',
+        'cancelled'     => 'cancelled',
     ];
 
     /** Area text mappings (flexible input → DB value) */
@@ -445,7 +445,7 @@ class CohortImportService
 
         // Status
         $status = strtolower(trim($data['training_status'] ?? ''));
-        $normalized['training_status'] = self::STATUS_MAP[$status] ?? 'planned';
+        $normalized['training_status'] = self::STATUS_MAP[$status] ?? 'not_started';
 
         // At risk
         $risk = strtolower(trim($data['at_risk'] ?? ''));
@@ -524,7 +524,7 @@ class CohortImportService
      */
     private function getExistingCohortKeys(): array
     {
-        $rows = $this->db->query('SELECT section_code AS name, start_date FROM cohort_sections');
+        $rows = $this->db->query('SELECT name, start_date FROM cohorts');
         $keys = [];
         foreach ($rows as $r) {
             $key = strtolower(trim($r['name'])) . '|' . ($r['start_date'] ?? '');

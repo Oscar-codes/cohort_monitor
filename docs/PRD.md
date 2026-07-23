@@ -532,14 +532,7 @@ cohort-monitor/                          ~65 archivos
 │   └── web.php                          ~35 rutas (dashboard + cohorts + import + users + account + auth + marketing + reports + alerts)
 │
 ├── database/
-│   ├── schema.sql                       DDL: CREATE DATABASE + 7 tablas + índices + FK
-│   └── migrations/
-│       ├── 001_initial_schema.sql       Cohorts + Students
-│       ├── 002_cohort_extended_fields.sql  16 columnas adicionales
-│       ├── 003_auth_system.sql          Users, Sessions, Marketing, Comments, Audit
-│       ├── 004_add_b2b_admissions.sql   Columna b2b_admissions
-│       ├── 005_add_area_to_cohorts.sql  Columna area ENUM para reportes
-│       └── 006_seed_cohorts_feb2026.sql 27 cohortes reales del spreadsheet operativo
+│   └── railway_dump_live.sql            Single source of truth: DDL + datos de las 29 tablas (MySQL Workbench ready)
 │
 ├── docs/
 │   ├── PRD.md                           Este documento
@@ -731,7 +724,7 @@ cp .env.example .env
 # Editar .env con credenciales de tu MySQL
 
 # 3. Crear base de datos
-mysql -u root -p < database/schema.sql
+mysql -u root -p < database/railway_dump_live.sql
 
 # 4. Levantar servidor de desarrollo
 php -S localhost:8000 -t public

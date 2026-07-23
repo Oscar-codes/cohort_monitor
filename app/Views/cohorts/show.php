@@ -13,18 +13,17 @@ $isAdmin = (bool) ($isAdmin ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 
 $statusMap = [
-    'planned' => ['bg-secondary-subtle text-secondary', 'Planificado', 'bi-hourglass-split'],
+    'not_started' => ['bg-secondary-subtle text-secondary', 'No iniciado', 'bi-hourglass-split'],
     'in_progress' => ['bg-primary-subtle text-primary', 'En progreso', 'bi-play-circle'],
     'completed' => ['bg-success-subtle text-success', 'Completado', 'bi-check-circle'],
     'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado', 'bi-x-circle'],
-    'pending_reschedule' => ['bg-warning-subtle text-warning', 'Pendiente de reprogramar', 'bi-calendar2-week'],
 ];
 
 if (!function_exists('cohortDetailStatus')) {
     function cohortDetailStatus(array $cohort): string
     {
-        $status = $cohort['training_status'] ?? 'planned';
-        if (in_array($status, ['cancelled', 'pending_reschedule', 'completed'], true)) {
+        $status = $cohort['training_status'] ?? 'not_started';
+        if (in_array($status, ['cancelled', 'completed'], true)) {
             return $status;
         }
 
@@ -39,7 +38,7 @@ if (!function_exists('cohortDetailStatus')) {
             return 'in_progress';
         }
 
-        return 'planned';
+        return 'not_started';
     }
 }
 
@@ -117,7 +116,7 @@ $catLabels = [
 ];
 $canDeleteThisCohort = (static function(array $cohort): bool {
     // Check both stored status and effective lifecycle status
-    $storedStatus = $cohort['training_status'] ?? 'planned';
+    $storedStatus = $cohort['training_status'] ?? 'not_started';
     $lifecycleStatus = cohortDetailStatus($cohort);
     
     // Block deletion if EITHER status is in_progress or completed
@@ -131,7 +130,7 @@ $canDeleteThisCohort = (static function(array $cohort): bool {
         return false;
     }
     
-    return in_array($lifecycleStatus, ['planned', 'cancelled', 'pending_reschedule'], true);
+    return in_array($lifecycleStatus, ['not_started', 'cancelled'], true);
 })($cohort);
 $workflowActionMap = [
     'completed' => [
@@ -152,17 +151,8 @@ $workflowActionMap = [
         'reasonLabel' => 'Motivo de cancelación',
         'placeholder' => 'Ej. No alcanzó estudiantes mínimos o se pausó el proyecto.',
     ],
-    'pending_reschedule' => [
-        'title' => 'Enviar a pendiente de reprogramar',
-        'description' => 'Mantiene la cohorte disponible para venta, pero fuera del calendario activo actual.',
-        'buttonClass' => 'btn-warning',
-        'icon' => 'bi-calendar2-week',
-        'requiresReason' => true,
-        'reasonLabel' => 'Motivo de reprogramación',
-        'placeholder' => 'Ej. Se moverá la fecha por baja demanda o ajuste operativo.',
-    ],
-    'planned' => [
-        'title' => 'Volver a planificado',
+    'not_started' => [
+        'title' => 'Volver a no iniciado',
         'description' => 'Usa esta acción después de actualizar fecha, coach y horario para reactivar la cohorte.',
         'buttonClass' => 'btn-secondary',
         'icon' => 'bi-arrow-counterclockwise',

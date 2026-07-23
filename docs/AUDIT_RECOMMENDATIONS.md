@@ -438,10 +438,11 @@ public function __construct(private AuditRepository $auditRepo) {}
 
 | Campo | Detalle |
 |-------|---------|
-| **Ubicación** | `database/schema.sql` — solo tablas `cohorts` + `students` |
+| **Ubicación** | `database/schema.sql` (legacy) — solo tablas `cohorts` + `students` |
 | **Problema** | Faltan 5 tablas (users, sessions, marketing_stages, cohort_comments, audit_log). |
 
-**Solución:** Generar schema.sql completo con las 7 tablas, o consolidar todas las migraciones.
+**Solución aplicada:** Reemplazado por `database/railway_dump_live.sql` que contiene
+las 29 tablas completas con datos.
 
 ---
 

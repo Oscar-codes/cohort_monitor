@@ -25,3 +25,10 @@ node_modules/
 
 # ─── Compiled / Build ───────────────
 *.compiled.php
+# --- Local data / dumps ------------
+/cohorts.csv
+/cohort_finance.csv
+/database/import_to_*.php
+/database/list_users_*.php
+/database/run_migration_*.php
+/database/registros_*.sql

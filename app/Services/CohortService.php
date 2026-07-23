@@ -16,30 +16,27 @@ use DateTime;
  */
 class CohortService
 {
-    public const STATUS_PLANNED = 'planned';
+    public const STATUS_NOT_STARTED = 'not_started';
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_PENDING_RESCHEDULE = 'pending_reschedule';
 
     public const STATUS_LABELS = [
-        self::STATUS_PLANNED => 'Planificado',
+        self::STATUS_NOT_STARTED => 'No iniciado',
         self::STATUS_IN_PROGRESS => 'En progreso',
         self::STATUS_COMPLETED => 'Completado',
         self::STATUS_CANCELLED => 'Cancelado',
-        self::STATUS_PENDING_RESCHEDULE => 'Pendiente de reprogramar',
     ];
 
     private const DELETABLE_STATUSES = [
-        self::STATUS_PLANNED,
+        self::STATUS_NOT_STARTED,
         self::STATUS_CANCELLED,
-        self::STATUS_PENDING_RESCHEDULE,
     ];
 
     private const WORKFLOW_TRANSITIONS = [
-        self::STATUS_PLANNED => [
+        self::STATUS_NOT_STARTED => [
+            self::STATUS_IN_PROGRESS,
             self::STATUS_CANCELLED,
-            self::STATUS_PENDING_RESCHEDULE,
             self::STATUS_COMPLETED,
         ],
         self::STATUS_IN_PROGRESS => [
@@ -48,12 +45,7 @@ class CohortService
         ],
         self::STATUS_COMPLETED => [],
         self::STATUS_CANCELLED => [
-            self::STATUS_PLANNED,
-            self::STATUS_PENDING_RESCHEDULE,
-        ],
-        self::STATUS_PENDING_RESCHEDULE => [
-            self::STATUS_PLANNED,
-            self::STATUS_CANCELLED,
+            self::STATUS_NOT_STARTED,
         ],
     ];
 
@@ -156,7 +148,7 @@ class CohortService
     public function createCohort(array $data): int
     {
         $data = $this->normalizeCohortData($data);
-        $data['training_status'] = self::STATUS_PLANNED;
+        $data['training_status'] = self::STATUS_NOT_STARTED;
         $this->validate($data);
         return $this->cohortRepo->create($data);
     }
@@ -206,7 +198,7 @@ class CohortService
         }
 
         // Validate both stored status and effective status
-        $storedStatus = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED));
+        $storedStatus = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED));
         $effectiveStatus = $this->effectiveTrainingStatus($cohort);
         
         // Block deletion if EITHER stored OR effective status is in_progress or completed
@@ -242,11 +234,11 @@ class CohortService
             throw new \InvalidArgumentException('La transición de estado solicitada no está permitida para esta cohorte.');
         }
 
-        if (in_array($targetStatus, [self::STATUS_CANCELLED, self::STATUS_PENDING_RESCHEDULE], true) && $reason === '') {
-            throw new \InvalidArgumentException('Debes ingresar un motivo para cancelar o reprogramar la cohorte.');
+        if ($targetStatus === self::STATUS_CANCELLED && $reason === '') {
+            throw new \InvalidArgumentException('Debes ingresar un motivo para cancelar la cohorte.');
         }
 
-        if ($targetStatus === self::STATUS_PLANNED) {
+        if ($targetStatus === self::STATUS_NOT_STARTED) {
             $this->assertPlanningDataReadyForPlanned($cohort);
         }
 
@@ -260,7 +252,7 @@ class CohortService
                 'entity_id'   => $id,
                 'old_values'  => [
                     'effective_status' => $currentStatus,
-                    'stored_status' => $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED)),
+                    'stored_status' => $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED)),
                 ],
                 'new_values'  => [
                     'training_status' => $targetStatus,
@@ -274,9 +266,9 @@ class CohortService
 
     public function effectiveTrainingStatus(array $cohort): string
     {
-        $status = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_PLANNED));
+        $status = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED));
 
-        if (in_array($status, [self::STATUS_CANCELLED, self::STATUS_PENDING_RESCHEDULE, self::STATUS_COMPLETED], true)) {
+        if (in_array($status, [self::STATUS_CANCELLED, self::STATUS_COMPLETED], true)) {
             return $status;
         }
 
@@ -292,17 +284,16 @@ class CohortService
             return self::STATUS_IN_PROGRESS;
         }
 
-        return self::STATUS_PLANNED;
+        return self::STATUS_NOT_STARTED;
     }
 
     public function normalizeTrainingStatus(string $status): string
     {
         return match ($status) {
-            'upcoming', 'planificado' => self::STATUS_PLANNED,
+            'upcoming', 'planificado' => self::STATUS_NOT_STARTED,
             'in_progress', 'en progreso', 'en ejecucion', 'en ejecución' => self::STATUS_IN_PROGRESS,
             'completed', 'completado' => self::STATUS_COMPLETED,
             'cancelled', 'cancelado' => self::STATUS_CANCELLED,
-            'pending_reschedule', 'pendiente de reprogramar' => self::STATUS_PENDING_RESCHEDULE,
             default => $status,
         };
     }
@@ -521,11 +512,10 @@ class CohortService
         }
 
         $validStatuses = [
-            self::STATUS_PLANNED,
+            self::STATUS_NOT_STARTED,
             self::STATUS_IN_PROGRESS,
             self::STATUS_COMPLETED,
             self::STATUS_CANCELLED,
-            self::STATUS_PENDING_RESCHEDULE,
             'upcoming',
         ];
         if (!empty($filters['cohort_status']) && in_array($filters['cohort_status'], $validStatuses, true)) {

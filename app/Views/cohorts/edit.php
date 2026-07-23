@@ -371,14 +371,13 @@ if (!$isMarketingBlocked) {
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="training_status" class="form-label">Estado de la cohorte</label>
-                                <select class="form-select bg-light text-muted" 
+                                <select class="form-select bg-light text-muted"
                                         id="training_status" name="training_status"
                                         disabled readonly>
-                                    <option value="planned" <?= ($cohort['training_status'] ?? '') === 'planned' ? 'selected' : '' ?>>Planificado</option>
+                                    <option value="not_started" <?= ($cohort['training_status'] ?? '') === 'not_started' ? 'selected' : '' ?>>No iniciado</option>
                                     <option value="in_progress" <?= ($cohort['training_status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>En progreso</option>
                                     <option value="completed"   <?= ($cohort['training_status'] ?? '') === 'completed'   ? 'selected' : '' ?>>Completado</option>
                                     <option value="cancelled"   <?= ($cohort['training_status'] ?? '') === 'cancelled'   ? 'selected' : '' ?>>Cancelado</option>
-                                    <option value="pending_reschedule"   <?= ($cohort['training_status'] ?? '') === 'pending_reschedule'   ? 'selected' : '' ?>>Pendiente de reprogramar</option>
                                 </select>
                                 <div class="form-text">El estado se actualiza por reglas de ciclo de vida o acciones controladas.</div>
                             </div>

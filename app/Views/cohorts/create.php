@@ -154,9 +154,9 @@
                             <div class="col-md-6">
                                 <label for="training_status" class="form-label">Estado de la cohorte</label>
                                 <select class="form-select bg-light text-muted" id="training_status" name="training_status" readonly>
-                                    <option value="planned" selected>Planificado</option>
+                                    <option value="not_started" selected>No iniciado</option>
                                 </select>
-                                <div class="form-text">Las cohortes nuevas entran al Cohort Plan como planificadas.</div>
+                                <div class="form-text">Las cohortes nuevas entran al Cohort Plan como no iniciadas.</div>
                             </div>
                         </div>
                     </div>
