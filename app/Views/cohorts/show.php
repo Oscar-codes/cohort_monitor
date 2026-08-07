@@ -511,7 +511,6 @@ $workflowActionMap = [
                         <select name="category" class="form-select" required>
                             <option value="general">General</option>
                             <option value="risk">Riesgo</option>
-                            <option value="change_request">Solicitud de cambio</option>
                         </select>
                     </div>
                     <div class="col-sm-6 col-lg-7">

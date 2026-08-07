@@ -34,11 +34,7 @@ class CommentController extends Controller
             return;
         }
 
-        if (in_array($category, ['admission', 'marketing'], true)) {
-            $category = 'change_request';
-        }
-
-        $validCategories = ['risk', 'general', 'change_request'];
+        $validCategories = ['risk', 'general'];
         if (!in_array($category, $validCategories, true)) {
             $category = 'general';
         }
