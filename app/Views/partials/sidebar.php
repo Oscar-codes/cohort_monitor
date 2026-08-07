@@ -60,14 +60,15 @@
             </li>
             <?php endif; ?>
 
-            <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
+            <?php /* Oculto temporalmente: MarketingStageRepository roto, pendiente de fix.
+            if (Auth::hasRole(['admin', 'marketing'])): ?>
             <li class="nav-item">
                 <a href="/marketing" class="nav-link <?= $active('marketing') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Marketing">
                     <i class="bi bi-megaphone"></i>
                     <span>Marketing</span>
                 </a>
             </li>
-            <?php endif; ?>
+            <?php endif; */ ?>
 
             <?php if (Auth::canAccess('alerts')): ?>
             <li class="nav-item">

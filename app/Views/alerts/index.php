@@ -33,8 +33,9 @@
             'body' => $stage['risk_notes'] ?? 'Sin notas registradas',
             'actor' => $stage['updated_by_name'] ?? 'Sin responsable',
             'date' => $stage['updated_at'] ?? null,
-            'url' => '/cohorts/' . $cohortId . '/marketing',
-            'cta' => 'Ver marketing',
+            // Oculto temporalmente: MarketingStageRepository roto, pendiente de fix.
+            // 'url' => '/cohorts/' . $cohortId . '/marketing',
+            // 'cta' => 'Ver marketing',
         ];
 
         $affectedCohorts[$cohortId] ??= [
@@ -220,9 +221,11 @@
                             <?php endif; ?>
                         </div>
                     </div>
+                    <?php if (!empty($item['url'])): ?>
                     <a href="<?= htmlspecialchars($item['url']) ?>" class="btn btn-sm btn-outline-primary risk-item__action">
                         <?= htmlspecialchars($item['cta']) ?>
                     </a>
+                    <?php endif; ?>
                 </article>
                 <?php endforeach; ?>
             </div>

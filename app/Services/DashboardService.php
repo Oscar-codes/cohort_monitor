@@ -73,7 +73,7 @@ class DashboardService
             'totalStudents'     => 0,
             'activeCohorts'     => $activeCohorts,
             'completedCohorts'  => $completedCohorts,
-            'plannedCohorts'    => $planned,
+            'plannedCohorts'    => $notStarted,
             'totalTarget'       => $totalTarget,
             'totalAdmissions'   => $totalAdmissions,
             'totalB2bAdmissions'=> $totalB2bAdmissions,

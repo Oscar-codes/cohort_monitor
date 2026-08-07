@@ -190,12 +190,13 @@
                     <span class="dashboard-action__icon text-danger bg-danger-subtle"><i class="bi bi-exclamation-triangle"></i></span>
                     <span>Alertas</span>
                 </a>
-                <?php if (Auth::hasRole(['admin', 'marketing'])): ?>
+                <?php /* Oculto temporalmente: MarketingStageRepository roto, pendiente de fix.
+                if (Auth::hasRole(['admin', 'marketing'])): ?>
                 <a href="/marketing" class="dashboard-action">
                     <span class="dashboard-action__icon text-warning bg-warning-subtle"><i class="bi bi-megaphone"></i></span>
                     <span>Marketing</span>
                 </a>
-                <?php endif; ?>
+                <?php endif; */ ?>
                 <a href="/reports" class="dashboard-action">
                     <span class="dashboard-action__icon text-info bg-info-subtle"><i class="bi bi-bar-chart"></i></span>
                     <span>Reportes</span>

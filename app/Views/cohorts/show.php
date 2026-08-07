@@ -202,9 +202,11 @@ $workflowActionMap = [
             <i class="bi <?= $badgeIcon ?> me-1"></i><?= htmlspecialchars($badgeLabel) ?>
         </span>
         <div class="d-flex flex-wrap gap-2 justify-content-end">
+            <?php /* Oculto temporalmente: MarketingStageRepository roto, pendiente de fix.
             <a href="/cohorts/<?= (int) $cohort['id'] ?>/marketing" class="btn btn-light btn-sm">
                 <i class="bi bi-megaphone me-1"></i> Marketing
             </a>
+            */ ?>
             <?php if ($canEdit ?? false): ?>
                 <a href="/cohorts/<?= (int) $cohort['id'] ?>/edit" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-pencil me-1"></i> Editar
