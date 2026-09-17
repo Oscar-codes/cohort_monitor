@@ -12,8 +12,9 @@ use App\Core\Database;
  * with the following shape:
  *
  *   id, cohort_code, name, correlative_number,
- *   total_admission_target, b2b_admission_target,
+ *   total_admission_target, b2b_admission_target, b2c_admission_target,
  *   b2b_admissions, b2c_admissions,
+ *   financial_target_revenue, financial_actual_revenue,
  *   admission_deadline_date, start_date, end_date,
  *   related_project, assigned_coach, bootcamp_type, area,
  *   assigned_class_schedule, training_status,
@@ -110,15 +111,17 @@ class CohortRepository
         $this->db->execute(
             'INSERT INTO cohorts (
                 cohort_code, name, correlative_number,
-                total_admission_target, b2b_admission_target,
+                total_admission_target, b2b_admission_target, b2c_admission_target,
                 b2b_admissions, b2c_admissions,
+                financial_target_revenue, financial_actual_revenue,
                 admission_deadline_date, start_date, end_date,
                 related_project, assigned_coach, bootcamp_type, area,
                 assigned_class_schedule, training_status
             ) VALUES (
                 :cohort_code, :name, :correlative_number,
-                :total_admission_target, :b2b_admission_target,
+                :total_admission_target, :b2b_admission_target, :b2c_admission_target,
                 :b2b_admissions, :b2c_admissions,
+                :financial_target_revenue, :financial_actual_revenue,
                 :admission_deadline_date, :start_date, :end_date,
                 :related_project, :assigned_coach, :bootcamp_type, :area,
                 :assigned_class_schedule, :training_status
@@ -138,8 +141,11 @@ class CohortRepository
                 correlative_number = :correlative_number,
                 total_admission_target = :total_admission_target,
                 b2b_admission_target = :b2b_admission_target,
+                b2c_admission_target = :b2c_admission_target,
                 b2b_admissions = :b2b_admissions,
                 b2c_admissions = :b2c_admissions,
+                financial_target_revenue = :financial_target_revenue,
+                financial_actual_revenue = :financial_actual_revenue,
                 admission_deadline_date = :admission_deadline_date,
                 start_date = :start_date,
                 end_date = :end_date,
@@ -349,11 +355,11 @@ class CohortRepository
                 c.correlative_number,
                 c.total_admission_target,
                 c.b2b_admission_target,
-                0 AS b2c_admission_target,
+                c.b2c_admission_target,
                 c.b2b_admissions,
                 c.b2c_admissions,
-                0 AS financial_target_revenue,
-                0 AS financial_actual_revenue,
+                c.financial_target_revenue,
+                c.financial_actual_revenue,
                 c.admission_deadline_date,
                 c.start_date,
                 c.end_date,
@@ -469,6 +475,7 @@ class CohortRepository
 
         $totalTarget = max(0, (int) ($data['total_admission_target'] ?? 0));
         $b2bTarget   = max(0, (int) ($data['b2b_admission_target'] ?? 0));
+        $b2cTarget   = max(0, (int) ($data['b2c_admission_target'] ?? 0));
 
         return [
             'cohort_code'              => trim((string) ($data['cohort_code'] ?? '')),
@@ -476,8 +483,11 @@ class CohortRepository
             'correlative_number'       => max(0, (int) ($data['correlative_number'] ?? 0)),
             'total_admission_target'   => $totalTarget,
             'b2b_admission_target'     => $b2bTarget,
+            'b2c_admission_target'     => $b2cTarget,
             'b2b_admissions'           => max(0, (int) ($data['b2b_admissions'] ?? 0)),
             'b2c_admissions'           => max(0, (int) ($data['b2c_admissions'] ?? 0)),
+            'financial_target_revenue' => max(0.0, (float) ($data['financial_target_revenue'] ?? 0)),
+            'financial_actual_revenue' => max(0.0, (float) ($data['financial_actual_revenue'] ?? 0)),
             'admission_deadline_date'  => $this->normalizeDate($data['admission_deadline_date'] ?? null),
             'start_date'               => $this->normalizeDate($data['start_date'] ?? null) ?? date('Y-m-d'),
             'end_date'                 => $this->normalizeDate($data['end_date'] ?? null) ?? ($this->normalizeDate($data['start_date'] ?? null) ?? date('Y-m-d')),
