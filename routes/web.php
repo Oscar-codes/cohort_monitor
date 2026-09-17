@@ -24,6 +24,10 @@ use App\Controllers\ImportCohortController;
 use App\Controllers\AccountController;
 use App\Controllers\CoachCalendarController;
 use App\Controllers\AdminController;
+use App\Controllers\HealthController;
+
+// ─── Health (public, no auth — platform healthchecks) ────────
+$router->get('/healthz', [HealthController::class, 'check'], 'health');
 
 // ─── Auth (public) ───────────────────────────────────────────
 $router->get('/login',  [AuthController::class, 'showLogin'], 'auth.login');
