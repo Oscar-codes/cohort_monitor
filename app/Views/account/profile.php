@@ -14,13 +14,13 @@ $userLastLoginAt = (string) ($user['last_login_at'] ?? '');
 $userCreatedAt = (string) ($user['created_at'] ?? '');
 
 $roleLabels = [
-    'admin' => ['Administrador', 'bg-danger-subtle text-danger', 'bi-shield-lock'],
-    'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info', 'bi-building'],
-    'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary', 'bi-people'],
-    'finance' => ['Finanzas', 'bg-success-subtle text-success', 'bi-cash-stack'],
-    'marketing' => ['Marketing', 'bg-warning-subtle text-warning', 'bi-megaphone'],
+    'admin' => ['Administrador', 'bg-danger-subtle text-danger', 'bi-shield-lock', 'danger'],
+    'admissions_b2b' => ['Admisiones B2B', 'bg-info-subtle text-info', 'bi-building', 'info'],
+    'admissions_b2c' => ['Admisiones B2C', 'bg-primary-subtle text-primary', 'bi-people', 'info'],
+    'finance' => ['Finanzas', 'bg-success-subtle text-success', 'bi-cash-stack', 'success'],
+    'marketing' => ['Marketing', 'bg-warning-subtle text-warning', 'bi-megaphone', 'warning'],
 ];
-[$roleLabel, $roleClass, $roleIcon] = $roleLabels[$userRole] ?? [$userRole, 'bg-secondary-subtle text-secondary', 'bi-person-badge'];
+[$roleLabel, $roleClass, $roleIcon, $roleTone] = $roleLabels[$userRole] ?? [$userRole, 'bg-secondary-subtle text-secondary', 'bi-person-badge', 'neutral'];
 
 $nameParts = preg_split('/\s+/', trim($userFullName));
 $initials = strtoupper(substr($nameParts[0] ?? 'U', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
@@ -55,13 +55,14 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
         </div>
     </div>
     <div class="account-hero__meta">
-        <span class="badge badge-status <?= $roleClass ?>">
-            <i class="bi <?= $roleIcon ?> me-1"></i><?= htmlspecialchars($roleLabel) ?>
+        <span class="kodigo-pill" data-tone="<?= htmlspecialchars($roleTone) ?>">
+            <span class="kodigo-pill__dot" aria-hidden="true"></span>
+            <i class="bi <?= htmlspecialchars($roleIcon) ?> me-1" aria-hidden="true"></i><?= htmlspecialchars($roleLabel) ?>
         </span>
         <?php if ($userIsActive): ?>
-            <span class="badge badge-status bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
+            <span class="kodigo-pill" data-tone="success"><span class="kodigo-pill__dot" aria-hidden="true"></span><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Activo</span>
         <?php else: ?>
-            <span class="badge badge-status bg-secondary-subtle text-secondary"><i class="bi bi-pause-circle me-1"></i>Inactivo</span>
+            <span class="kodigo-pill" data-tone="neutral"><span class="kodigo-pill__dot" aria-hidden="true"></span><i class="bi bi-pause-circle me-1" aria-hidden="true"></i>Inactivo</span>
         <?php endif; ?>
     </div>
 </section>
@@ -103,12 +104,13 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
 
 <div class="row g-4">
     <div class="col-xl-4">
-        <section class="app-panel account-side-panel mb-4">
+        <section class="kodigo-card account-side-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__body">
             <div class="account-profile-card">
                 <span class="account-avatar account-avatar--xl"><?= htmlspecialchars($initials) ?></span>
                 <h2><?= htmlspecialchars($userFullName) ?></h2>
                 <p>@<?= htmlspecialchars($userUsername) ?></p>
-                <span class="badge badge-status <?= $roleClass ?>"><?= htmlspecialchars($roleLabel) ?></span>
+                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($roleTone) ?>"><?= htmlspecialchars($roleLabel) ?></span>
             </div>
             <dl class="account-meta-list">
                 <div>
@@ -128,18 +130,20 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
                     <dd id="systemTime">--:--:--</dd>
                 </div>
             </dl>
+            </div>
         </section>
     </div>
 
     <div class="col-xl-8">
-        <section class="app-panel account-form-panel mb-4">
-            <div class="app-panel__header">
+        <section class="kodigo-card account-form-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-person"></i> Informacion del perfil</h2>
-                    <p class="app-panel__subtitle">Actualiza tus datos visibles y correo de contacto.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-person"></i> Informacion del perfil</h2>
+                    <p class="kodigo-card__subtitle">Actualiza tus datos visibles y correo de contacto.</p>
                 </div>
             </div>
-            <form method="POST" action="/account" class="needs-validation" novalidate>
+            <div class="kodigo-card__body">
+                <form method="POST" action="/account" class="needs-validation" novalidate>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="username" class="form-label">Usuario</label>
@@ -163,13 +167,14 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
                     </button>
                 </div>
             </form>
+            </div>
         </section>
 
-        <section class="app-panel account-form-panel">
-            <div class="app-panel__header">
+        <section class="kodigo-card account-form-panel" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-lock"></i> Seguridad</h2>
-                    <p class="app-panel__subtitle">Cambia tu contrasena usando una clave de al menos 8 caracteres.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-lock"></i> Seguridad</h2>
+                    <p class="kodigo-card__subtitle">Cambia tu contrasena usando una clave de al menos 8 caracteres.</p>
                 </div>
             </div>
             <form method="POST" action="/account/password" class="needs-validation" novalidate>
@@ -206,12 +211,13 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
                         </div>
                     </div>
                 </div>
-                <div class="account-form-actions">
-                    <button type="submit" class="btn btn-warning">
+<div class="account-form-actions">
+                    <button type="submit" class="btn btn-primary">
                         <i class="bi bi-shield-lock me-1"></i> Cambiar contrasena
                     </button>
                 </div>
             </form>
+            </div>
         </section>
     </div>
 </div>

@@ -40,15 +40,15 @@ $formatJson = static function ($value): string {
     </div>
 </section>
 
-<div class="app-panel cohort-filter-panel mb-4">
-    <div class="app-panel__header">
+<div class="kodigo-card cohort-filter-panel mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros</h3>
-            <p class="app-panel__subtitle">Refina por usuario, accion, entidad, rango de fechas o texto.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Filtros</h3>
+            <p class="kodigo-card__subtitle">Refina por usuario, accion, entidad, rango de fechas o texto.</p>
         </div>
     </div>
-
-    <form method="GET" action="/admin/audit-log" class="row g-3">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/admin/audit-log" class="row g-3">
         <div class="col-12 col-md-4">
             <label for="q" class="form-label">Busqueda</label>
             <input type="text" id="q" name="q" class="form-control" value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>" placeholder="Usuario, accion o entidad">
@@ -100,15 +100,17 @@ $formatJson = static function ($value): string {
             </a>
         </div>
     </form>
+    </div>
 </div>
 
-<section class="app-panel">
-    <div class="app-panel__header">
+<section class="kodigo-card" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-list-check"></i> Eventos</h3>
-            <p class="app-panel__subtitle">Total mostrado: <?= count($entries) ?> eventos.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-list-check"></i> Eventos</h3>
+            <p class="kodigo-card__subtitle">Total mostrado: <?= count($entries) ?> eventos.</p>
         </div>
     </div>
+    <div class="kodigo-card__body">
 
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -135,7 +137,7 @@ $formatJson = static function ($value): string {
                                 <div class="fw-semibold"><?= htmlspecialchars((string) ($entry['user_name'] ?? $entry['username'] ?? 'Sistema')) ?></div>
                                 <small class="text-muted"><?= htmlspecialchars((string) ($entry['user_role'] ?? '')) ?></small>
                             </td>
-                            <td><span class="badge text-bg-primary"><?= htmlspecialchars((string) ($entry['action'] ?? '—')) ?></span></td>
+                            <td><span class="kodigo-pill" data-tone="info"><?= htmlspecialchars((string) ($entry['action'] ?? '—')) ?></span></td>
                             <td><?= htmlspecialchars((string) ($entry['entity_type'] ?? '—')) ?></td>
                             <td><?= htmlspecialchars((string) ($entry['entity_ref'] ?? '—')) ?></td>
                             <td>
@@ -152,5 +154,6 @@ $formatJson = static function ($value): string {
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
     </div>
 </section>

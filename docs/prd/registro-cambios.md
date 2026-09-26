@@ -212,6 +212,22 @@
 - Observaciones: ni `reports-index.js` ni `coaches-calendar.js` se modificaron. El `coach-list-panel__header` recibe además la clase `kodigo-card__header` para alinear visualmente el header con el sistema Kodigo, conservando sus overrides de fondo/border propios.
 - Transición: CM-UI-006 sigue En progreso con dieciséis vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-019
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración al sistema visual Kodigo de los cuatro archivos restantes: `app/Views/account/profile.php` (`/account`), `app/Views/admin/audit-log.php` (`/admin/audit-log`), `app/Views/admin/health.php` (`/admin/health`), y verificación de que `app/Views/auth/login.php` (`/auth/login`) ya quedó migrado en fases previas (no contiene clases heredadas de las que se auditan).
+- En `/account`, las tres secciones (`account-side-panel`, dos `account-form-panel` para "Información del perfil" y "Seguridad") pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. El mapa `$roleLabels` se amplió con un cuarto elemento `tone`; los badges de rol y los inline de Activo/Inactivo (hero + side panel) se migraron a `kodigo-pill[data-tone]` con `kodigo-pill__dot` (admin→danger, admissions→info, finance→success, marketing→warning, default→neutral).
+- En `/admin/audit-log`, el panel de filtros y el panel "Eventos" pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. El badge de acción en la tabla (`badge text-bg-primary`) pasó a `kodigo-pill[data-tone="info"]` para mantener jerarquía visual con el resto del sistema.
+- En `/admin/health`, la sección "Health checks" pasó a `.kodigo-card` con `kodigo-card__header/__title/__subtitle/__body`. El badge de estado (`text-bg-success|danger|warning`) se sustituyó por `kodigo-pill[data-tone]` con `kodigo-pill__dot` según el status (`ok→success`, `error→danger`, default→`warning`).
+- En `/auth/login` se confirmó que no quedan clases heredadas de las que se auditan (`app-panel`, `status-pill`, `class="badge bg-*`, `empty-state`); ningún cambio fue necesario.
+- Fuentes: [account/profile](../../app/Views/account/profile.php), [admin/audit-log](../../app/Views/admin/audit-log.php), [admin/health](../../app/Views/admin/health.php), [account-profile.js](../../public/assets/js/account-profile.js), [auth-login.js](../../public/assets/js/auth-login.js), [tokens Kodigo](../../public/assets/css/app.css).
+- Comprobación: `php -l` sobre los cuatro archivos sin errores; `node -c` sobre account-profile.js y auth-login.js sin errores; `grep -n 'app-panel\|class="badge bg-\|class="badge text-bg-\|class="badge badge-status\|empty-state-icon\|empty-state-title\|empty-state-text'` en los cuatro archivos sin coincidencias; atributos `data-password-toggle`, IDs de formulario y `cohort-filter-panel/account-side-panel/account-form-panel/chart-control-select` se conservaron.
+- Observaciones: ni `account-profile.js` ni `auth-login.js` se modificaron. Los `<details>` con `<pre>` para payload JSON se conservan intactos porque son contenido semántico (no UI a estilizar). El toggle de password usa `data-password-toggle="#..."` que ya estaba integrado con el manejador existente.
+- Transición: CM-UI-006 pasa de En progreso a Completado: las veinte vistas del panel administrativo del usuario han sido migradas. CM-UI-002 se mantiene Completado (los componentes `.kodigo-*` ya existían). CM-UI-003 sigue Completado (CSS). CM-UI-004 (a11y transversal WCAG) y CM-UI-005 (QA responsive) permanecen Pendientes.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan como follow-ups los tickets CM-UI-004 (a11y con foco visible, contraste, prefers-reduced-motion), CM-UI-005 (QA responsive en 360/768/1440) y la auditoría visual transversal.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
