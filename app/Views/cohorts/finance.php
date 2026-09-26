@@ -112,19 +112,21 @@ $spanishMonths = [
     </div>
 <?php endif; ?>
 
-<div class="app-panel cohort-filter-panel mb-4">
-    <div class="app-panel__header">
+<div class="kodigo-card cohort-filter-panel mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Panel de filtros financieros</h3>
-            <p class="app-panel__subtitle">Filtra por mes, bootcamp, meta de revenue (proyecto) o rango de metas para analizar el revenue.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Panel de filtros financieros</h3>
+            <p class="kodigo-card__subtitle">Filtra por mes, bootcamp, meta de revenue (proyecto) o rango de metas para analizar el revenue.</p>
         </div>
         <?php if (!empty($activeFilters)): ?>
-            <span class="badge bg-primary-subtle text-primary">
-                <i class="bi bi-funnel-fill me-1"></i><?= count($activeFilters) ?> filtro(s) activo(s)
+            <span class="kodigo-pill" data-tone="info">
+                <span class="kodigo-pill__dot" aria-hidden="true"></span>
+                <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i><?= count($activeFilters) ?> filtro(s) activo(s)
             </span>
         <?php endif; ?>
     </div>
-    <form method="GET" action="/cohorts/finance" class="row g-3">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/cohorts/finance" class="row g-3">
         <div class="col-12 col-lg-3">
             <label for="month" class="form-label"><i class="bi bi-calendar-month me-1"></i>Mes</label>
             <select class="form-select" id="month" name="month">
@@ -246,7 +248,7 @@ $spanishMonths = [
                         ];
                         $label = $filterLabels[$key] ?? $key;
                     ?>
-                        <span class="badge bg-light text-dark border">
+                        <span class="kodigo-pill" data-tone="neutral">
                             <strong><?= htmlspecialchars($label) ?>:</strong>
                             <?= htmlspecialchars($displayValue) ?>
                         </span>
@@ -255,6 +257,7 @@ $spanishMonths = [
             <?php endif; ?>
         </div>
     </form>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -300,19 +303,19 @@ $spanishMonths = [
     <i class="bi bi-info-circle-fill text-primary fs-5 mt-1"></i>
     <div class="small">
         <strong class="d-block mb-1">Reglas de ingreso de revenue por fuente</strong>
-        <span class="d-inline-block"><span class="badge bg-info-subtle text-info me-1">INCAF</span> Se ingresa el revenue cuando Academia haya emitido el reporte y el valor definitivo a cobrar.</span>
-        <span class="d-inline-block ms-md-3"><span class="badge bg-success-subtle text-success me-1">Student Revenue / Other SF</span> Se ingresa al emitir la factura, con actualizaciones semanales.</span>
+        <span class="d-inline-block"><span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span>INCAF</span> Se ingresa el revenue cuando Academia haya emitido el reporte y el valor definitivo a cobrar.</span>
+        <span class="d-inline-block ms-md-3"><span class="kodigo-pill" data-tone="success"><span class="kodigo-pill__dot" aria-hidden="true"></span>Student Revenue / Other SF</span> Se ingresa al emitir la factura, con actualizaciones semanales.</span>
         <span class="d-block mt-1 text-muted"><i class="bi bi-calendar-event me-1"></i> Período: mes de facturación. Para INCAF se alinea con el compromiso presupuestario.</span>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
     <div class="col-xl-7">
-        <section class="app-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
-                    <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo del año calendario seleccionado.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
+                    <p class="kodigo-card__subtitle">Comparativo visual de revenue meta vs actual por periodo del año calendario seleccionado.</p>
                 </div>
                 <div class="d-flex align-items-center gap-1 flex-wrap chart-controls">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Navegacion de ano">
@@ -339,7 +342,7 @@ $spanishMonths = [
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
-                    <span class="badge bg-light text-muted border-0 small d-none d-md-inline" id="financeTrendYearBadge">12 meses</span>
+                    <span class="kodigo-pill d-none d-md-inline" data-tone="neutral" id="financeTrendYearBadge">12 meses</span>
                     <div class="vr d-none d-md-inline mx-1"></div>
                     <select id="financeForecastMethod" class="form-select form-select-sm chart-control-select" aria-label="Metodo de proyeccion" title="Metodo">
                         <option value="moving_avg" <?= $selectedForecastMethod === 'moving_avg' ? 'selected' : '' ?>>Media movil</option>
@@ -352,15 +355,17 @@ $spanishMonths = [
                     </select>
                 </div>
             </div>
-            <div id="financeMonthlyChart" style="min-height: 320px;" role="img" aria-label="Grafica de tendencia mensual de revenue meta vs actual con proyeccion"></div>
+            <div class="kodigo-card__body">
+                <div id="financeMonthlyChart" style="min-height: 320px;" role="img" aria-label="Grafica de tendencia mensual de revenue meta vs actual con proyeccion"></div>
+            </div>
         </section>
     </div>
     <div class="col-xl-5">
-        <section class="app-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por cohorte</h3>
-                    <p class="app-panel__subtitle">Top de revenue actual <?= htmlspecialchars($businessModelLabel) ?> con referencia de meta.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por cohorte</h3>
+                    <p class="kodigo-card__subtitle">Top de revenue actual <?= htmlspecialchars($businessModelLabel) ?> con referencia de meta.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <label for="financeTopN" class="form-label mb-0 small text-muted">Top</label>
@@ -371,7 +376,9 @@ $spanishMonths = [
                     </select>
                 </div>
             </div>
-            <div id="financeBootcampChart" style="min-height: 320px;" role="img" aria-label="Grafica de barras horizontales con el top de cohortes por revenue actual contra meta"></div>
+            <div class="kodigo-card__body">
+                <div id="financeBootcampChart" style="min-height: 320px;" role="img" aria-label="Grafica de barras horizontales con el top de cohortes por revenue actual contra meta"></div>
+            </div>
         </section>
     </div>
 </div>
@@ -427,14 +434,15 @@ $spanishMonths = [
 
 <div class="row g-4">
     <div class="col-xl-6">
-        <section class="app-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-calendar3"></i> Revenue por mes</h3>
-                    <p class="app-panel__subtitle">Comparativo de meta y real por periodo de inicio.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-calendar3"></i> Revenue por mes</h3>
+                    <p class="kodigo-card__subtitle">Comparativo de meta y real por periodo de inicio.</p>
                 </div>
             </div>
-            <div class="table-responsive">
+            <div class="kodigo-card__body">
+                <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
@@ -461,20 +469,22 @@ $spanishMonths = [
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
-                    </tbody>
+</tbody>
                 </table>
-            </div>
-        </section>
-    </div>
-    <div class="col-xl-6">
-        <section class="app-panel h-100">
-            <div class="app-panel__header">
-                <div>
-                    <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por cohorte</h3>
-                    <p class="app-panel__subtitle">Ranking financiero por cohorte (<?= htmlspecialchars($businessModelLabel) ?>).</p>
                 </div>
             </div>
-            <div class="table-responsive">
+        </section>
+
+    <div class="col-xl-6">
+<section class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
+                <div>
+                    <h3 class="kodigo-card__title"><i class="bi bi-layers"></i> Revenue por cohorte</h3>
+                    <p class="kodigo-card__subtitle">Ranking financiero por cohorte (<?= htmlspecialchars($businessModelLabel) ?>).</p>
+                </div>
+            </div>
+            <div class="kodigo-card__body">
+                <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
@@ -503,6 +513,7 @@ $spanishMonths = [
                         <?php endif; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </section>
     </div>

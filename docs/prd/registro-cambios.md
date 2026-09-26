@@ -120,6 +120,23 @@
 - Observaciones: no se modificó JS; los bundles revisados no dependen de las clases heredadas. La migración aprovecha el espacio para introducir tonos semánticos explícitos en los badges semáforo/estado en lugar de pares de clases Bootstrap.
 - Transición: CM-UI-006 sigue En progreso con cuatro vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/finance`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-012
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/cohorts/finance.php` (`/cohorts/finance`) al sistema visual Kodigo. Panel de filtros financieros pasó a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body` envolviendo el formulario. Los cuatro paneles de tarjetas/tablas (Tendencia mensual, Cumplimiento por cohorte, Revenue por mes, Revenue por cohorte) también migraron a `.kodigo-card h-100 data-elevation="1"` con su `kodigo-card__body`. Los badges internos se migraron:
+  - "X filtros activos" → `kodigo-pill data-tone="info"` con `kodigo-pill__dot`.
+  - Chips de filtros activos → `kodigo-pill data-tone="neutral"` (manteniendo el `<strong>` con la etiqueta de filtro).
+  - Leyenda INCAF → `kodigo-pill data-tone="info"` con dot.
+  - Leyenda Student Revenue / Other SF → `kodigo-pill data-tone="success"` con dot.
+  - Badge inline "12 meses" del gráfico de tendencia → `kodigo-pill data-tone="neutral"` conservando `id="financeTrendYearBadge"` y `d-none d-md-inline`.
+- Fuentes: [cohorts/finance](../../app/Views/cohorts/finance.php), [cohorts-finance.js](../../public/assets/js/cohorts-finance.js) (sólo lee IDs), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`).
+- Comprobación: `php -l app/Views/cohorts/finance.php` sin errores; `node -c public/assets/js/cohorts-finance.js` y cohorts-edit/import.js sin errores; `grep -n 'app-panel\|class="badge bg-\|empty-state py\|empty-state-icon' app/Views/cohorts/finance.php` sin coincidencias; IDs `cohort-finance-data`, `financeMonthlyChart`, `financeBootcampChart`, `financeTopN`, `financeForecastMethod`, `financeForecastHorizon`, `financeTrendPrevYear`, `financeTrendNextYear`, `financeTrendYear`, `financeTrendYearBadge` y `form[action="/cohorts/finance"]` se conservaron.
+- Observaciones: no se modificó JS. Los `<textarea class="d-none" id="cohort-finance-data">` y los `<details class="visually-hidden">` con tablas accesibles se conservan intactos porque son contenido para tecnología asistiva, no UI visible.
+- Transición: CM-UI-006 sigue En progreso con cinco vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
