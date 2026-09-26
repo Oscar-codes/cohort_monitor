@@ -21,6 +21,11 @@ $areaTone = [
     'marketing' => 'success',
     'admissions' => 'info',
 ];
+$areaKodigoTone = [
+    'academic' => 'info',
+    'marketing' => 'success',
+    'admissions' => 'info',
+];
 $statusCards = [
     ['key' => 'completed', 'label' => 'Completado', 'icon' => 'bi-check-circle', 'tone' => 'success'],
     ['key' => 'in_progress', 'label' => 'En ejecucion', 'icon' => 'bi-play-circle', 'tone' => 'primary'],
@@ -32,6 +37,12 @@ $statusBadge = [
     'in_progress' => 'bg-primary-subtle text-primary',
     'not_started' => 'bg-warning-subtle text-warning',
     'cancelled' => 'bg-danger-subtle text-danger',
+];
+$statusKodigoTone = [
+    'completed' => 'success',
+    'in_progress' => 'info',
+    'not_started' => 'warning',
+    'cancelled' => 'danger',
 ];
 
 $totalCohorts = count($cohorts);
@@ -100,17 +111,18 @@ if (!function_exists('reportDate')) {
     </div>
 </section>
 
-<section class="app-panel reports-filter-panel mb-4">
-    <div class="app-panel__header">
+<section class="kodigo-card reports-filter-panel mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h2 class="app-panel__title"><i class="bi bi-funnel"></i> Filtros</h2>
-            <p class="app-panel__subtitle">Usa area y rango de fechas para construir el reporte exportable.</p>
+            <h2 class="kodigo-card__title"><i class="bi bi-funnel"></i> Filtros</h2>
+            <p class="kodigo-card__subtitle">Usa area y rango de fechas para construir el reporte exportable.</p>
         </div>
         <?php if ($activeFilterCount > 0): ?>
-            <span class="reports-filter-count"><?= $activeFilterCount ?> activo<?= $activeFilterCount > 1 ? 's' : '' ?></span>
+            <span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= (int) $activeFilterCount ?> activo<?= $activeFilterCount > 1 ? 's' : '' ?></span>
         <?php endif; ?>
     </div>
-    <form method="GET" action="/reports" id="filterForm" class="row g-3 align-items-end">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/reports" id="filterForm" class="row g-3 align-items-end">
         <div class="col-sm-6 col-lg-3">
             <label for="area" class="form-label">Area</label>
             <select class="form-select" name="area" id="area">
@@ -139,6 +151,7 @@ if (!function_exists('reportDate')) {
             </a>
         </div>
     </form>
+    </div>
 </section>
 
 <div class="reports-summary mb-4">
@@ -178,14 +191,15 @@ if (!function_exists('reportDate')) {
 
 <div class="row g-4 mb-4">
     <div class="col-xl-7">
-        <section class="app-panel reports-area-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card reports-area-panel h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-grid-3x3-gap"></i> Resumen por area</h2>
-                    <p class="app-panel__subtitle">Distribucion de resultados por responsabilidad operativa.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-grid-3x3-gap"></i> Resumen por area</h2>
+                    <p class="kodigo-card__subtitle">Distribucion de resultados por responsabilidad operativa.</p>
                 </div>
             </div>
-            <div class="reports-area-grid">
+            <div class="kodigo-card__body">
+                <div class="reports-area-grid">
                 <?php foreach ($areaLabels as $aKey => $aLabel): ?>
                     <?php $a = $byArea[$aKey] ?? ['total' => 0, 'at_risk' => 0, 'completed' => 0, 'in_progress' => 0]; ?>
                     <article class="reports-area-card">
@@ -205,18 +219,20 @@ if (!function_exists('reportDate')) {
                         </div>
                     </article>
                 <?php endforeach; ?>
+                </div>
             </div>
         </section>
     </div>
     <div class="col-xl-5">
-        <section class="app-panel reports-status-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card reports-status-panel h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-activity"></i> Estado de entrenamiento</h2>
-                    <p class="app-panel__subtitle">Conteo por estado actual de las cohortes filtradas.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-activity"></i> Estado de entrenamiento</h2>
+                    <p class="kodigo-card__subtitle">Conteo por estado actual de las cohortes filtradas.</p>
                 </div>
             </div>
-            <div class="reports-status-list">
+            <div class="kodigo-card__body">
+                <div class="reports-status-list">
                 <?php foreach ($statusCards as $sc): ?>
                     <?php
                     $count = (int) ($byStatus[$sc['key']] ?? 0);
@@ -233,19 +249,20 @@ if (!function_exists('reportDate')) {
                         </div>
                     </article>
                 <?php endforeach; ?>
+                </div>
             </div>
         </section>
     </div>
 </div>
 
-<section class="app-panel reports-table-panel">
-    <div class="app-panel__header">
+<section class="kodigo-card reports-table-panel" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h2 class="app-panel__title"><i class="bi bi-table"></i> Detalle de cohortes</h2>
-            <p class="app-panel__subtitle"><?= $totalCohorts ?> resultado<?= $totalCohorts !== 1 ? 's' : '' ?> disponibles para exportacion.</p>
+            <h2 class="kodigo-card__title"><i class="bi bi-table"></i> Detalle de cohortes</h2>
+            <p class="kodigo-card__subtitle"><?= $totalCohorts ?> resultado<?= $totalCohorts !== 1 ? 's' : '' ?> disponibles para exportacion.</p>
         </div>
     </div>
-
+    <div class="kodigo-card__body">
     <?php if (!empty($cohorts)): ?>
         <div class="table-responsive reports-table">
             <table class="table table-hover align-middle mb-0">
@@ -271,7 +288,8 @@ if (!function_exists('reportDate')) {
                             <td class="text-center"><code class="small"><?= htmlspecialchars($c['cohort_code'] ?? 'N/A') ?></code></td>
                             <td class="text-center d-none d-md-table-cell">
                                 <?php if (!empty($c['area'])): ?>
-                                    <span class="badge bg-<?= htmlspecialchars($areaTone[$c['area']] ?? 'secondary') ?>-subtle text-<?= htmlspecialchars($areaTone[$c['area']] ?? 'secondary') ?>">
+                                    <span class="kodigo-pill" data-tone="<?= htmlspecialchars($areaKodigoTone[$c['area']] ?? 'neutral') ?>">
+                                        <span class="kodigo-pill__dot" aria-hidden="true"></span>
                                         <?= htmlspecialchars($areaLabels[$c['area']] ?? $c['area']) ?>
                                     </span>
                                 <?php else: ?>
@@ -279,7 +297,8 @@ if (!function_exists('reportDate')) {
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <span class="badge badge-status <?= $statusBadge[$c['training_status'] ?? ''] ?? 'bg-secondary-subtle text-secondary' ?>">
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($statusKodigoTone[$c['training_status'] ?? ''] ?? 'neutral') ?>">
+                                    <span class="kodigo-pill__dot" aria-hidden="true"></span>
                                     <?= htmlspecialchars($statusLabels[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'Sin estado')) ?>
                                 </span>
                             </td>
@@ -287,9 +306,9 @@ if (!function_exists('reportDate')) {
                             <td class="text-center d-none d-lg-table-cell"><?= htmlspecialchars(reportDate($c['end_date'] ?? null)) ?></td>
                             <td class="text-center">
                                 <?php if ($c['at_risk'] ?? 0): ?>
-                                    <span class="badge bg-danger-subtle text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Si</span>
+                                    <span class="kodigo-pill" data-tone="danger"><span class="kodigo-pill__dot" aria-hidden="true"></span><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Si</span>
                                 <?php else: ?>
-                                    <span class="badge bg-success-subtle text-success">No</span>
+                                    <span class="kodigo-pill" data-tone="success"><span class="kodigo-pill__dot" aria-hidden="true"></span>No</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -306,7 +325,8 @@ if (!function_exists('reportDate')) {
                             <a href="/cohorts/<?= (int) $c['id'] ?>"><?= htmlspecialchars($c['cohort_code'] ?? 'N/A') ?></a>
                             <h3><?= htmlspecialchars($c['name']) ?></h3>
                         </div>
-                        <span class="badge badge-status <?= $statusBadge[$c['training_status'] ?? ''] ?? 'bg-secondary-subtle text-secondary' ?>">
+                        <span class="kodigo-pill" data-tone="<?= htmlspecialchars($statusKodigoTone[$c['training_status'] ?? ''] ?? 'neutral') ?>">
+                            <span class="kodigo-pill__dot" aria-hidden="true"></span>
                             <?= htmlspecialchars($statusLabels[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'Sin estado')) ?>
                         </span>
                     </div>
@@ -319,15 +339,14 @@ if (!function_exists('reportDate')) {
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <div class="empty-state py-5">
-            <div class="empty-state-icon">
-                <i class="bi bi-bar-chart-line"></i>
-            </div>
-            <h5 class="empty-state-title">Sin resultados</h5>
-            <p class="empty-state-text">No se encontraron cohortes con los filtros seleccionados.</p>
-            <a href="/reports" class="btn btn-outline-primary">
+        <div class="kodigo-empty py-5">
+            <i class="bi bi-bar-chart-line kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">Sin resultados</h5>
+            <p class="kodigo-empty__text">No se encontraron cohortes con los filtros seleccionados.</p>
+            <a href="/reports" class="btn btn-outline-primary mt-2">
                 <i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar filtros
             </a>
         </div>
     <?php endif; ?>
+    </div>
 </section>

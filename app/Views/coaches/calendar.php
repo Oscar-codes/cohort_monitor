@@ -9,14 +9,14 @@ if (!function_exists('coachPhaseBadge')) {
     function coachPhaseBadge(string $phase): string
     {
         $map = [
-            'early' => ['bg-info-subtle text-info', 'Inicio'],
-            'mid' => ['bg-primary-subtle text-primary', 'Medio'],
-            'advanced' => ['bg-warning-subtle text-warning', 'Avanzado'],
-            'finishing' => ['bg-danger-subtle text-danger', 'Finalizando'],
+            'early' => ['info', 'Inicio'],
+            'mid' => ['info', 'Medio'],
+            'advanced' => ['warning', 'Avanzado'],
+            'finishing' => ['danger', 'Finalizando'],
         ];
-        [$class, $label] = $map[$phase] ?? ['bg-secondary-subtle text-secondary', ucfirst($phase)];
+        [$tone, $label] = $map[$phase] ?? ['neutral', ucfirst($phase)];
 
-        return '<span class="badge badge-status ' . $class . '">' . htmlspecialchars($label) . '</span>';
+        return '<span class="kodigo-pill" data-tone="' . htmlspecialchars($tone) . '"><span class="kodigo-pill__dot" aria-hidden="true"></span>' . htmlspecialchars($label) . '</span>';
     }
 }
 
@@ -140,14 +140,15 @@ $phaseBarColors = [
     </div>
 </section>
 
-<section class="app-panel coach-filter-panel mb-4">
-    <div class="app-panel__header">
+<section class="kodigo-card coach-filter-panel mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h2 class="app-panel__title"><i class="bi bi-funnel"></i> Filtros</h2>
-            <p class="app-panel__subtitle">Segmenta por coach o tipo de cohorte sin perder el modo de vista.</p>
+            <h2 class="kodigo-card__title"><i class="bi bi-funnel"></i> Filtros</h2>
+            <p class="kodigo-card__subtitle">Segmenta por coach o tipo de cohorte sin perder el modo de vista.</p>
         </div>
     </div>
-    <form method="GET" action="/coaches" class="row g-3 align-items-end">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/coaches" class="row g-3 align-items-end">
         <div class="col-12 col-md-5">
             <label for="coach" class="form-label">Coach</label>
             <select class="form-select" id="coach" name="coach">
@@ -177,6 +178,7 @@ $phaseBarColors = [
             <a href="/coaches" class="btn btn-outline-secondary">Reset</a>
         </div>
     </form>
+    </div>
 </section>
 
 <div class="coach-calendar-summary mb-4">
@@ -215,28 +217,31 @@ $phaseBarColors = [
 </div>
 
 <?php if (empty($entries)): ?>
-    <section class="app-panel">
-        <div class="empty-state py-5">
-            <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
-            <h5 class="empty-state-title">Sin coaches activos</h5>
-            <p class="empty-state-text">No hay coaches con cohortes en progreso activo en este momento.</p>
-            <?php if (!empty($activeFilters)): ?>
-                <a href="/coaches" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
-            <?php endif; ?>
+    <section class="kodigo-card" data-elevation="1">
+        <div class="kodigo-card__body">
+            <div class="kodigo-empty py-5">
+                <i class="bi bi-calendar-x kodigo-empty__icon" aria-hidden="true"></i>
+                <h5 class="kodigo-empty__title">Sin coaches activos</h5>
+                <p class="kodigo-empty__text">No hay coaches con cohortes en progreso activo en este momento.</p>
+                <?php if (!empty($activeFilters)): ?>
+                    <a href="/coaches" class="btn btn-outline-secondary btn-sm mt-2">Limpiar filtros</a>
+                <?php endif; ?>
+            </div>
         </div>
     </section>
 <?php else: ?>
 
-<section id="view-timeline" class="app-panel coach-calendar-board">
-    <div class="app-panel__header">
+<section id="view-timeline" class="kodigo-card coach-calendar-board" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h2 class="app-panel__title"><i class="bi bi-bar-chart-steps"></i> Timeline de carga</h2>
-            <p class="app-panel__subtitle"><?= (int) $stats['total_coaches'] ?> coaches - <?= (int) $stats['total_cohorts'] ?> cohortes activas</p>
+            <h2 class="kodigo-card__title"><i class="bi bi-bar-chart-steps"></i> Timeline de carga</h2>
+            <p class="kodigo-card__subtitle"><?= (int) $stats['total_coaches'] ?> coaches - <?= (int) $stats['total_cohorts'] ?> cohortes activas</p>
         </div>
         <div class="coach-calendar-range">
             <?= htmlspecialchars(coachCalendarDate($timelineMin)) ?> - <?= htmlspecialchars(coachCalendarDate($timelineMax)) ?>
         </div>
     </div>
+    <div class="kodigo-card__body">
 
     <div class="coach-gantt-shell">
         <div class="gantt-wrapper coach-gantt-modern">
@@ -315,6 +320,7 @@ $phaseBarColors = [
         <small><span class="coach-legend-dot is-finishing"></span> Finalizando</small>
         <small><span class="coach-legend-line"></span> Hoy</small>
     </div>
+    </div>
 </section>
 
 <section id="view-list" class="d-none">
@@ -322,8 +328,8 @@ $phaseBarColors = [
         <?php
         $coachAvg = (int) round(array_sum(array_column($coachEntries, 'pct_completion')) / max(1, count($coachEntries)));
         ?>
-        <article class="app-panel coach-list-panel mb-3">
-            <div class="coach-list-panel__header">
+        <article class="kodigo-card coach-list-panel mb-3" data-elevation="1">
+            <div class="kodigo-card__header coach-list-panel__header">
                 <div class="coach-row-person">
                     <span class="coach-avatar-sm"><?= htmlspecialchars(coachInitial($coachName)) ?></span>
                     <div>
@@ -336,7 +342,7 @@ $phaseBarColors = [
                     <div class="dashboard-mini-progress"><span data-style-width="<?= $coachAvg ?>%"></span></div>
                 </div>
             </div>
-
+            <div class="kodigo-card__body">
             <div class="table-responsive coach-list-table">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
@@ -363,7 +369,7 @@ $phaseBarColors = [
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php if (!empty($ce['bootcamp_type'])): ?>
-                                        <span class="badge bg-light text-dark border"><?= htmlspecialchars($ce['bootcamp_type']) ?></span>
+                                        <span class="kodigo-pill" data-tone="neutral"><?= htmlspecialchars($ce['bootcamp_type']) ?></span>
                                     <?php else: ?>
                                         <span class="text-muted">Sin tipo</span>
                                     <?php endif; ?>
@@ -385,9 +391,9 @@ $phaseBarColors = [
                                 <td class="d-none d-lg-table-cell"><small><?= htmlspecialchars(coachCalendarDate($ce['end_date'])) ?></small></td>
                                 <td class="d-none d-md-table-cell text-center">
                                     <?php if ((int) $ce['days_remaining'] <= 7): ?>
-                                        <span class="badge bg-danger-subtle text-danger"><?= (int) $ce['days_remaining'] ?>d</span>
+                                        <span class="kodigo-pill" data-tone="danger"><?= (int) $ce['days_remaining'] ?>d</span>
                                     <?php elseif ((int) $ce['days_remaining'] <= 30): ?>
-                                        <span class="badge bg-warning-subtle text-warning"><?= (int) $ce['days_remaining'] ?>d</span>
+                                        <span class="kodigo-pill" data-tone="warning"><?= (int) $ce['days_remaining'] ?>d</span>
                                     <?php else: ?>
                                         <span class="text-muted small"><?= (int) $ce['days_remaining'] ?>d</span>
                                     <?php endif; ?>
@@ -428,6 +434,7 @@ $phaseBarColors = [
                         </div>
                     </article>
                 <?php endforeach; ?>
+            </div>
             </div>
         </article>
     <?php endforeach; ?>
