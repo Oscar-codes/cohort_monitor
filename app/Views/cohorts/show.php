@@ -13,10 +13,10 @@ $isAdmin = (bool) ($isAdmin ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 
 $statusMap = [
-    'not_started' => ['bg-secondary-subtle text-secondary', 'No iniciado', 'bi-hourglass-split'],
-    'in_progress' => ['bg-primary-subtle text-primary', 'En progreso', 'bi-play-circle'],
-    'completed' => ['bg-success-subtle text-success', 'Completado', 'bi-check-circle'],
-    'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado', 'bi-x-circle'],
+    'not_started' => ['neutral',  'No iniciado',  'bi-hourglass-split'],
+    'in_progress' => ['info',     'En progreso',  'bi-play-circle'],
+    'completed'   => ['success',  'Completado',   'bi-check-circle'],
+    'cancelled'   => ['danger',   'Cancelado',    'bi-x-circle'],
 ];
 
 if (!function_exists('cohortDetailStatus')) {
@@ -43,7 +43,7 @@ if (!function_exists('cohortDetailStatus')) {
 }
 
 $ts = cohortDetailStatus($cohort);
-[$badgeClass, $badgeLabel, $badgeIcon] = $statusMap[$ts] ?? ['bg-info-subtle text-info', ucfirst($ts), 'bi-info-circle'];
+[$badgeTone, $badgeLabel, $badgeIcon] = $statusMap[$ts] ?? ['info', ucfirst($ts), 'bi-info-circle'];
 
 if (!function_exists('cohortDetailDate')) {
     function cohortDetailDate(?string $date): string
@@ -104,10 +104,10 @@ $timeline = [
 ];
 $today = date('Y-m-d');
 
-$catBadges = [
-    'risk' => 'bg-danger-subtle text-danger',
-    'general' => 'bg-secondary-subtle text-secondary',
-    'change_request' => 'bg-info-subtle text-info',
+$catTones = [
+    'risk'           => 'danger',
+    'general'        => 'neutral',
+    'change_request' => 'info',
 ];
 $catLabels = [
     'risk' => 'Riesgo',
@@ -198,8 +198,9 @@ $workflowActionMap = [
         </div>
     </div>
     <div class="cohort-detail-hero__actions">
-        <span class="badge badge-status <?= $badgeClass ?>">
-            <i class="bi <?= $badgeIcon ?> me-1"></i><?= htmlspecialchars($badgeLabel) ?>
+        <span class="kodigo-pill" data-tone="<?= htmlspecialchars($badgeTone) ?>">
+            <span class="kodigo-pill__dot" aria-hidden="true"></span>
+            <i class="bi <?= htmlspecialchars($badgeIcon) ?> me-1" aria-hidden="true"></i><?= htmlspecialchars($badgeLabel) ?>
         </span>
         <div class="d-flex flex-wrap gap-2 justify-content-end">
             <?php /* Oculto temporalmente: MarketingStageRepository roto, pendiente de fix.
@@ -261,43 +262,46 @@ $workflowActionMap = [
 
 <div class="row g-4">
     <div class="col-xl-8">
-        <section class="app-panel cohort-detail-panel mb-4">
-            <div class="app-panel__header">
+        <section class="kodigo-card cohort-detail-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-calendar-range"></i> Timeline de entrenamiento</h2>
-                    <p class="app-panel__subtitle">Hitos principales para seguimiento academico y operativo.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-calendar-range"></i> Timeline de entrenamiento</h2>
+                    <p class="kodigo-card__subtitle">Hitos principales para seguimiento academico y operativo.</p>
                 </div>
             </div>
-            <div class="cohort-timeline">
-                <?php foreach ($timeline as $item): ?>
-                    <?php
-                    $dateValue = $item['date'];
-                    $stateClass = 'is-pending';
-                    if ($dateValue && $dateValue <= $today) {
-                        $stateClass = 'is-complete';
-                    } elseif ($dateValue) {
-                        $stateClass = 'is-upcoming';
-                    }
-                    ?>
-                    <article class="cohort-timeline__item <?= $stateClass ?>">
-                        <span class="cohort-timeline__icon"><i class="bi <?= $item['icon'] ?>"></i></span>
-                        <div>
-                            <strong><?= htmlspecialchars($item['label']) ?></strong>
-                            <span><?= htmlspecialchars(cohortDetailDate($dateValue)) ?></span>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
+            <div class="kodigo-card__body">
+                <div class="cohort-timeline">
+                    <?php foreach ($timeline as $item): ?>
+                        <?php
+                        $dateValue = $item['date'];
+                        $stateClass = 'is-pending';
+                        if ($dateValue && $dateValue <= $today) {
+                            $stateClass = 'is-complete';
+                        } elseif ($dateValue) {
+                            $stateClass = 'is-upcoming';
+                        }
+                        ?>
+                        <article class="cohort-timeline__item <?= $stateClass ?>">
+                            <span class="cohort-timeline__icon"><i class="bi <?= $item['icon'] ?>"></i></span>
+                            <div>
+                                <strong><?= htmlspecialchars($item['label']) ?></strong>
+                                <span><?= htmlspecialchars(cohortDetailDate($dateValue)) ?></span>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </section>
 
-        <section class="app-panel cohort-detail-panel mb-4">
-            <div class="app-panel__header">
+        <section class="kodigo-card cohort-detail-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-kanban"></i> Asignaciones operativas</h2>
-                    <p class="app-panel__subtitle">Responsables, horario y contexto para coordinar la cohorte.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-kanban"></i> Asignaciones operativas</h2>
+                    <p class="kodigo-card__subtitle">Responsables, horario y contexto para coordinar la cohorte.</p>
                 </div>
             </div>
-            <div class="cohort-info-grid">
+            <div class="kodigo-card__body">
+                <div class="cohort-info-grid">
                 <div>
                     <span>Proyecto relacionado</span>
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['related_project'] ?? null)) ?></strong>
@@ -327,18 +331,20 @@ $workflowActionMap = [
                     <strong><?= htmlspecialchars(cohortDetailValue($cohort['assigned_class_schedule'] ?? null)) ?></strong>
                 </div>
             </div>
+            </div>
         </section>
     </div>
 
     <div class="col-xl-4">
-        <section class="app-panel cohort-detail-panel mb-4">
-            <div class="app-panel__header">
+        <section class="kodigo-card cohort-detail-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Admisiones</h2>
-                    <p class="app-panel__subtitle">Progreso acumulado B2B y B2C.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-graph-up-arrow"></i> Admisiones</h2>
+                    <p class="kodigo-card__subtitle">Progreso acumulado B2B y B2C.</p>
                 </div>
             </div>
-            <div class="cohort-admission-meter">
+            <div class="kodigo-card__body">
+                <div class="cohort-admission-meter">
                 <div class="cohort-admission-meter__top">
                     <strong><?= $admissionPct ?>%</strong>
                     <span><?= $actualAdmissions ?> de <?= $totalTarget ?></span>
@@ -369,15 +375,17 @@ $workflowActionMap = [
                     <strong><?= $totalTarget ?></strong>
                 </div>
             </div>
+            </div>
         </section>
 
-        <section class="app-panel cohort-detail-panel mb-4">
-            <div class="app-panel__header">
+        <section class="kodigo-card cohort-detail-panel mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-currency-dollar"></i> Finanzas</h2>
-                    <p class="app-panel__subtitle">Seguimiento de ingresos vs meta por cohorte.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-currency-dollar"></i> Finanzas</h2>
+                    <p class="kodigo-card__subtitle">Seguimiento de ingresos vs meta por cohorte.</p>
                 </div>
             </div>
+            <div class="kodigo-card__body">
             <div class="cohort-admission-meter">
                 <div class="cohort-admission-meter__top">
                     <strong><?= $revenuePct ?>%</strong>
@@ -405,15 +413,17 @@ $workflowActionMap = [
                     <strong><?= $revenuePct ?>%</strong>
                 </div>
             </div>
+            </div>
         </section>
 
-        <section class="app-panel cohort-detail-panel">
-            <div class="app-panel__header">
+        <section class="kodigo-card cohort-detail-panel" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-info-circle"></i> Informacion</h2>
-                    <p class="app-panel__subtitle">Datos de auditoria y trazabilidad.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-info-circle"></i> Informacion</h2>
+                    <p class="kodigo-card__subtitle">Datos de auditoria y trazabilidad.</p>
                 </div>
             </div>
+            <div class="kodigo-card__body">
             <dl class="cohort-meta-list">
                 <div>
                     <dt>ID</dt>
@@ -436,21 +446,24 @@ $workflowActionMap = [
                     <dd><?= htmlspecialchars(date('d/m/Y H:i', strtotime($cohort['updated_at'] ?? 'now'))) ?></dd>
                 </div>
             </dl>
+            </div>
         </section>
 
         <?php if ($canManageStatus): ?>
-            <section class="app-panel cohort-detail-panel mt-4">
-                <div class="app-panel__header">
+            <section class="kodigo-card cohort-detail-panel mt-4" data-elevation="1">
+                <div class="kodigo-card__header">
                     <div>
-                        <h2 class="app-panel__title"><i class="bi bi-arrow-repeat"></i> Workflow de estado</h2>
-                        <p class="app-panel__subtitle">Acciones controladas para mover la cohorte entre estados permitidos.</p>
+                        <h2 class="kodigo-card__title"><i class="bi bi-arrow-repeat"></i> Workflow de estado</h2>
+                        <p class="kodigo-card__subtitle">Acciones controladas para mover la cohorte entre estados permitidos.</p>
                     </div>
                 </div>
 
+                <div class="kodigo-card__body">
                 <div class="mb-3 p-3 rounded border bg-light-subtle">
                     <div class="small text-uppercase text-muted fw-semibold mb-1">Estado actual</div>
-                    <span class="badge badge-status <?= $badgeClass ?>">
-                        <i class="bi <?= $badgeIcon ?> me-1"></i><?= htmlspecialchars($badgeLabel) ?>
+                    <span class="kodigo-pill" data-tone="<?= htmlspecialchars($badgeTone) ?>">
+                        <span class="kodigo-pill__dot" aria-hidden="true"></span>
+                        <i class="bi <?= htmlspecialchars($badgeIcon) ?> me-1" aria-hidden="true"></i><?= htmlspecialchars($badgeLabel) ?>
                     </span>
                 </div>
 
@@ -488,71 +501,73 @@ $workflowActionMap = [
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+                </div>
             </section>
         <?php endif; ?>
     </div>
 </div>
 
-<section class="app-panel cohort-comments mt-4">
-    <div class="app-panel__header">
+<section class="kodigo-card cohort-comments mt-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h2 class="app-panel__title"><i class="bi bi-chat-left-text"></i> Comentarios y riesgos</h2>
-            <p class="app-panel__subtitle">Registro compartido para decisiones, alertas y seguimiento.</p>
+            <h2 class="kodigo-card__title"><i class="bi bi-chat-left-text"></i> Comentarios y riesgos</h2>
+            <p class="kodigo-card__subtitle">Registro compartido para decisiones, alertas y seguimiento.</p>
         </div>
         <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#commentForm">
             <i class="bi bi-plus-lg me-1"></i> Nuevo comentario
         </button>
     </div>
 
-    <div class="collapse" id="commentForm">
-        <div class="cohort-comment-form">
-            <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/comments">
-                <div class="row g-3">
-                    <div class="col-sm-6 col-lg-3">
-                        <label class="form-label">Categoria</label>
-                        <select name="category" class="form-select" required>
-                            <option value="general">General</option>
-                            <option value="risk">Riesgo</option>
-                        </select>
+    <div class="kodigo-card__body">
+        <div class="collapse" id="commentForm">
+            <div class="cohort-comment-form">
+                <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/comments">
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label">Categoria</label>
+                            <select name="category" class="form-select" required>
+                                <option value="general">General</option>
+                                <option value="risk">Riesgo</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-lg-7">
+                            <label class="form-label">Comentario</label>
+                            <textarea name="body" class="form-control" rows="2" required placeholder="Escribe el comentario operativo..."></textarea>
+                        </div>
+                        <div class="col-lg-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-send me-1"></i> Enviar
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-sm-6 col-lg-7">
-                        <label class="form-label">Comentario</label>
-                        <textarea name="body" class="form-control" rows="2" required placeholder="Escribe el comentario operativo..."></textarea>
-                    </div>
-                    <div class="col-lg-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-send me-1"></i> Enviar
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <?php if (empty($comments ?? [])): ?>
-        <div class="empty-state py-5">
-            <div class="empty-state-icon">
-                <i class="bi bi-chat"></i>
+                </form>
             </div>
-            <h5 class="empty-state-title">Sin comentarios</h5>
-            <p class="empty-state-text">Todavia no hay notas registradas para esta cohorte.</p>
         </div>
-    <?php else: ?>
-        <div class="cohort-comment-list">
-            <?php foreach ($comments as $c): ?>
-                <article class="cohort-comment-item <?= (($c['category'] ?? '') === 'risk') ? 'is-risk' : '' ?>">
-                    <div class="cohort-comment-item__body">
-                        <span class="badge badge-status <?= $catBadges[$c['category']] ?? 'bg-secondary-subtle text-secondary' ?>">
-                            <?= htmlspecialchars($catLabels[$c['category']] ?? $c['category']) ?>
-                        </span>
-                        <p><?= nl2br(htmlspecialchars($c['body'])) ?></p>
-                    </div>
-                    <div class="cohort-comment-item__meta">
-                        <strong><?= htmlspecialchars($c['author_name'] ?? 'Sistema') ?></strong>
-                        <span><?= htmlspecialchars(date('d/m/Y', strtotime($c['created_at']))) ?></span>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+
+        <?php if (empty($comments ?? [])): ?>
+            <div class="kodigo-empty py-5">
+                <i class="bi bi-chat kodigo-empty__icon" aria-hidden="true"></i>
+                <h5 class="kodigo-empty__title">Sin comentarios</h5>
+                <p class="kodigo-empty__text">Todavia no hay notas registradas para esta cohorte.</p>
+            </div>
+        <?php else: ?>
+            <div class="cohort-comment-list">
+                <?php foreach ($comments as $c): ?>
+                    <article class="cohort-comment-item <?= (($c['category'] ?? '') === 'risk') ? 'is-risk' : '' ?>">
+                        <div class="cohort-comment-item__body">
+                            <span class="kodigo-pill" data-tone="<?= htmlspecialchars($catTones[$c['category']] ?? 'neutral') ?>">
+                                <span class="kodigo-pill__dot" aria-hidden="true"></span>
+                                <?= htmlspecialchars($catLabels[$c['category']] ?? $c['category']) ?>
+                            </span>
+                            <p><?= nl2br(htmlspecialchars($c['body'])) ?></p>
+                        </div>
+                        <div class="cohort-comment-item__meta">
+                            <strong><?= htmlspecialchars($c['author_name'] ?? 'Sistema') ?></strong>
+                            <span><?= htmlspecialchars(date('d/m/Y', strtotime($c['created_at']))) ?></span>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </section>

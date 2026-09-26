@@ -96,6 +96,18 @@
 - Observaciones: `cohorts-index.js` no se modificó; su única dependencia de markup (los IDs de las pestañas y atributos de tooltip) sigue intacta. El badge de conteo redondo (`rounded-pill text-bg-dark`) usado junto al nombre de los grupos permanece como `badge` de Bootstrap porque representa cantidad, no estado semántico.
 - Transición: CM-UI-006 sigue En progreso con un módulo más completado.
 - Límite: sin prueba en navegador; sólo comprobación estática y de sintaxis. Quedan pendientes `cohorts/master`, `cohorts/finance`, `cohorts/show`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-010
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/cohorts/show.php` (`/cohorts/{id}`) al sistema visual Kodigo. Siete secciones `.app-panel` (Timeline de entrenamiento, Asignaciones operativas, Admisiones, Finanzas, Información, Workflow de estado y Comentarios y riesgos) pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. Los dos `<span class="badge badge-status $bg-…-subtle text-…">` (uno en el hero, otro dentro del bloque de Workflow) y el badge de categoría de comentario se migraron a `<span class="kodigo-pill" data-tone="…">` con `kodigo-pill__dot`; el mapa `$statusMap` y el nuevo `$catTones` traducen los antiguos pares de clases a tonos semánticos (`neutral/info/success/danger`). El `empty-state` de "sin comentarios" pasó a `.kodigo-empty/__icon/__title/__text` con icono aria-hidden. El `bg-light-subtle border` del bloque de estado actual y los formularios de comentario quedan como Bootstrap por ser utilidades estructurales, no badges semánticos.
+- Fuentes: [cohorts/show](../../app/Views/cohorts/show.php), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.kodigo-empty`), [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md).
+- Comprobación: `php -l app/Views/cohorts/show.php` sin errores; `node -c` sobre cohorts-edit/finance/import.js y marketing-show.js sin errores; `grep -n 'app-panel\|status-pill\|empty-state\|badge-status\|badge bg-\|\$badgeClass\|\$catBadges' app/Views/cohorts/show.php` sin coincidencias; los IDs `commentForm` y `cohort-filters` se conservaron.
+- Observaciones: no se modificó JS; las clases que quitamos no eran blanco de selectores `querySelector`/`getElementsByClassName` en los bundles revisados. La alerta `<div class="alert alert-secondary" role="alert">` del bloque Workflow sin transiciones disponibles se conserva como Bootstrap alert porque es contenido en página (no flash), no es badge semántico.
+- Transición: CM-UI-006 sigue En progreso con tres vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/master`, `cohorts/finance`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
