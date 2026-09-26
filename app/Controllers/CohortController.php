@@ -170,6 +170,7 @@ class CohortController extends Controller
                 'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
                 'related_project' => (string) $this->input('related_project', ''),
                 'month'           => (string) $this->input('month', ''),
+                'year'            => (string) $this->input('year', ''),
                 'target_min'      => (string) $this->input('target_min', ''),
                 'target_max'      => (string) $this->input('target_max', ''),
                 'start_date'      => (string) $this->input('start_date', ''),
@@ -185,6 +186,7 @@ class CohortController extends Controller
                 'bootcamp_type'   => (string) ($sessionFilters['bootcamp_type'] ?? ''),
                 'related_project' => (string) ($sessionFilters['related_project'] ?? ''),
                 'month'           => (string) ($sessionFilters['month'] ?? ''),
+                'year'            => (string) ($sessionFilters['year'] ?? ''),
                 'target_min'      => (string) ($sessionFilters['target_min'] ?? ''),
                 'target_max'      => (string) ($sessionFilters['target_max'] ?? ''),
                 'start_date'      => (string) ($sessionFilters['start_date'] ?? ''),
@@ -198,6 +200,13 @@ class CohortController extends Controller
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
         $availableMonths = $this->cohortService->getAvailableMonths();
+        $availableYears = $this->cohortService->getAvailableYears();
+        $currentYear = (string) date('Y');
+
+        // Default the trend chart to the current calendar year when no year is selected.
+        if ($filters['year'] === '' || $filters['year'] === null) {
+            $filters['year'] = $currentYear;
+        }
 
         // Check if dates were swapped and show a warning
         if (!empty($filters['start_date']) && !empty($filters['end_date']) && $filters['start_date'] > $filters['end_date']) {
@@ -256,6 +265,8 @@ class CohortController extends Controller
             'bootcampTypes'  => $bootcampTypes,
             'projectNames'   => $projectNames,
             'availableMonths' => $availableMonths,
+            'availableYears' => $availableYears,
+            'currentYear'    => $currentYear,
             'byMonth'        => $byMonth,
             'byBootcamp'     => $byBootcamp,
             'totalTarget'    => $totalTarget,
@@ -353,6 +364,7 @@ class CohortController extends Controller
             'bootcamp_type'   => '',
             'related_project' => '',
             'month'           => '',
+            'year'            => '',
             'target_min'      => '',
             'target_max'      => '',
             'start_date'      => '',

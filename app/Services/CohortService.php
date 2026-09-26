@@ -109,6 +109,16 @@ class CohortService
     }
 
     /**
+     * Distinct calendar years (YYYY) available for the finance year filter.
+     *
+     * @return string[]
+     */
+    public function getAvailableYears(): array
+    {
+        return $this->cohortRepo->findAvailableYears();
+    }
+
+    /**
      * Financial aggregation by month (filtered).
      *
      * @return array<int, array<string, mixed>>
@@ -477,6 +487,7 @@ class CohortService
             'business_model'  => null,
             'cohort_status'   => null,
             'month'           => null,
+            'year'            => null,
             'target_min'      => null,
             'target_max'      => null,
         ];
@@ -501,6 +512,13 @@ class CohortService
             $month = (string) $filters['month'];
             if (preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
                 $normalized['month'] = $month;
+            }
+        }
+
+        if (!empty($filters['year'])) {
+            $year = (string) $filters['year'];
+            if (preg_match('/^\d{4}$/', $year) === 1) {
+                $normalized['year'] = $year;
             }
         }
 

@@ -12,6 +12,34 @@ $chartPrefs = isset($chartPrefs) && is_array($chartPrefs) ? $chartPrefs : [];
 $bootcampTypes = isset($bootcampTypes) && is_array($bootcampTypes) ? $bootcampTypes : [];
 $projectNames = isset($projectNames) && is_array($projectNames) ? $projectNames : [];
 $availableMonths = isset($availableMonths) && is_array($availableMonths) ? $availableMonths : [];
+$availableYears = isset($availableYears) && is_array($availableYears) ? $availableYears : [];
+$currentYear = (string) ($currentYear ?? date('Y'));
+$selectedYear = (string) ($filters['year'] ?? $currentYear);
+$monthLabels = [
+    '01' => 'Ene', '02' => 'Feb', '03' => 'Mar',
+    '04' => 'Abr', '05' => 'May', '06' => 'Jun',
+    '07' => 'Jul', '08' => 'Ago', '09' => 'Sep',
+    '10' => 'Oct', '11' => 'Nov', '12' => 'Dic',
+];
+$monthlyByKey = [];
+foreach ($byMonth as $row) {
+    $key = (string) ($row['period_key'] ?? '');
+    if ($key !== '') {
+        $monthlyByKey[$key] = $row;
+    }
+}
+$trendMonths = [];
+for ($m = 1; $m <= 12; $m++) {
+    $mm = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+    $key = $selectedYear . '-' . $mm;
+    $row = $monthlyByKey[$key] ?? null;
+    $trendMonths[] = [
+        'key'   => $key,
+        'label' => ($monthLabels[$mm] ?? $mm) . ' ' . $selectedYear,
+        'target' => (float) ($row['target_revenue'] ?? 0),
+        'actual' => (float) ($row['actual_revenue'] ?? 0),
+    ];
+}
 
 $selectedTopN = (int) ($chartPrefs['top_n'] ?? 10);
 $selectedForecastHorizon = (int) ($chartPrefs['forecast_horizon'] ?? 3);
@@ -91,6 +119,22 @@ $spanishMonths = [
                     $label = ($spanishMonths[$mn] ?? $mn) . ' ' . $year;
                 ?>
                     <option value="<?= htmlspecialchars($monthKey) ?>" <?= (($filters['month'] ?? '') === $monthKey) ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="year" class="form-label"><i class="bi bi-calendar3 me-1"></i>Año</label>
+            <select class="form-select" id="year" name="year">
+                <?php
+                $formYearOptions = $availableYears;
+                if (!in_array($currentYear, $formYearOptions, true)) {
+                    array_unshift($formYearOptions, $currentYear);
+                }
+                $formYearOptions = array_values(array_unique(array_filter($formYearOptions, static fn($y) => preg_match('/^\d{4}$/', (string) $y) === 1)));
+                usort($formYearOptions, static fn($a, $b) => (int) $b <=> (int) $a);
+                ?>
+                <?php foreach ($formYearOptions as $yearOpt): ?>
+                    <option value="<?= htmlspecialchars((string) $yearOpt) ?>" <?= ((string) $yearOpt === ($filters['year'] ?? '')) ? 'selected' : '' ?>><?= htmlspecialchars((string) $yearOpt) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -174,6 +218,7 @@ $spanishMonths = [
                             'bootcamp_type'   => 'Bootcamp',
                             'related_project' => 'Proyecto',
                             'month'           => 'Mes',
+                            'year'            => 'Año',
                             'target_min'      => 'Meta min',
                             'target_max'      => 'Meta max',
                             'start_date'      => 'Desde',
@@ -249,9 +294,33 @@ $spanishMonths = [
             <div class="app-panel__header">
                 <div>
                     <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
-                    <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo.</p>
+                    <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo del año calendario seleccionado.</p>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" id="financeTrendPrevYear" class="btn btn-sm btn-outline-secondary" title="Año anterior">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <label for="financeTrendYear" class="form-label mb-0 small text-muted">Año</label>
+                    <select id="financeTrendYear" class="form-select form-select-sm" style="min-width: 110px;">
+                        <?php
+                        $yearOptions = $availableYears;
+                        if (!in_array($currentYear, $yearOptions, true)) {
+                            array_unshift($yearOptions, $currentYear);
+                        }
+                        if (!in_array($selectedYear, $yearOptions, true)) {
+                            array_unshift($yearOptions, $selectedYear);
+                        }
+                        $yearOptions = array_values(array_unique(array_filter($yearOptions, static fn($y) => preg_match('/^\d{4}$/', (string) $y) === 1)));
+                        usort($yearOptions, static fn($a, $b) => (int) $b <=> (int) $a);
+                        foreach ($yearOptions as $yearOpt):
+                        ?>
+                            <option value="<?= htmlspecialchars((string) $yearOpt) ?>" <?= ((string) $yearOpt === $selectedYear) ? 'selected' : '' ?>><?= htmlspecialchars((string) $yearOpt) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" id="financeTrendNextYear" class="btn btn-sm btn-outline-secondary" title="Año siguiente">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <span class="badge bg-light text-dark border" id="financeTrendYearBadge">12 meses</span>
                     <label for="financeForecastMethod" class="form-label mb-0 small text-muted">Metodo</label>
                     <select id="financeForecastMethod" class="form-select form-select-sm" style="min-width: 140px;">
                         <option value="moving_avg" <?= $selectedForecastMethod === 'moving_avg' ? 'selected' : '' ?>>Media movil</option>
@@ -291,6 +360,12 @@ $spanishMonths = [
 
 
 <textarea id="cohort-finance-data" class="d-none"><?= htmlspecialchars(json_encode($financeChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
+<textarea id="cohort-finance-trend" class="d-none" data-year="<?= htmlspecialchars($selectedYear, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(json_encode([
+    'year' => $selectedYear,
+    'current_year' => $currentYear,
+    'available_years' => array_values(array_filter($yearOptions, static fn($y) => preg_match('/^\d{4}$/', (string) $y) === 1)),
+    'months' => $trendMonths,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
 
 <div class="row g-4">
     <div class="col-xl-6">
@@ -312,17 +387,16 @@ $spanishMonths = [
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($byMonth)): ?>
+                        <?php if (empty($trendMonths)): ?>
                             <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
                         <?php else: ?>
-                            <?php foreach ($byMonth as $row): ?>
-                                <?php
-                                $target = max(0.0, (float) ($row['target_revenue'] ?? 0));
-                                $actual = max(0.0, (float) ($row['actual_revenue'] ?? 0));
+                            <?php foreach ($trendMonths as $monthRow):
+                                $target = (float) ($monthRow['target'] ?? 0);
+                                $actual = (float) ($monthRow['actual'] ?? 0);
                                 $pct = $target > 0 ? min(100, (int) round(($actual / $target) * 100)) : 0;
-                                ?>
+                            ?>
                                 <tr>
-                                    <td><?= htmlspecialchars((string) ($row['period_label'] ?? '—')) ?></td>
+                                    <td><?= htmlspecialchars((string) ($monthRow['label'] ?? '—')) ?></td>
                                     <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
                                     <td class="text-end"><?= htmlspecialchars(moneyFmt($actual)) ?></td>
                                     <td class="text-end"><?= $pct ?>%</td>

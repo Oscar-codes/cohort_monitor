@@ -101,6 +101,26 @@ class CohortRepository
         ));
     }
 
+    /**
+     * Distinct calendar years present in cohort start dates, newest first.
+     *
+     * @return string[] List of YYYY keys
+     */
+    public function findAvailableYears(): array
+    {
+        $rows = $this->db->query(
+            "SELECT DISTINCT DATE_FORMAT(c.start_date, '%Y') AS period_key
+             FROM cohorts c
+             WHERE c.start_date IS NOT NULL
+             ORDER BY period_key DESC"
+        );
+
+        return array_values(array_map(
+            static fn(array $row): string => (string) ($row['period_key'] ?? ''),
+            $rows
+        ));
+    }
+
     public function findCoachNames(): array
     {
         $rows = $this->db->query(
@@ -435,6 +455,11 @@ class CohortRepository
         if (!empty($filters['month'])) {
             $where[] = "DATE_FORMAT(c.start_date, '%Y-%m') = :period_month";
             $params['period_month'] = (string) $filters['month'];
+        }
+
+        if (!empty($filters['year'])) {
+            $where[] = "DATE_FORMAT(c.start_date, '%Y') = :period_year";
+            $params['period_year'] = (string) $filters['year'];
         }
 
         if ($filters['target_min'] !== null && $filters['target_min'] !== '') {

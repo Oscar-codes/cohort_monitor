@@ -155,10 +155,21 @@
         const el = document.getElementById('financeMonthlyChart');
         if (!el || !hasApex()) return;
 
-        const monthly = data.monthly || {};
-        const labels = Array.isArray(monthly.labels) ? monthly.labels.slice() : [];
-        const target = Array.isArray(monthly.target) ? monthly.target.map(Number) : [];
-        const actual = Array.isArray(monthly.actual) ? monthly.actual.map(Number) : [];
+        const trend = readTrendData();
+        let labels = [];
+        let target = [];
+        let actual = [];
+
+        if (trend && Array.isArray(trend.months) && trend.months.length > 0) {
+            labels = trend.months.map(m => String(m.label || m.key || ''));
+            target = trend.months.map(m => Number(m.target || 0));
+            actual = trend.months.map(m => Number(m.actual || 0));
+        } else {
+            const monthly = data.monthly || {};
+            labels = Array.isArray(monthly.labels) ? monthly.labels.slice() : [];
+            target = Array.isArray(monthly.target) ? monthly.target.map(Number) : [];
+            actual = Array.isArray(monthly.actual) ? monthly.actual.map(Number) : [];
+        }
 
         const horizonEl = document.getElementById('financeForecastHorizon');
         const methodEl = document.getElementById('financeForecastMethod');
@@ -328,8 +339,91 @@
             });
         }
 
+        initTrendYearNavigator();
+
         renderMonthlyChart();
         renderBootcampChart();
+    }
+
+    /**
+     * Wire the trend chart year navigation buttons + selector to submit the
+     * filter form so the monthly chart and the totals reflect the chosen year.
+     */
+    function initTrendYearNavigator() {
+        const form = document.querySelector('form[action="/cohorts/finance"]');
+        const yearSelect = document.getElementById('financeTrendYear');
+        const formYearSelect = document.getElementById('year');
+        const prevBtn = document.getElementById('financeTrendPrevYear');
+        const nextBtn = document.getElementById('financeTrendNextYear');
+        const badge = document.getElementById('financeTrendYearBadge');
+
+        if (!yearSelect || !form) {
+            return;
+        }
+
+        function syncFormYear(year) {
+            if (!formYearSelect) return;
+            const value = String(year);
+            const exists = Array.from(formYearSelect.options).some(
+                opt => opt.value === value
+            );
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = value;
+                formYearSelect.insertBefore(opt, formYearSelect.firstChild);
+            }
+            formYearSelect.value = value;
+        }
+
+        function submitWithYear(year) {
+            syncFormYear(year);
+            yearSelect.value = String(year);
+            if (formYearSelect) {
+                formYearSelect.value = String(year);
+            }
+            form.submit();
+        }
+
+        yearSelect.addEventListener('change', () => {
+            submitWithYear(yearSelect.value);
+        });
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                const current = parseInt(yearSelect.value, 10);
+                if (Number.isFinite(current)) {
+                    submitWithYear(current - 1);
+                }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const current = parseInt(yearSelect.value, 10);
+                if (Number.isFinite(current)) {
+                    submitWithYear(current + 1);
+                }
+            });
+        }
+
+        if (badge) {
+            const data = readTrendData();
+            if (data && data.year) {
+                badge.textContent = '12 meses · ' + data.year;
+            }
+        }
+    }
+
+    function readTrendData() {
+        const el = document.getElementById('cohort-finance-trend');
+        if (!el || !el.value) {
+            return null;
+        }
+        try {
+            return JSON.parse(el.value);
+        } catch (e) {
+            return null;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', init);
