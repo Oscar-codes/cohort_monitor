@@ -60,6 +60,7 @@ $roleLabels = [
             </div>
             <div class="form-workbench__body">
                 <form method="POST" action="/users/<?= $userId ?>" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
                     <input type="hidden" name="_method" value="PUT">
 
                     <div class="form-section">

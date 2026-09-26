@@ -215,6 +215,7 @@ $workflowActionMap = [
             <?php endif; ?>
             <?php if (($canDelete ?? false) && $canDeleteThisCohort): ?>
                 <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>" data-confirm="Estas seguro de que deseas eliminar esta cohorte?">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-trash me-1"></i> Eliminar
@@ -479,6 +480,7 @@ $workflowActionMap = [
                                 <?php continue; ?>
                             <?php endif; ?>
                             <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/status" class="border rounded p-3 bg-body-tertiary">
+                                <?= csrf_field() ?>
                                 <input type="hidden" name="target_status" value="<?= htmlspecialchars($targetStatus) ?>">
                                 <div class="d-flex flex-column gap-2">
                                     <div>
@@ -522,6 +524,7 @@ $workflowActionMap = [
         <div class="collapse" id="commentForm">
             <div class="cohort-comment-form">
                 <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/comments">
+                    <?= csrf_field() ?>
                     <div class="row g-3">
                         <div class="col-sm-6 col-lg-3">
                             <label class="form-label">Categoria</label>

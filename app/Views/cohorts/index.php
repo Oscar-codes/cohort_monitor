@@ -176,6 +176,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
     $deleteBtn = '';
     if ($canDelete && cohortCanDelete($cohort)) {
         $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
+            . csrf_field()
             . '<input type="hidden" name="_method" value="DELETE">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash"></i></button>'
             . '</form>';
@@ -232,6 +233,7 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canEdi
     $deleteBtn = '';
     if ($canDelete && cohortCanDelete($cohort)) {
         $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
+            . csrf_field()
             . '<input type="hidden" name="_method" value="DELETE">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" aria-label="Eliminar"><i class="bi bi-trash"></i></button>'
             . '</form>';

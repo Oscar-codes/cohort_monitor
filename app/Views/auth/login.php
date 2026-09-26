@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -45,7 +45,8 @@
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="/login" class="needs-validation auth-login-form" novalidate>
+<form method="POST" action="/login" class="needs-validation auth-login-form" novalidate>
+                <?= csrf_field() ?>
                 <div class="mb-3">
                     <label for="username" class="form-label">Usuario o correo</label>
                     <div class="input-group auth-input-group">

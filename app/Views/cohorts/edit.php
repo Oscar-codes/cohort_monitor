@@ -104,6 +104,7 @@ if (!$isMarketingBlocked) {
             </div>
             <div class="form-workbench__body">
                 <form method="POST" action="/cohorts/<?= $cohort['id'] ?>" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
                     <input type="hidden" name="_method" value="PUT">
 
                     <!-- ─── Identificación ─────────────────────── -->

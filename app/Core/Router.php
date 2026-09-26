@@ -89,7 +89,15 @@ class Router
 
         // Support method override via hidden form field (_method)
         if ($method === 'POST' && isset($_POST['_method'])) {
-            $method = strtoupper($_POST['_method']);
+            $candidate = strtoupper((string) $_POST['_method']);
+            if (in_array($candidate, ['PUT', 'DELETE', 'PATCH'], true)) {
+                $method = $candidate;
+            }
+        }
+
+        // CSRF check for any state-changing request.
+        if (in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
+            \App\Core\Csrf::verifyOrDie();
         }
 
         if (!isset($this->routes[$method])) {

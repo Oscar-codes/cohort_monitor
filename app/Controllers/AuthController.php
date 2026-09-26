@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Auth;
+use App\Core\Csrf;
 use App\Services\AuthService;
 use Throwable;
 
@@ -61,6 +62,7 @@ class AuthController extends Controller
             return;
         }
 
+        Csrf::rotate();
         $this->redirect('/');
     }
 
@@ -68,6 +70,7 @@ class AuthController extends Controller
     public function logout(): void
     {
         $this->authService->logout();
+        Csrf::rotate();
         $this->redirect('/login');
     }
 }

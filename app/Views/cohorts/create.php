@@ -1,4 +1,4 @@
-<!-- Cohort Create View -->
+﻿<!-- Cohort Create View -->
 <section class="form-page-hero mb-4">
     <div>
         <div class="dashboard-eyebrow">
@@ -24,34 +24,35 @@
             </div>
             <div class="form-workbench__body">
                 <form method="POST" action="/cohorts" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
 
-                    <!-- ─── Identificación ─────────────────────── -->
+                    <!-- â”€â”€â”€ IdentificaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">
-                            <i class="bi bi-tag"></i> Identificación
+                            <i class="bi bi-tag"></i> IdentificaciÃ³n
                         </div>
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label for="cohort_code" class="form-label">Código de Cohorte <span class="text-danger">*</span></label>
+                                <label for="cohort_code" class="form-label">CÃ³digo de Cohorte <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="cohort_code" name="cohort_code" required
                                        placeholder="ej. COH-2026-01">
-                                <div class="invalid-feedback">El código es requerido.</div>
+                                <div class="invalid-feedback">El cÃ³digo es requerido.</div>
                             </div>
                             <div class="col-md-5">
                                 <label for="name" class="form-label">Nombre de Cohorte <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name" name="name" required
-                                       placeholder="ej. Primavera 2026 — Full Stack Web Dev">
+                                       placeholder="ej. Primavera 2026 â€” Full Stack Web Dev">
                                 <div class="invalid-feedback">El nombre es requerido.</div>
                             </div>
                             <div class="col-md-3">
-                                <label for="correlative_number" class="form-label">Número Correlativo</label>
+                                <label for="correlative_number" class="form-label">NÃºmero Correlativo</label>
                                 <input type="number" class="form-control" id="correlative_number" name="correlative_number"
                                        min="0" value="0">
                             </div>
                         </div>
                     </div>
 
-                    <!-- ─── Admisiones ─────────────────────────── -->
+                    <!-- â”€â”€â”€ Admisiones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-people"></i> Admisiones
@@ -80,13 +81,13 @@
                         </div>
                         <div class="row g-3 mt-1">
                             <div class="col-sm-6 col-md-4">
-                                <label for="admission_deadline_date" class="form-label">Límite Admisión</label>
+                                <label for="admission_deadline_date" class="form-label">LÃ­mite AdmisiÃ³n</label>
                                 <input type="date" class="form-control" id="admission_deadline_date" name="admission_deadline_date">
                             </div>
                         </div>
                     </div>
 
-                    <!-- ─── Fechas de Entrenamiento ────────────── -->
+                    <!-- â”€â”€â”€ Fechas de Entrenamiento â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-calendar-event"></i> Fechas de Entrenamiento
@@ -103,11 +104,11 @@
                         </div>
                         <div class="alert alert-light border small mb-0">
                             <i class="bi bi-info-circle text-primary me-2"></i>
-                            Las fechas de <strong>50%</strong> y <strong>75%</strong> del entrenamiento se calculan automáticamente.
+                            Las fechas de <strong>50%</strong> y <strong>75%</strong> del entrenamiento se calculan automÃ¡ticamente.
                         </div>
                     </div>
 
-                    <!-- ─── Asignaciones ───────────────────────── -->
+                    <!-- â”€â”€â”€ Asignaciones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-briefcase"></i> Asignaciones
@@ -116,12 +117,12 @@
                             <div class="col-md-6">
                                 <label for="related_project" class="form-label">Proyecto Relacionado</label>
                                 <input type="text" class="form-control" id="related_project" name="related_project"
-                                       placeholder="ej. Proyecto Formación Tech 2026">
+                                       placeholder="ej. Proyecto FormaciÃ³n Tech 2026">
                             </div>
                             <div class="col-md-6">
                                 <label for="assigned_coach" class="form-label">Coach Asignado</label>
                                 <input type="text" class="form-control" id="assigned_coach" name="assigned_coach"
-                                       placeholder="ej. María González">
+                                       placeholder="ej. MarÃ­a GonzÃ¡lez">
                             </div>
                             <div class="col-md-6">
                                 <label for="bootcamp_type" class="form-label">Bootcamp name</label>
@@ -129,9 +130,9 @@
                                        placeholder="ej. Full Stack, Data Science, UX/UI">
                             </div>
                             <div class="col-md-6">
-                                <label for="area" class="form-label">Área</label>
+                                <label for="area" class="form-label">Ãrea</label>
                                 <select class="form-select" id="area" name="area">
-                                    <option value="">Seleccionar área...</option>
+                                    <option value="">Seleccionar Ã¡rea...</option>
                                     <option value="academic">Academic</option>
                                     <option value="marketing">Marketing</option>
                                     <option value="admissions">Admissions</option>
@@ -145,7 +146,7 @@
                         </div>
                     </div>
 
-                    <!-- ─── Estado ─────────────────────────────── -->
+                    <!-- â”€â”€â”€ Estado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-flag"></i> Estado
@@ -161,7 +162,7 @@
                         </div>
                     </div>
 
-                    <!-- ─── Botones ────────────────────────────── -->
+                    <!-- â”€â”€â”€ Botones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="d-flex flex-column flex-sm-row gap-2 pt-3 border-top">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i> Crear Cohorte

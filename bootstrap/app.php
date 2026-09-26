@@ -164,3 +164,19 @@ function asset(string $path): string
 {
     return '/assets/' . ltrim($path, '/');
 }
+
+/**
+ * Return the current CSRF token, generating one if needed.
+ */
+function csrf_token(): string
+{
+    return \App\Core\Csrf::token();
+}
+
+/**
+ * Emit a hidden <input name="_csrf" value="…"> for forms.
+ */
+function csrf_field(): string
+{
+    return \App\Core\Csrf::field();
+}

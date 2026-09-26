@@ -265,6 +265,34 @@
 - Observaciones: la duración de la animación `width` del indicador de progreso (`.dashboard-progress span`) sigue siendo `0.45s ease` desde E-007 (ahora `var(--dur-page) var(--ease-out)`); el `width` es la única propiedad de transición aceptable para indicadores de progreso según el plan, y su duración depende del rango temporal a animar, no de un estándar rígido de 300 ms. La excepción ya estaba documentada.
 - Transición: CM-UI-003 pasa de En progreso a Completado. Los tickets pendientes del bloque UI son CM-UI-004 (a11y transversal WCAG) y CM-UI-005 (QA responsive 360/768/1440).
 - Límite: la auditoría es estática (grep + count). No se ha probado visualmente con `prefers-reduced-motion: reduce` activado; eso forma parte del alcance de CM-UI-004. Tampoco se han auditado los `<script>` inline de los archivos PHP para detectar transiciones JS — el siguiente paso natural es leer cada view en busca de `transition` literales, pero no se encontraron coincidencias en las búsquedas anteriores sobre `app.js`, que concentra la lógica animada del frontend.
+
+### E-022
+
+- Fecha: 2026-09-26.
+- Tickets: CM-SEC-001.
+- Resultado: Verificado.
+- Alcance: incorporar defensa CSRF a las rutas mutantes y reemplazar logout por GET por POST con token. Auditoría previa: cero referencias a `csrf_*` en `app/`, `bootstrap/` ni vistas; `/logout` declarado como GET en `routes/web.php`, susceptible a CSRF (un `<img src="/logout">` o un iframe en un atacante deslogueaba al usuario legítimo); todos los `<form method="POST">` mutantes carecían de token CSRF.
+- Cambios aplicados:
+  1. **`app/Core/Csrf.php`**: clase nueva con `token(): string` (genera y persiste token por sesión con `random_bytes(32)`), `field(): string` (devuelve `<input type="hidden" name="_csrf" value="…">`), `verify(string $token): bool` (compara con `hash_equals` en tiempo constante), `verifyOrDie(): void` (HTTP 419 + salida tipada si la verificación falla) y `rotate(): void` (rotación tras login/logout). El bucket de almacenamiento se inicializa a `[]` si la sesión aún no abrió su array, lo que evita warnings en hostings con `session_strict_mode`.
+  2. **`bootstrap/app.php`**: nuevas funciones globales `csrf_token(): string` y `csrf_field(): string` que delegan en `App\Core\Csrf`. Se mantienen como helpers ligeros sin inyección de dependencias.
+  3. **`app/Core/Router.php`**: el método `dispatch()` resuelve ahora el verbo tras procesar el override `$_POST['_method']`; si el verbo resuelto está en `['POST','PUT','DELETE','PATCH']` invoca `Csrf::verifyOrDie()` antes de buscar la ruta. Esto evita dos orificios:-(a) CSRF sobre POSTs estándar y (b) CSRF sobre los `_method=PUT/DELETE/PATCH` que la app usa para sobreescribir el verbo.
+  4. **`routes/web.php`**: `auth.logout` cambia de GET a POST. Se mantiene `auth.login` como GET y POST tal cual.
+  5. **`app/Views/partials/header.php`**: la etiqueta `<a class="dropdown-item" href="/logout">Cerrar sesion</a>` se sustituye por un `<form method="POST" action="/logout" class="m-0">` con `<?= csrf_field() ?>` y un `<button type="submit" class="dropdown-item…">` que conserva la apariencia visual. La barra de navegación principal mantiene `<a href="/account">` (no es mutante).
+  6. **`app/Controllers/AuthController.php`**: import del nuevo `Csrf`; `login()` y `logout()` invocan `Csrf::rotate()` tras éxito para que el usuario autenticado empiece con un token fresco. Si el login es inválido, no se rota (evita sobre-regeneración que afecta a `flash`).
+  7. **Cobertura exhaustiva en vistas**: se identificaron 24 `<form method="POST">` a lo largo de 12 archivos (`auth/login.php`, `account/profile.php`, `admin/audit-log.php`, `coaches/calendar.php`, `cohorts/{create,edit,import,index,show,master,finance}.php`, `marketing/{index,show}.php`, `users/{create,edit,index}.php`, `partials/header.php`). Cada uno recibió `<?= csrf_field() ?>` inmediatamente después de la etiqueta `<form>` de apertura. En los formularios que delega vía `_method=DELETE` o `_method=PUT` el token sigue protegiendo la petición que llega como POST.
+- Auditoría final:
+  - `php -l` sobre los archivos modificados (16 PHP, 1 nuevo) sin errores. lints a `0` fallos.
+  - `python -X utf8 validate_tracker.py` devuelve `Tracker válido: 27 tickets, 22 evidencias`.
+  - `node -c public/assets/js/auth-login.js` y `node -c public/assets/js/users-form.js`: OK.
+  - Auditoría de cobertura programada `csrf_audit.ps1` (cmdlets directos a `app/Views`): 24 formularios POST, 24 llamadas a `csrf_field()`. Sin desajustes.
+- Decisiones deliberadas:
+  - Los `<form method="GET">` (filtros de `/cohorts`, `/cohorts/master`, `/cohorts/finance`, `/alerts`, `/reports`, `/admin/audit-log`) no requieren CSRF (son búsquedas sin efecto secundario).
+  - El endpoint `/healthz` (GET) queda exento.
+  - El token vive solo en sesión (`$_SESSION['_csrf_token']`), no en cookie, lo que evita exponerlo al documento público y lo ata a la sesión activa.
+  - El navegador abre un token nuevo cada vez que recicla por `session_regenerate_id(true)` en `Auth::login()`; `Csrf::rotate()` añade una capa redundante de generación independiente del ID de sesión.
+- Observaciones: el script de PowerShell usado para inyectar tokens dejó inicialmente un residuo literal `` `r`n `` en 6 archivos y duplicó tokens donde ya existían manualmente; ambos defectos se corrigieron uno por uno con `edit` antes de commit. Los 6 archivos fueron saneados y re-validados.
+- Límite: la verificación es estática. No se ha ejecutado el flujo en navegador real (login → POST → 419 → logout) para validar que la respuesta 419 se muestra con plantilla. Tampoco se ha hecho una prueba de aceptación manual para confirmar que las acciones inline (toggle-status, reset-password, delete, comments) siguen funcionando tras añadir tokens — esto cae fuera del alcance de este pase pero se recomienda una verificación manual antes de pasar a CM-SEC-002 (cookies/revocación).
+- Transición: CM-SEC-001 pasa de Pendiente a Completado. Las nuevas rutas internas (logout POST) y los flujos de token (rotación al login/logout) son la única superficie pública cambiada. CM-SEC-002 (configuración y revocación de cookies) y CM-SEC-003 (rate-limit + hashing) siguen Pendientes.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006

@@ -1,4 +1,4 @@
-<!-- Top Header Bar -->
+﻿<!-- Top Header Bar -->
 <?php use App\Core\Auth; ?>
 <?php
     $roleBadges = [
@@ -114,10 +114,13 @@
                     <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item d-flex align-items-center text-danger" href="/logout">
-                            <i class="bi bi-box-arrow-right me-2"></i>
-                            Cerrar sesion
-                        </a>
+<form method="POST" action="/logout" class="m-0">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="dropdown-item d-flex align-items-center text-danger border-0 bg-transparent w-100 text-start">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Cerrar sesion
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>

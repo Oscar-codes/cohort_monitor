@@ -183,16 +183,19 @@ if (!function_exists('userLastLogin')) {
                                         </a>
                                         <?php if (!$isSelf): ?>
                                             <form method="POST" action="/users/<?= (int) $u['id'] ?>/toggle-status" class="d-inline" data-confirm="<?= $u['is_active'] ? 'Desactivar este usuario?' : 'Activar este usuario?' ?>">
+                                                <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-icon btn-sm btn-outline-<?= $u['is_active'] ? 'warning' : 'success' ?>" data-bs-toggle="tooltip" title="<?= $u['is_active'] ? 'Desactivar' : 'Activar' ?>">
                                                     <i class="bi bi-<?= $u['is_active'] ? 'pause-circle' : 'play-circle' ?>"></i>
                                                 </button>
                                             </form>
                                             <form method="POST" action="/users/<?= (int) $u['id'] ?>/reset-password" class="d-inline" data-confirm="Restablecer la contrasena de este usuario?">
+                                                <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-icon btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Restablecer contrasena">
                                                     <i class="bi bi-key"></i>
                                                 </button>
                                             </form>
                                             <form method="POST" action="/users/<?= (int) $u['id'] ?>" class="d-inline" data-confirm="Eliminar este usuario?">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="_method" value="DELETE">
                                                 <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
                                                     <i class="bi bi-trash"></i>
@@ -235,6 +238,7 @@ if (!function_exists('userLastLogin')) {
                             </a>
                             <?php if (!$isSelf): ?>
                                 <form method="POST" action="/users/<?= (int) $u['id'] ?>/toggle-status" data-confirm="<?= $u['is_active'] ? 'Desactivar este usuario?' : 'Activar este usuario?' ?>">
+                                    <?= csrf_field() ?>
                                     <button type="submit" class="btn btn-sm btn-outline-<?= $u['is_active'] ? 'warning' : 'success' ?>">
                                         <i class="bi bi-<?= $u['is_active'] ? 'pause-circle' : 'play-circle' ?> me-1"></i><?= $u['is_active'] ? 'Desactivar' : 'Activar' ?>
                                     </button>

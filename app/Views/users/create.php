@@ -1,4 +1,4 @@
-<!-- User Create View (Admin) -->
+﻿<!-- User Create View (Admin) -->
 <?php use App\Core\Auth; ?>
 
 <?php if ($msg = Auth::getFlash('error')): ?>
@@ -40,6 +40,7 @@
             </div>
             <div class="form-workbench__body">
                 <form method="POST" action="/users" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-person"></i> Cuenta

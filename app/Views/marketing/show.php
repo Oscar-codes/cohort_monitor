@@ -157,6 +157,7 @@ if (!function_exists('marketingStageStatusLabel')) {
     </div>
     <div class="kodigo-card__body">
         <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info" class="row g-3 align-items-end">
+            <?= csrf_field() ?>
         <div class="col-md-6 col-xl-5">
             <label for="campaign_status" class="form-label">Estado de la campaña</label>
             <select id="campaign_status" name="campaign_status" class="form-select" required>
@@ -197,6 +198,7 @@ if (!function_exists('marketingStageStatusLabel')) {
     </div>
     <div class="kodigo-card__body">
         <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info">
+        <?= csrf_field() ?>
         <input type="hidden" name="campaign_status" value="<?= htmlspecialchars($campaignStatus) ?>">
         <div class="row g-3">
             <?php
@@ -319,6 +321,7 @@ if (!function_exists('marketingStageStatusLabel')) {
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
                                     <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing">
+                                        <?= csrf_field() ?>
                                         <div class="modal-header">
                                             <h6 class="modal-title">
                                                 <i class="bi bi-pencil me-2"></i>

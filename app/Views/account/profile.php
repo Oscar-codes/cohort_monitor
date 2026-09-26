@@ -1,4 +1,4 @@
-<!-- Account Profile View -->
+﻿<!-- Account Profile View -->
 <?php
 use App\Core\Auth;
 
@@ -144,6 +144,7 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
             </div>
             <div class="kodigo-card__body">
                 <form method="POST" action="/account" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="username" class="form-label">Usuario</label>
@@ -178,6 +179,7 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
                 </div>
             </div>
             <form method="POST" action="/account/password" class="needs-validation" novalidate>
+                    <?= csrf_field() ?>
                 <div class="row g-3">
                     <div class="col-12">
                         <label for="current_password" class="form-label">Contrasena actual <span class="text-danger">*</span></label>

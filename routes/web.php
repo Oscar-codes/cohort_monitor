@@ -32,7 +32,7 @@ $router->get('/healthz', [HealthController::class, 'check'], 'health');
 // ─── Auth (public) ───────────────────────────────────────────
 $router->get('/login',  [AuthController::class, 'showLogin'], 'auth.login');
 $router->post('/login', [AuthController::class, 'login'],     'auth.login.post');
-$router->get('/logout', [AuthController::class, 'logout'],    'auth.logout');
+$router->post('/logout', [AuthController::class, 'logout'],   'auth.logout');
 
 // ─── Dashboard ───────────────────────────────────────────────
 $router->get('/', [DashboardController::class, 'index'], 'dashboard');
