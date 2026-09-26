@@ -218,7 +218,7 @@ $workflowActionMap = [
                     <?= csrf_field() ?>
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-trash me-1"></i> Eliminar
+                        <i class="bi bi-trash me-1" aria-hidden="true"></i> Eliminar
                     </button>
                 </form>
             <?php endif; ?>

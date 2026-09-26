@@ -403,7 +403,7 @@ $phaseBarColors = [
                                     <small class="text-muted"><?= htmlspecialchars($ce['assigned_class_schedule'] ?? 'Sin horario') ?></small>
                                 </td>
                                 <td class="text-end">
-                                    <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver cohorte">
+                                    <a href="/cohorts/<?= (int) $ce['id'] ?><?= $querySuffix ?>" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver cohorte" aria-label="Ver cohorte">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>

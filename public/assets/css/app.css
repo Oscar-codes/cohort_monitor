@@ -4876,6 +4876,29 @@ body {
     box-shadow: var(--app-focus-ring-danger);
 }
 
+/* Kodigo interactive cards & pills: surface a focus ring when reached
+   via keyboard so screen reader and switch-device users can locate them. */
+.kodigo-card[data-interactive="true"]:focus-visible,
+.kodigo-pill:focus-visible {
+    outline: 2px solid var(--app-primary);
+    outline-offset: 3px;
+    box-shadow: var(--app-focus-ring);
+}
+
+/* Status live regions: alert role keeps Bootstrap's padding but the
+   elevated surface is rounded for the Kodigo card system. */
+[role="alert"] {
+    border-radius: 0.625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .alert.fade,
+    .alert.fade.show {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
 /* Touch targets — minimum 40x40 on interactive elements */
 @media (max-width: 575.98px) {
     .header-icon-btn,

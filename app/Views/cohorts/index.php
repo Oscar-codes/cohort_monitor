@@ -178,13 +178,13 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
         $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
             . csrf_field()
             . '<input type="hidden" name="_method" value="DELETE">'
-            . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash"></i></button>'
+            . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar" aria-label="Eliminar cohorte"><i class="bi bi-trash" aria-hidden="true"></i></button>'
             . '</form>';
     }
 
     $editBtn = '';
     if ($canEdit) {
-        $editBtn = '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil"></i></a>';
+        $editBtn = '<a href="/cohorts/' . $id . '/edit' . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Editar" aria-label="Editar cohorte"><i class="bi bi-pencil" aria-hidden="true"></i></a>';
     }
 
     return '<tr>'
@@ -205,7 +205,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
         . '<td class="d-none d-xl-table-cell text-center"><small>' . $b2b . ' / ' . $b2c . '</small></td>'
         . '<td class="d-none d-lg-table-cell text-center">' . $bModel . '</td>'
         . '<td class="text-end"><div class="action-buttons justify-content-end">'
-            . '<a href="/cohorts/' . $id . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles"><i class="bi bi-eye"></i></a>'
+            . '<a href="/cohorts/' . $id . $querySuffix . '" class="btn btn-icon btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles" aria-label="Ver detalles de cohorte"><i class="bi bi-eye" aria-hidden="true"></i></a>'
             . $editBtn
             . $deleteBtn
         . '</div></td>'

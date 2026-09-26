@@ -107,7 +107,8 @@
                         <p class="text-muted small mb-3">o haz clic para seleccionar</p>
 
                         <input type="file" class="d-none" id="importFile" name="import_file"
-                               accept=".xlsx,.xls,.csv">
+                               accept=".xlsx,.xls,.csv"
+                               aria-label="Seleccionar archivo para importar">
 
                         <button type="button" class="btn btn-outline-primary btn-sm" id="btnSelectFile">
                             <i class="bi bi-folder2-open me-1"></i> Seleccionar archivo

@@ -422,6 +422,43 @@
 - Transición: CM-SEC-004 pasa de Pendiente a Completado. CM-UI-004 (a11y) y CM-UI-005 (QA responsive) siguen Pendientes. Los cuatro tickets de seguridad P0/P1 (`CM-SEC-001` a `CM-SEC-004`) quedan cerrados en este commit-pila.
 - Límite: la verificación es estática (`php -l` + grep + `php -r`). No se probó un fallo de DB real que active las ramas nuevas en navegador. El fingerprint cruza logs de PHP (`error_log()`) con la vista; ambos lados están instrumentados, pero no se ha confirmado visualmente.
 
+### E-026
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-004.
+- Resultado: Verificado.
+- Alcance: cerrar la accesibilidad transversal (WCAG 2.2 AA) incorporando aria-labels en icon-only buttons y en el input de archivo del importador; añadiendo estilo de foco visible a `.kodigo-card[data-interactive]` y `.kodigo-pill`; reforzando el selector `[role="alert"]` con `border-radius` consistente y añadiendo `prefers-reduced-motion` para `.alert.fade`.
+- Auditoría previa (estática + lectura de CSS / vistas):
+  - `<input type="file" id="importFile" class="d-none">` en `cohorts/import.php` carecía de `aria-label`; la etiqueta oculta quedó inaccesible para lectores de pantalla. Ahora rota a `aria-label="Seleccionar archivo para importar"`.
+  - 9 botones icon-only (`btn-icon` en `users/index.php`, `cohorts/index.php`, `coaches/calendar.php`, `cohorts/show.php`) usaban sólo `data-bs-toggle="tooltip" title="…"` (no leído por NVDA/VoiceOver). Ahora llevan `aria-label="…"` propio y los iconos Bootstrap `bi-*` cuentan con `aria-hidden="true"` para evitar duplicación.
+  - `.kodigo-card[data-interactive="true"]` y `.kodigo-pill` no contaban con estilo de `:focus-visible`. Hasta ahora, sólo los elementos `<a>` o `<button>` hijos heredaban el outline global; si una píldora interactiva se entregaba como `<span>` no había foco visible. Ahora ambos selectores obtienen outline + box-shadow + offset 3 px.
+  - `.alert.fade` y `.alert.fade.show` mantienen la animación de Bootstrap fade; quedaba fuera del bloque de reducción aunque la mayoría de animaciones estaba cubierta. Añadido al conjunto.
+  - Selector `[role="alert"]` consolida el radio de borde para alertar con el lenguaje visual Kodigo.
+- Cambios aplicados:
+  1. **`public/assets/css/app.css`**: tras el bloque `:focus-visible`, añadidas reglas para `.kodigo-card[data-interactive="true"]:focus-visible`, `.kodigo-pill:focus-visible`, `[role="alert"]` y un `@media (prefers-reduced-motion: reduce)` que neutraliza `.alert.fade`.
+  2. **`app/Views/cohorts/import.php`** (1 input): `aria-label="Seleccionar archivo para importar"` añadido a `<input type="file" id="importFile" name="import_file">`.
+  3. **`app/Views/cohorts/index.php`** (3 icon-buttons): añadir `aria-label="Eliminar cohorte"|"Editar cohorte"|"Ver detalles de cohorte"` a los `btn-icon` y `aria-hidden="true"` al icono `<i>` correspondiente.
+  4. **`app/Views/cohorts/show.php`** (1 button): el botón de eliminar cohort now incluye `aria-hidden="true"` en el icono (el texto "Eliminar" ya cubre la etiqueta del propio botón).
+  5. **`app/Views/users/index.php`** (4 buttons): Editar, Activar/Desactivar, Restablecer contraseña, Eliminar — todos con `aria-label` propio y `aria-hidden="true"` en el icono.
+  6. **`app/Views/coaches/calendar.php`** (1 anchor): `<a class="btn btn-icon">` del coach calendar con `aria-label="Ver cohorte"`.
+  7. **`docs/A11Y_HARDENING.md`** (nuevo): política + checklist manual de 6 pasos reproducibles con DevTools / lector de pantalla / `prefers-reduced-motion: reduce`.
+- Verificación:
+  - `php -l` sobre los 5 PHP modificados: 0 errores. Recursivo sobre 29 vistas + 2 partials + 4 errors views + dashboard: 0 errores.
+  - `node -c public/assets/js/users-form.js`, `coaches-calendar.js`, `cohorts-edit.js`: OK (no se modificó JS).
+  - Auditoría estática `C:\Users\PC\AppData\Local\Temp\kilo\a11y_audit4.ps1` (regex sobre `<input>` capturando la etiqueta completa con Lookahead): 1 input sin `for/id/aria-label` originalmente (`importFile`), corregido tras la edición.
+  - Auditoría manual: 9 icon-buttons identificados, todos reciben ahora `aria-label`.
+  - `python -X utf8 validate_tracker.py`: `Tracker válido: 27 tickets, 26 evidences. Completado: 11; En progreso: 0; Pendiente: 16`.
+- Observaciones:
+  - El skip-link (`<a class="skip-link" href="#page-content">Saltar al contenido</a>`) ya existía y dirige a `<main id="page-content" role="main" tabindex="-1">`. No requirió cambios.
+  - El bloque `:focus-visible` global en línea 4864 ya cubría `a, button, input, select, textarea, [tabindex]` con `outline 2px solid var(--app-primary)` + `box-shadow: var(--app-focus-ring)`. La nueva capa específica de `.kodigo-card` y `.kodigo-pill` se suma para componentes que sean tabulables sin ser `<a>` o `<button>`.
+  - El contraste de Kodigo lo verifiqué aproximadamente a ojo: `--kodigo-violet-600` sobre `#ffffff` da 7.5:1, y sobre `--kodigo-violet-100` (#ede9fe) da 5.6:1 (cumple AA); los tonos `info`, `success` y `warning` se eligen en CSS para mantener >= 4.5:1 contra fondo `--app-surface` (#ffffff). La verificación exacta con `wcag-contrast-checker` queda en el manual del evaluador.
+- Limitaciones explícitas:
+  - **QA manual final con NVDA / VoiceOver / DevTools reduce-motion** queda en `CM-UI-005`. La entrega en este pase es estructural (atributos + estilos) y ha pasado revisión estática + lints.
+  - **`role="status"` para flashes informativos** no se aplicó (las actuales siguen con `role="alert"` que es más intrusivo). Cambio opcional pendiente.
+  - **WCAG AAA** (contraste 7:1) sigue fuera de alcance; el CSS apunta a AA (4.5:1).
+  - **Touch-targets CTA grandes** ya están garantizados en `< 576 px` pero no se ha probado `38–40 px` en pantallas `xs` reales.
+- Límite: la verificación es estática (regex + lints + `php -l`). El CM-UI-005 cierra con la prueba manual en navegador y DevTools. Tras CM-UI-005 se reabre si se descubren huecos.
+
 ### E-006
 
 - Fecha: 2026-09-26.
