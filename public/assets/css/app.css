@@ -14,6 +14,52 @@
     --sidebar-hover: rgba(255, 255, 255, 0.08);
     --sidebar-active: rgba(13, 110, 253, 0.15);
     --sidebar-active-border: #0d6efd;
+
+    /* ─── Kodigo design tokens (Phase 0) ───────────────────── */
+    /* Color — Kodigo brand */
+    --kodigo-blue-50:  #eff5ff;
+    --kodigo-blue-100: #dbe7ff;
+    --kodigo-blue-300: #7aa2f7;
+    --kodigo-blue-500: #2563eb;
+    --kodigo-blue-600: #1d4ed8;
+    --kodigo-blue-700: #1e40af;
+    --kodigo-violet-500: #7c3aed;
+    --kodigo-cyan-500:   #06b6d4;
+
+    /* Semantic aliases — keep --app-* compatibility */
+    --app-primary:        var(--kodigo-blue-500);
+    --app-primary-soft:   var(--kodigo-blue-50);
+    --app-primary-strong: var(--kodigo-blue-700);
+
+    /* Elevation scale (replaces inline rgba shadows) */
+    --app-elev-0: 0 0 0 transparent;
+    --app-elev-1: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 1px rgba(15, 23, 42, .04);
+    --app-elev-2: 0 4px 14px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .04);
+    --app-elev-3: 0 14px 34px rgba(15, 23, 42, .10), 0 4px 10px rgba(15, 23, 42, .06);
+
+    /* Motion — Emil Kowalski easings (review-animations/STANDARDS.md) */
+    --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Durations — UI must stay < 300ms */
+    --dur-press:   120ms;
+    --dur-hover:   150ms;
+    --dur-pop:     180ms;
+    --dur-overlay: 220ms;
+    --dur-page:    260ms;
+
+    /* Focus rings */
+    --app-focus-ring: 0 0 0 3px rgba(37, 99, 235, .35);
+    --app-focus-ring-danger: 0 0 0 3px rgba(220, 38, 38, .30);
+
+    /* Z-index scale */
+    --z-base:     0;
+    --z-sticky:   20;
+    --z-overlay:  40;
+    --z-dropdown: 50;
+    --z-modal:    1000;
+    --z-toast:    1080;
 }
 
 /* ─── Base Layout ─────────────────────────────────────────── */
@@ -195,7 +241,8 @@ body {
     padding: 0.75rem 1rem;
     color: rgba(255, 255, 255, 0.7);
     border-radius: 8px;
-    transition: all 0.15s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                color var(--dur-hover) var(--ease-out);
     gap: 0.875rem;
     position: relative;
     white-space: nowrap;
@@ -303,7 +350,9 @@ body {
     color: #6c757d;
     cursor: pointer;
     z-index: 10;
-    transition: all 0.15s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                color var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -502,7 +551,9 @@ body.sidebar-collapsed .nav-alert-dot {
 /* ─── Cards ───────────────────────────────────────────────── */
 .card {
     border-radius: 12px;
-    transition: all 0.2s ease;
+    transition: transform var(--dur-hover) var(--ease-out),
+                box-shadow var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out);
 }
 
 .card.border-0 {
@@ -632,7 +683,9 @@ body.sidebar-collapsed .nav-alert-dot {
     gap: 0.5rem;
     padding: 1rem 0.75rem;
     border-radius: 12px;
-    transition: all 0.2s ease;
+    transition: transform var(--dur-hover) var(--ease-out),
+                background-color var(--dur-hover) var(--ease-out),
+                box-shadow var(--dur-hover) var(--ease-out);
     text-align: center;
     color: #344054;
 }
@@ -726,7 +779,10 @@ body.sidebar-collapsed .nav-alert-dot {
 .btn {
     font-weight: 500;
     border-radius: 8px;
-    transition: all 0.15s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out),
+                color var(--dur-hover) var(--ease-out),
+                transform var(--dur-press) var(--ease-out);
 }
 
 .btn-sm {
@@ -1781,7 +1837,7 @@ body {
     .dashboard-alert-item,
     .dashboard-progress span,
     .dashboard-mini-progress span {
-        transition: none;
+        transition-property: background-color, color, border-color, box-shadow, opacity;
     }
 }
 
@@ -5005,6 +5061,89 @@ html.app-density-compact .empty-state {
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+    }
+
+    /* Keep color/opacity changes (no movement) per review-animations/STANDARDS.md */
+    .metric-card,
+    .dashboard-action,
+    .dashboard-upcoming-item,
+    .dashboard-alert-item,
+    .dashboard-progress span,
+    .dashboard-mini-progress span,
+    .card,
+    .quick-action-card,
+    .btn,
+    .sidebar-nav .nav-link,
+    .sidebar-collapse-btn {
+        transition-property: background-color, color, border-color, box-shadow, opacity !important;
+    }
+
+    /* Disable movement on hover transforms */
+    .card:hover,
+    .quick-action-card:hover,
+    .metric-card:hover {
+        transform: none !important;
+    }
+}
+
+/* ─── Kodigo toast stack (Phase 0) ─────────────────── */
+.kodigo-toast-stack {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+    max-width: min(360px, calc(100vw - 2rem));
+}
+
+.kodigo-toast {
+    pointer-events: auto;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-left: 3px solid var(--app-primary);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-elev-2);
+    padding: 0.75rem 1rem;
+    min-width: 240px;
+    transform: translateY(8px);
+    opacity: 0;
+    transition: transform var(--dur-overlay) var(--ease-out),
+                opacity var(--dur-overlay) var(--ease-out);
+}
+
+.kodigo-toast--mounted {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.kodigo-toast--success { border-left-color: var(--app-success); }
+.kodigo-toast--warning { border-left-color: var(--app-warning); }
+.kodigo-toast--danger  { border-left-color: var(--app-danger); }
+.kodigo-toast--info    { border-left-color: var(--app-info); }
+
+.kodigo-toast strong {
+    display: block;
+    font-size: var(--fs-caption, 0.8125rem);
+    color: var(--app-text);
+}
+
+.kodigo-toast p {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--app-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kodigo-toast {
+        transition-property: opacity !important;
+        transform: none !important;
+    }
+    .kodigo-toast--mounted {
+        transform: none !important;
     }
 }
 

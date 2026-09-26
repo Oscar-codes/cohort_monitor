@@ -21,6 +21,8 @@ const App = (() => {
         initFormValidation();
         initTableResponsive();
         initAlertsWorkbench();
+        initKodigoToast();
+        initKodigoReveal();
     }
 
     function initDynamicStyles() {
@@ -285,6 +287,103 @@ const App = (() => {
         if (searchInput) {
             searchInput.addEventListener('input', applyFilters);
         }
+    }
+
+    /**
+     * Kodigo toast helper (Phase 0).
+     * Mounts a fixed stack container and exposes window.kodigoToast({tone,title,message,timeout})
+     * which renders a non-blocking notification. Honors prefers-reduced-motion.
+     */
+    function initKodigoToast() {
+        if (!document.querySelector('.kodigo-toast-stack')) {
+            const stack = document.createElement('div');
+            stack.className = 'kodigo-toast-stack';
+            stack.setAttribute('aria-live', 'polite');
+            stack.setAttribute('aria-atomic', 'false');
+            document.body.appendChild(stack);
+        }
+
+        window.kodigoToast = function (options) {
+            const opts = options || {};
+            const tone = ['success', 'warning', 'danger', 'info'].includes(opts.tone) ? opts.tone : 'info';
+            const title = opts.title ? String(opts.title) : '';
+            const message = opts.message ? String(opts.message) : '';
+            const timeout = Number.isFinite(opts.timeout) ? opts.timeout : 3500;
+
+            const stack = document.querySelector('.kodigo-toast-stack');
+            if (!stack) return null;
+
+            const node = document.createElement('div');
+            node.className = 'kodigo-toast kodigo-toast--' + tone;
+            node.setAttribute('role', 'status');
+
+            const titleEl = document.createElement('strong');
+            titleEl.textContent = title;
+            node.appendChild(titleEl);
+
+            if (message) {
+                const msgEl = document.createElement('p');
+                msgEl.textContent = message;
+                node.appendChild(msgEl);
+            }
+
+            stack.appendChild(node);
+
+            requestAnimationFrame(() => {
+                node.classList.add('kodigo-toast--mounted');
+            });
+
+            const dismiss = () => {
+                node.classList.remove('kodigo-toast--mounted');
+                const cleanup = () => {
+                    if (node.parentNode) {
+                        node.parentNode.removeChild(node);
+                    }
+                };
+                const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
+                setTimeout(cleanup, duration);
+            };
+
+            const timer = setTimeout(dismiss, timeout);
+            node.addEventListener('click', () => {
+                clearTimeout(timer);
+                dismiss();
+            });
+
+            return node;
+        };
+    }
+
+    /**
+     * Kodigo reveal (Phase 0). Applies a small staggered fade/translate
+     * entrance to elements with [data-kodigo-reveal], capped at 6 staggered
+     * groups so power users do not get a long cascade.
+     */
+    function initKodigoReveal() {
+        const targets = document.querySelectorAll('[data-kodigo-reveal]');
+        if (!targets.length) return;
+
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        targets.forEach((el, i) => {
+            const stagger = Math.min(i, 6);
+            if (prefersReduced) {
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+                return;
+            }
+            el.style.transition = 'opacity var(--dur-page) var(--ease-out), transform var(--dur-page) var(--ease-out)';
+            el.style.transitionDelay = (stagger * 40) + 'ms';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(8px)';
+        });
+
+        requestAnimationFrame(() => {
+            targets.forEach((el) => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+        });
     }
 
     return { init };
