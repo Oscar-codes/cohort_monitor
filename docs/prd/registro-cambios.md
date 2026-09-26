@@ -60,3 +60,13 @@
 - Comprobación: `php -l` sin errores de sintaxis en los cuatro archivos modificados; `git diff --stat` confirma cambios aislados a módulo de finanzas y documentos.
 - Observaciones: los filtros `month` y `target_min/max` se añadieron al whitelist de `CohortService::normalizeFilters` y a las cláusulas WHERE de `CohortRepository::buildFilters`; la vista muestra badges de filtros activos y un selector de meses poblado desde `availableMonths`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
+
+### E-006
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-001, CM-UI-002, CM-UI-003, CM-UI-004, CM-UI-005.
+- Resultado: Parcial.
+- Alcance: planificacion de la adopcion del lenguaje visual Kodigo Academy en Cohort Monitor sin modificar logica, rutas ni campos; solo CSS, motion, micro-interacciones JS y documentacion.
+- Fuentes: [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md), [habilidad frontend Kodigo](../../.agents/skills/frontend-developer-kodigo-SKILL/SKILL.md), [estandares de motion](../../.agents/skills/review-animations/STANDARDS.md), [reglas UX](../../.agents/skills/ui-ux-pro-max/references/quick-reference.md), [auditoria CSS](../../public/assets/css/app.css) y vistas en `app/Views/`.
+- Observaciones: se detectaron `transition: all` y `width 0.45s` que violan los 10 estandares no negociables de motion; tokens Kodigo (color, elevacion, easing, duracion) se proponen como adiciones al `:root` existente sin romper `--app-*`. Plan cubre 8 fases incrementales con Definition of Done por cambio.
+- Límite: el plan no se ejecuta en este commit; no se aplican aun tokens ni clases nuevas. No hubo modificacion de controladores, servicios, repositorios, migraciones ni archivos SQL.
