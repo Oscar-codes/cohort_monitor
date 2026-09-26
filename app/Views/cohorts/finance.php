@@ -296,41 +296,41 @@ $spanishMonths = [
                     <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow"></i> Tendencia mensual</h3>
                     <p class="app-panel__subtitle">Comparativo visual de revenue meta vs actual por periodo del año calendario seleccionado.</p>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <button type="button" id="financeTrendPrevYear" class="btn btn-sm btn-outline-secondary" title="Año anterior">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <label for="financeTrendYear" class="form-label mb-0 small text-muted">Año</label>
-                    <select id="financeTrendYear" class="form-select form-select-sm" style="min-width: 110px;">
-                        <?php
-                        $yearOptions = $availableYears;
-                        if (!in_array($currentYear, $yearOptions, true)) {
-                            array_unshift($yearOptions, $currentYear);
-                        }
-                        if (!in_array($selectedYear, $yearOptions, true)) {
-                            array_unshift($yearOptions, $selectedYear);
-                        }
-                        $yearOptions = array_values(array_unique(array_filter($yearOptions, static fn($y) => preg_match('/^\d{4}$/', (string) $y) === 1)));
-                        usort($yearOptions, static fn($a, $b) => (int) $b <=> (int) $a);
-                        foreach ($yearOptions as $yearOpt):
-                        ?>
-                            <option value="<?= htmlspecialchars((string) $yearOpt) ?>" <?= ((string) $yearOpt === $selectedYear) ? 'selected' : '' ?>><?= htmlspecialchars((string) $yearOpt) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button type="button" id="financeTrendNextYear" class="btn btn-sm btn-outline-secondary" title="Año siguiente">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                    <span class="badge bg-light text-dark border" id="financeTrendYearBadge">12 meses</span>
-                    <label for="financeForecastMethod" class="form-label mb-0 small text-muted">Metodo</label>
-                    <select id="financeForecastMethod" class="form-select form-select-sm" style="min-width: 140px;">
+                <div class="d-flex align-items-center gap-1 flex-wrap chart-controls">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Navegacion de ano">
+                        <button type="button" id="financeTrendPrevYear" class="btn btn-outline-secondary" title="Ano anterior" aria-label="Ano anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <select id="financeTrendYear" class="form-select form-select-sm finance-trend-year" aria-label="Ano" title="Ano">
+                            <?php
+                            $yearOptions = $availableYears;
+                            if (!in_array($currentYear, $yearOptions, true)) {
+                                array_unshift($yearOptions, $currentYear);
+                            }
+                            if (!in_array($selectedYear, $yearOptions, true)) {
+                                array_unshift($yearOptions, $selectedYear);
+                            }
+                            $yearOptions = array_values(array_unique(array_filter($yearOptions, static fn($y) => preg_match('/^\d{4}$/', (string) $y) === 1)));
+                            usort($yearOptions, static fn($a, $b) => (int) $b <=> (int) $a);
+                            foreach ($yearOptions as $yearOpt):
+                            ?>
+                                <option value="<?= htmlspecialchars((string) $yearOpt) ?>" <?= ((string) $yearOpt === $selectedYear) ? 'selected' : '' ?>><?= htmlspecialchars((string) $yearOpt) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" id="financeTrendNextYear" class="btn btn-outline-secondary" title="Ano siguiente" aria-label="Ano siguiente">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <span class="badge bg-light text-muted border-0 small d-none d-md-inline" id="financeTrendYearBadge">12 meses</span>
+                    <div class="vr d-none d-md-inline mx-1"></div>
+                    <select id="financeForecastMethod" class="form-select form-select-sm chart-control-select" aria-label="Metodo de proyeccion" title="Metodo">
                         <option value="moving_avg" <?= $selectedForecastMethod === 'moving_avg' ? 'selected' : '' ?>>Media movil</option>
                         <option value="linear_trend" <?= $selectedForecastMethod === 'linear_trend' ? 'selected' : '' ?>>Tendencia lineal</option>
                     </select>
-                    <label for="financeForecastHorizon" class="form-label mb-0 small text-muted">Proyeccion</label>
-                    <select id="financeForecastHorizon" class="form-select form-select-sm" style="min-width: 110px;">
+                    <select id="financeForecastHorizon" class="form-select form-select-sm chart-control-select" aria-label="Horizonte de proyeccion" title="Proyeccion">
                         <option value="0" <?= $selectedForecastHorizon === 0 ? 'selected' : '' ?>>Sin proyeccion</option>
-                        <option value="3" <?= $selectedForecastHorizon === 3 ? 'selected' : '' ?>>+3 periodos</option>
-                        <option value="6" <?= $selectedForecastHorizon === 6 ? 'selected' : '' ?>>+6 periodos</option>
+                        <option value="3" <?= $selectedForecastHorizon === 3 ? 'selected' : '' ?>>+3</option>
+                        <option value="6" <?= $selectedForecastHorizon === 6 ? 'selected' : '' ?>>+6</option>
                     </select>
                 </div>
             </div>

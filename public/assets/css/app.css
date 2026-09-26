@@ -5311,4 +5311,55 @@ html.app-density-compact .empty-state {
     }
 }
 
+/* ------------------------------------------------------------
+   Subtle inline controls for chart headers (finance trend)
+   ------------------------------------------------------------ */
+.app-panel .chart-controls {
+    gap: .25rem;
+    font-size: .8125rem;
 }
+
+.app-panel .chart-controls .form-select,
+.app-panel .chart-controls .btn {
+    padding-top: .15rem;
+    padding-bottom: .15rem;
+    font-size: .8125rem;
+    line-height: 1.2;
+    background-color: transparent;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+.app-panel .chart-controls .form-select:hover,
+.app-panel .chart-controls .btn:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.app-panel .chart-controls .form-select:focus,
+.app-panel .chart-controls .btn:focus {
+    box-shadow: none;
+    border-color: #2563eb;
+}
+
+.app-panel .chart-controls .finance-trend-year {
+    min-width: 4.5rem;
+    max-width: 5.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.app-panel .chart-controls .chart-control-select {
+    min-width: 0;
+    width: auto;
+    max-width: 9rem;
+}
+
+.app-panel .chart-controls .btn {
+    padding-left: .5rem;
+    padding-right: .5rem;
+}
+
