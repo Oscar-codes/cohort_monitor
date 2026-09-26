@@ -306,6 +306,11 @@ class UserService
         if ($excludeId === null && empty($data['password'])) {
             throw new \InvalidArgumentException('La contraseña es obligatoria.');
         }
+        // CM-SEC-003: minimum length on create/reset; on update we skip
+        // when the field is empty (caller wants to keep current password).
+        if (!empty($data['password']) && strlen($data['password']) < 8) {
+            throw new \InvalidArgumentException('La contraseña debe tener al menos 8 caracteres.');
+        }
     }
 
     /**

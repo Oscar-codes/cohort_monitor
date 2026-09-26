@@ -42,7 +42,7 @@ class AuthController extends Controller
         $password = $this->input('password', '');
 
         if (empty($identifier) || empty($password)) {
-            Auth::flash('login_error', 'Ingrese usuario/correo y contraseña.');
+            Auth::flash('login_error', 'Credenciales invalidas.');
             $this->redirect('/login');
             return;
         }
@@ -57,7 +57,11 @@ class AuthController extends Controller
         }
 
         if (!$user) {
-            Auth::flash('login_error', 'Credenciales incorrectas o cuenta desactivada.');
+            // CM-SEC-003: all failures render the same message. We do NOT
+            // distinguish wrong password, unknown user, inactive account,
+            // bad-hash or locked-out — that would let attackers enumerate
+            // valid usernames.
+            Auth::flash('login_error', 'Credenciales invalidas.');
             $this->redirect('/login');
             return;
         }

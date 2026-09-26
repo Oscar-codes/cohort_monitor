@@ -326,7 +326,52 @@
 - Limitaciones explícitas:
   - **Revocación multi-sesión** no está cableada. La tabla `sessions` existe en `database/schema.sql` pero no tiene handler; las sesiones siguen siendo nativas de PHP (archivos). Para habilitar "cerrar todas las sesiones de un usuario" haría falta un `SessionHandlerInterface` con repo — fuera del alcance de este pase.
   - Las verificaciones no se han corrido en navegador real con servidor dev PHP; el doc `SESSION_HARDENING.md` lista los pasos para reproducir la traza de cookies con `curl -c/-b`.
+- Límite: la verificación se realizó con `php -r` y `php -l`, pero el flujo de cookie real no se ejecutó contra un servidor dev PHP. Las pruebas automatizadas del navegador (XHR tras login → 419 → logout) están fuera del alcance de este pase y se recomienda hacerlas antes del próximo release.
 - Transición: CM-SEC-002 pasa de Pendiente a Completado. CM-SEC-003 (rate-limit + migración de hashes) y CM-SEC-004 (sanitizar logs / errores de DB) siguen Pendientes. El ticket puede reabrirse si se decide conectar una fuente de revocación central (DB/Redis) en el futuro.
+
+### E-024
+
+- Fecha: 2026-09-26.
+- Tickets: CM-SEC-003.
+- Resultado: Verificado.
+- Alcance: incorporar rate-limit, eliminar fallback plaintext de migración automática y unificar el mensaje de error en login para impedir enumeración de usuarios.
+- Antes del cambio:
+  - `AuthService::attempt` ejecutaba password_verify contra `password_hash`, pero si fallaba, hacía `hash_equals($passwordHash, $password)` con la contraseña en plano y re-hasheaba al vuelo al primer login exitoso. Cualquier usuario con `password_hash` en plano podía autenticarse mientras no hubiera iniciado sesión al menos una vez tras el despliegue.
+  - Sin límite de intentos.
+  - El mensaje del controlador distinguía "credenciales incorrectas o cuenta desactivada", filtrando el flag `is_active` y permitiendo enumeración de cuentas válidas.
+  - Las contraseñas nuevas no tenían validación de longitud mínima uniforme (sólo `changePassword` exigía >= 8).
+- Cambios aplicados:
+  1. **`database/migrations/019_login_attempts.sql`** — nueva tabla `login_attempts(id, identifier_hash, ip_address, user_agent, success, reason, created_at)` con `INDEX (identifier_hash, created_at)` y `INDEX (ip_address, created_at)`. El identificador se persiste como SHA-256 con un salt interno fijo (`cohort_monitor_session_login_v1`) para que un dump de la tabla no permita conocer qué usernames/emails fueron objetivo.
+  2. **`app/Services/LoginAttemptService.php`** (nuevo) — servicio con cuatro políticas configurables:
+       - Ventana corta: hasta 5 fallos en 10 min → bloqueo de 15 min para el mismo `(identifier_hash, ip_address)`.
+       - Ventana larga: 10 fallos en 24 h → bloqueo de 24 h.
+       - `isLocked($identifier, $ip)`, `recordFailure($identifier, $ip, $reason)`, `recordSuccess($identifier, $ip)` y `lockoutUntil()`.
+       - Razones registradas en `reason`: `invalid_credentials`, `bad_hash`, `success`. La rama de bloqueo emite acción `login_blocked` en `audit_log` con `reason=lockout`.
+  3. **`app/Services/AuthService.php`** — refactor de `attempt`:
+       - Llama primero a `LoginAttemptService::isLocked()` y devuelve `null` sin búsqueda de usuario si la regla de lockout aplica. Reduce carga y rompe el diferencial de tiempo entre "usuario existe" y "usuario no existe".
+       - Lookup del usuario y validación de hash; las tres ramas (no existe, hash inválido, inactivo) convergen en `null`. Cada una registra un `reason` específico en `login_attempts`.
+       - **Eliminado** el `hash_equals($passwordHash, $password)` y la rama de auto-migración a bcrypt. Si una cuenta tiene `password_hash` no-bcrypt, el login falla y se registra `bad_hash`. El administrador debe restablecerla vía flujo de `resetPassword` o auto-migración manual.
+       - Conserva `password_needs_rehash()` para renovar hashes cuando el cost-factor cambie.
+       - Limpia contador de fallos al iniciar sesión exitosa vía `recordSuccess`.
+       - `logout()` también limpia el contador por seguridad.
+  4. **`app/Controllers/AuthController.php`** — `login()` ahora devuelve siempre `'Credenciales invalidas.'` (antes 'Ingrese usuario/correo…' / 'Credenciales incorrectas o cuenta desactivada.'). Esta uniformidad impide enumeración: un atacante no puede inferir si un usuario existe o está activo o si su hash se corrompió.
+  5. **`app/Services/UserService.php`** — `validate()` ahora exige longitud mínima 8 al crear/actualizar usuarios (no sólo al cambiar la propia contraseña). El error se devuelve vía flash desde el controlador (`users.create` / `users.edit` ya muestran el error con `Auth::flash()`).
+- Verificación:
+  - `php -l` sobre los 4 archivos modificados: 0 errores. `php -l` recursivo sobre las 29 vistas: 0 errores.
+  - `php -r 'require "bootstrap/app.php"; new App\Services\LoginAttemptService();'` → OK (autoload PSR-4).
+  - `validate_tracker.py`: `Tracker válido: 27 tickets, 24 evidences. Completado: 9; En progreso: 1; Pendiente: 17`.
+  - `node -c public/assets/js/auth-login.js` y `users-form.js`: OK.
+  - `grep -nE 'hash_equals\s*\(\s*\$passwordHash' app/Services/AuthService.php` → 0 coincidencias (compatibilidad plaintext retirada).
+- Observaciones:
+  - Si la tabla `login_attempts` aún no existe en un entorno, las llamadas SQL fallarán al primer login. La mitigación provisional es tolerar la falta de la tabla sólo si se aplica el switch `try/catch` correspondiente (no incluido en este pase). En la práctica, los despliegues deben ejecutar `019_login_attempts.sql` antes de promover el código.
+  - El cambio unifica el mensaje a la baja: usuarios con cuenta inactiva ahora ven "Credenciales invalidas" en lugar de "Cuenta desactivada". Soporte histórico lo notará; pero es la única forma de cerrar la fuga de información.
+  - Las contraseñas heredadas sin bcrypt quedan inaccesibles hasta que un admin las restablezca. Ese flujo ya existía (`POST /users/{id}/reset-password`).
+- Limitaciones explícitas:
+  - El hash de `identifier_hash` usa una sal estática de aplicación (no un HMAC). Si se necesita un anonimato más estricto, mover al esquema `HMAC(secret_key, identifier)` con clave rotada en KMS.
+  - El lockout es por dirección IP: usuarios detrás de un mismo NAT pueden compartir lockout. Se acepta como mitigación en entornos corporativos.
+  - El rate-limit no cubre contraseñas incorrectas repetidas sobre el mismo usuario desde múltiples IPs (bloquea lo individual). El lockout de ventana larga sí mitiga eso a partir de 10 fallos.
+- Transición: CM-SEC-003 pasa de Pendiente a Completado. CM-SEC-004 (sanitizar mensajes de error de `Database::getInstance()` y de `AdminController`, así como mensajes de error de log en producción) sigue Pendiente.
+- Acción manual requerida en cada entorno: ejecutar `database/migrations/019_login_attempts.sql`. El audit_log no requiere cambios.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
