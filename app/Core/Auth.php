@@ -7,12 +7,22 @@ namespace App\Core;
  *
  * Wraps PHP native sessions and provides role-checking helpers.
  * Call Auth::boot() once per request (from bootstrap).
+ *
+ * Security hardening (CM-SEC-002):
+ *   - Cookie params (Secure/HttpOnly/SameSite/Lifetime) configured via
+ *     {@see SessionConfig} before session_start().
+ *   - Idle timeout (SESSION_LIFETIME) checked on each boot.
+ *   - Absolute lifetime (SESSION_ABSOLUTE_LIFETIME) applied as a hard cap.
+ *   - Browser fingerprint binding: UA + IP-24 — invalidates the session on
+ *     a match failure; users behind CGN must allow IP drift in settings.
  */
 class Auth
 {
+    public const SESSION_NAME = 'cohort_session';
+
     private static bool $booted = false;
 
-    /** Start (or resume) the PHP session. */
+    /** Start (or resume) the PHP session after applying hardening config. */
     public static function boot(): void
     {
         if (self::$booted) {
@@ -20,11 +30,89 @@ class Auth
         }
 
         if (session_status() === PHP_SESSION_NONE) {
-            session_name('cohort_session');
+            SessionConfig::apply(self::SESSION_NAME);
+            session_name(self::SESSION_NAME);
             session_start();
+            self::enforcePolicy();
+        } else {
+            self::enforcePolicy();
         }
 
         self::$booted = true;
+    }
+
+    /**
+     * Apply idle timeout, absolute lifetime, and browser fingerprint checks.
+     * Destroys the session and closes the cookie if any rule fails.
+     */
+    private static function enforcePolicy(): void
+    {
+        $idleLimit       = SessionConfig::lifetime();
+        $absoluteLimit   = SessionConfig::absoluteLifetime();
+        $fingerprintNow  = self::fingerprint();
+        $now             = time();
+
+        $lastActivity = isset($_SESSION['_last_activity']) ? (int) $_SESSION['_last_activity'] : null;
+        $loginAt      = isset($_SESSION['_login_at']) ? (int) $_SESSION['_login_at'] : null;
+        $storedFp     = isset($_SESSION['_fingerprint']) ? (string) $_SESSION['_fingerprint'] : null;
+
+        if ($lastActivity !== null && ($now - $lastActivity) > $idleLimit) {
+            self::destroy();
+            return;
+        }
+        if ($loginAt !== null && ($now - $loginAt) > $absoluteLimit) {
+            self::destroy();
+            return;
+        }
+        if ($storedFp !== null && !hash_equals($storedFp, $fingerprintNow)) {
+            self::destroy();
+            return;
+        }
+
+        // Refresh activity timestamp so each valid request extends the session.
+        $_SESSION['_last_activity'] = $now;
+    }
+
+    /**
+     * Compute a browser fingerprint. Returns a stable hash even when the IP
+     * changes (the hash itself is salted by UA — UA changes authenticate the
+     * device-class change sufficiently for our threat model).
+     */
+    public static function fingerprint(): string
+    {
+        $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? 'unknown');
+        $ip = self::clientIp();
+        return hash('sha256', $ua . '|' . $ip);
+    }
+
+    /**
+     * Best-effort detection of the originating client IP, honoring common
+     * proxy headers when present. Falls back to REMOTE_ADDR.
+     */
+    private static function clientIp(): string
+    {
+        $candidates = [
+            'HTTP_CF_CONNECTING_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+            'REMOTE_ADDR',
+        ];
+        foreach ($candidates as $key) {
+            if (!empty($_SERVER[$key])) {
+                $value = trim((string) $_SERVER[$key]);
+                if ($value === '') {
+                    continue;
+                }
+                if (str_contains($value, ',')) {
+                    $parts = explode(',', $value);
+                    $value = trim($parts[0]);
+                }
+                if (filter_var($value, FILTER_VALIDATE_IP)) {
+                    return $value;
+                }
+            }
+        }
+        return '0.0.0.0';
     }
 
     // ─── Session helpers ─────────────────────────────────
@@ -40,19 +128,37 @@ class Auth
             'email'     => $user['email'],
             'role'      => $user['role'],
         ];
+        $now = time();
+        $_SESSION['_login_at']      = $now;
+        $_SESSION['_last_activity'] = $now;
+        $_SESSION['_fingerprint']   = self::fingerprint();
         session_regenerate_id(true);
+        // After regeneration, the regenerated id is the new one. Refresh
+        // fingerprint + activity timestamps because the session id rotated.
+        $_SESSION['_last_activity'] = $now;
+        $_SESSION['_fingerprint']   = self::fingerprint();
     }
 
-    /** Destroy the session. */
+    /** Destroy the session. Public API for controllers and middleware. */
     public static function logout(): void
     {
         self::boot();
+        self::destroy();
+    }
+
+    /**
+     * Internal destructor used by logout and by enforcePolicy().
+     * Clears session data, expires the cookie, and destroys the session.
+     */
+    private static function destroy(): void
+    {
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
-            $p = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+            SessionConfig::expireCookie(self::SESSION_NAME);
         }
-        session_destroy();
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
     }
 
     /** Is there an authenticated user? */

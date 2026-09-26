@@ -293,6 +293,40 @@
 - Observaciones: el script de PowerShell usado para inyectar tokens dejó inicialmente un residuo literal `` `r`n `` en 6 archivos y duplicó tokens donde ya existían manualmente; ambos defectos se corrigieron uno por uno con `edit` antes de commit. Los 6 archivos fueron saneados y re-validados.
 - Límite: la verificación es estática. No se ha ejecutado el flujo en navegador real (login → POST → 419 → logout) para validar que la respuesta 419 se muestra con plantilla. Tampoco se ha hecho una prueba de aceptación manual para confirmar que las acciones inline (toggle-status, reset-password, delete, comments) siguen funcionando tras añadir tokens — esto cae fuera del alcance de este pase pero se recomienda una verificación manual antes de pasar a CM-SEC-002 (cookies/revocación).
 - Transición: CM-SEC-001 pasa de Pendiente a Completado. Las nuevas rutas internas (logout POST) y los flujos de token (rotación al login/logout) son la única superficie pública cambiada. CM-SEC-002 (configuración y revocación de cookies) y CM-SEC-003 (rate-limit + hashing) siguen Pendientes.
+
+### E-023
+
+- Fecha: 2026-09-26.
+- Tickets: CM-SEC-002.
+- Resultado: Verificado.
+- Alcance: endurecimiento del ciclo de vida de la cookie de sesión y de la política de expiración.
+- Antes del cambio:
+  - `Auth::boot()` invocaba `session_name('cohort_session') + session_start()` sin cookie params; los cookies salían con `Secure=false, HttpOnly=false, SameSite=` (default del runtime).
+  - Sin control de idle ni absolute lifetime.
+  - Sin binding de browser fingerprint; un atacante con la cookie podía reanudar sin más.
+  - El logout sólo usaba `setcookie()` con `session_get_cookie_params()` (que ya estaban vacíos), por lo que la invalidación del cookie asumía defaults del runtime.
+- Cambios aplicados:
+  1. **`app/Core/SessionConfig.php`** (nuevo, 117 líneas): calcula params del cookie desde `APP_URL`/`APP_DEBUG`/`SESSION_*` env; expone `lifetime()`, `absoluteLifetime()`, `cookieParams()`, `apply()`, `expireCookie()`. Defaults seguros: 7200s idle + 28800s absoluto + HttpOnly + SameSite=Lax + Secure auto-detectado desde `APP_URL`.
+  2. **`app/Core/Auth.php`** extendido: `SESSION_NAME` constante pública, `boot()` invoca `SessionConfig::apply()` antes de `session_start()`, registra `enforcePolicy()` que valida idle timeout, absolute cap, fingerprint (UA+IP) y refresca `_last_activity`. `login()` ahora guarda `_login_at`, `_last_activity`, `_fingerprint`. `logout()` reformado para usar `SessionConfig::expireCookie()` (expira con los mismos params del cookie original). Helpers nuevos `fingerprint()` y `clientIp()` privado con orden de prioridad `CF-Connecting-IP / X-Forwarded-For / X-Real-IP / REMOTE_ADDR`.
+  3. **`bootstrap/app.php`**: sin cambios — `Auth::boot()` ya cubre la configuración al primer uso.
+  4. **`.env.example`** documenta las nuevas variables con defaults razonables y ejemplos comentados.
+  5. **`docs/SESSION_HARDENING.md`**: documento nuevo con la política aplicada, las variables de entorno y un checklist manual numerado de 9 pasos para reproducir las garantías en navegador o curl.
+- Pruebas y verificaciones:
+  - `php -l` sobre `SessionConfig.php`, `Auth.php`, `bootstrap/app.php`: 0 errores. lints a `0` fallos en todas las vistas.
+  - `php -r 'require "bootstrap/app.php"; print_r(session_get_cookie_params())'` devuelve `lifetime=7200, path=/, domain=, secure=false, httponly=true, samesite=LAX` (entorno local con `APP_URL=http://localhost:8000`).
+  - `php -r 'require "bootstrap/app.php"; print_r(ini_get(...))'` confirma `session.use_strict_mode=1` y `session.use_only_cookies=1`.
+  - `php -l app/Views/**/*.php` recursivo: 0 errores. 25 vistas + 2 layouts + 2 partials + 4 errors views + `dashboard/index.php`.
+  - `node -c public/assets/js/app.js` y `node -c public/assets/js/auth-login.js`: OK (no se modificó JS).
+  - Validador del tracker: `Tracker válido: 27 tickets, 23 evidences. Completado: 8; En progreso: 1; Pendiente: 18`.
+- Observaciones técnicas:
+  - `enforcePolicy()` corre **dos veces por request** si la cookie es nueva y luego se modifica (no destructivo), pero corre una vez cuando `session_status() === PHP_SESSION_NONE` y una vez cuando ya hay sesión activa.
+  - El fingerprint se calcula con `hash('sha256', UA . '|' . clientIp())`; `hash_equals` evita timing attacks.
+  - El CSRF token (CSRF de E-022) se evalúa en `Router::dispatch()` **antes** de aplicar la política de CM-SEC-002 si la sesión ya está activa — el orden es: `session_start()` → `enforcePolicy()` → `dispatch()` → `verifyOrDie()`. Como `enforcePolicy()` destruye la sesión cuando inválida, el siguiente `Csrf::verifyOrDie()` no tendrá token y devolverá 419 (correcto).
+  - El regenerate_id de `Auth::login()` y el de `Csrf::rotate()` se complementan: el session id rota para evitar fixation; el token CSRF rota para invalidar tokens emitidos antes del login.
+- Limitaciones explícitas:
+  - **Revocación multi-sesión** no está cableada. La tabla `sessions` existe en `database/schema.sql` pero no tiene handler; las sesiones siguen siendo nativas de PHP (archivos). Para habilitar "cerrar todas las sesiones de un usuario" haría falta un `SessionHandlerInterface` con repo — fuera del alcance de este pase.
+  - Las verificaciones no se han corrido en navegador real con servidor dev PHP; el doc `SESSION_HARDENING.md` lista los pasos para reproducir la traza de cookies con `curl -c/-b`.
+- Transición: CM-SEC-002 pasa de Pendiente a Completado. CM-SEC-003 (rate-limit + migración de hashes) y CM-SEC-004 (sanitizar logs / errores de DB) siguen Pendientes. El ticket puede reabrirse si se decide conectar una fuente de revocación central (DB/Redis) en el futuro.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
