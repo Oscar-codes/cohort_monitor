@@ -11,6 +11,7 @@ $financeChartData = isset($financeChartData) && is_array($financeChartData) ? $f
 $chartPrefs = isset($chartPrefs) && is_array($chartPrefs) ? $chartPrefs : [];
 $bootcampTypes = isset($bootcampTypes) && is_array($bootcampTypes) ? $bootcampTypes : [];
 $projectNames = isset($projectNames) && is_array($projectNames) ? $projectNames : [];
+$availableMonths = isset($availableMonths) && is_array($availableMonths) ? $availableMonths : [];
 
 $selectedTopN = (int) ($chartPrefs['top_n'] ?? 10);
 $selectedForecastHorizon = (int) ($chartPrefs['forecast_horizon'] ?? 3);
@@ -27,6 +28,13 @@ if (!function_exists('moneyFmt')) {
         return '$' . number_format($value, 2);
     }
 }
+
+$spanishMonths = [
+    '01' => 'Enero', '02' => 'Febrero', '03' => 'Marzo',
+    '04' => 'Abril', '05' => 'Mayo', '06' => 'Junio',
+    '07' => 'Julio', '08' => 'Agosto', '09' => 'Septiembre',
+    '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre',
+];
 ?>
 
 <section class="cohorts-hero mb-4">
@@ -44,6 +52,147 @@ if (!function_exists('moneyFmt')) {
         </a>
     </div>
 </section>
+
+<?php if ($msg = Auth::getFlash('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+<?php if ($msg = Auth::getFlash('info')): ?>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($msg) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<div class="app-panel cohort-filter-panel mb-4">
+    <div class="app-panel__header">
+        <div>
+            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Panel de filtros financieros</h3>
+            <p class="app-panel__subtitle">Filtra por mes, bootcamp, meta de revenue (proyecto) o rango de metas para analizar el revenue.</p>
+        </div>
+        <?php if (!empty($activeFilters)): ?>
+            <span class="badge bg-primary-subtle text-primary">
+                <i class="bi bi-funnel-fill me-1"></i><?= count($activeFilters) ?> filtro(s) activo(s)
+            </span>
+        <?php endif; ?>
+    </div>
+    <form method="GET" action="/cohorts/finance" class="row g-3">
+        <div class="col-12 col-lg-3">
+            <label for="month" class="form-label"><i class="bi bi-calendar-month me-1"></i>Mes</label>
+            <select class="form-select" id="month" name="month">
+                <option value="">Todos los meses</option>
+                <?php foreach (($availableMonths ?? []) as $monthKey):
+                    $monthKey = (string) $monthKey;
+                    if ($monthKey === '' || !preg_match('/^\d{4}-\d{2}$/', $monthKey)) continue;
+                    $year = substr($monthKey, 0, 4);
+                    $mn = substr($monthKey, 5, 2);
+                    $label = ($spanishMonths[$mn] ?? $mn) . ' ' . $year;
+                ?>
+                    <option value="<?= htmlspecialchars($monthKey) ?>" <?= (($filters['month'] ?? '') === $monthKey) ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label for="bootcamp_type" class="form-label"><i class="bi bi-mortarboard me-1"></i>Bootcamp</label>
+            <select class="form-select" id="bootcamp_type" name="bootcamp_type">
+                <option value="">Todos</option>
+                <?php foreach (($bootcampTypes ?? []) as $type): ?>
+                    <option value="<?= htmlspecialchars($type) ?>" <?= (($filters['bootcamp_type'] ?? '') === $type) ? 'selected' : '' ?>><?= htmlspecialchars($type) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label for="related_project" class="form-label"><i class="bi bi-briefcase me-1"></i>Tipo de revenue (Proyecto)</label>
+            <select class="form-select" id="related_project" name="related_project">
+                <option value="">Todos</option>
+                <?php foreach (($projectNames ?? []) as $project): ?>
+                    <option value="<?= htmlspecialchars($project) ?>" <?= (($filters['related_project'] ?? '') === $project) ? 'selected' : '' ?>><?= htmlspecialchars($project) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-3">
+            <label for="target_min" class="form-label"><i class="bi bi-arrow-down-circle me-1"></i>Meta minima</label>
+            <input type="number" min="0" step="1" class="form-control" id="target_min" name="target_min" value="<?= htmlspecialchars((string) ($filters['target_min'] ?? '')) ?>" placeholder="Ej. 10">
+        </div>
+        <div class="col-6 col-md-3 col-lg-3">
+            <label for="target_max" class="form-label"><i class="bi bi-arrow-up-circle me-1"></i>Meta maxima</label>
+            <input type="number" min="0" step="1" class="form-control" id="target_max" name="target_max" value="<?= htmlspecialchars((string) ($filters['target_max'] ?? '')) ?>" placeholder="Ej. 50">
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="start_date" class="form-label">Desde</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars((string) ($filters['start_date'] ?? '')) ?>">
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="end_date" class="form-label">Hasta</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="business_model" class="form-label">Poblacion</label>
+            <select class="form-select" id="business_model" name="business_model">
+                <option value="">Todos</option>
+                <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
+                <option value="b2c" <?= (($filters['business_model'] ?? '') === 'b2c') ? 'selected' : '' ?>>B2C</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-2">
+            <label for="cohort_status" class="form-label">Estado</label>
+            <select class="form-select" id="cohort_status" name="cohort_status">
+                <option value="">Todos</option>
+                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
+                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
+                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
+                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+            </select>
+        </div>
+        <div class="col-12 col-lg-4">
+            <label for="search" class="form-label">Buscar</label>
+            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">
+        </div>
+        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search me-1"></i> Aplicar filtros
+            </button>
+            <?php if (!empty($activeFilters)): ?>
+                <a href="/cohorts/finance?reset_filters=1" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Limpiar
+                </a>
+            <?php endif; ?>
+            <?php if (!empty($activeFilters)): ?>
+                <div class="d-flex flex-wrap gap-1 ms-lg-2">
+                    <?php foreach ($activeFilters as $key => $value):
+                        if (!is_string($value) && !is_numeric($value)) continue;
+                        $displayValue = (string) $value;
+                        if ($key === 'month' && preg_match('/^\d{4}-\d{2}$/', $displayValue) === 1) {
+                            $mn = substr($displayValue, 5, 2);
+                            $yr = substr($displayValue, 0, 4);
+                            $displayValue = ($spanishMonths[$mn] ?? $mn) . ' ' . $yr;
+                        }
+                        $filterLabels = [
+                            'search'          => 'Busqueda',
+                            'bootcamp_type'   => 'Bootcamp',
+                            'related_project' => 'Proyecto',
+                            'month'           => 'Mes',
+                            'target_min'      => 'Meta min',
+                            'target_max'      => 'Meta max',
+                            'start_date'      => 'Desde',
+                            'end_date'        => 'Hasta',
+                            'business_model'  => 'Poblacion',
+                            'cohort_status'   => 'Estado',
+                        ];
+                        $label = $filterLabels[$key] ?? $key;
+                    ?>
+                        <span class="badge bg-light text-dark border">
+                            <strong><?= htmlspecialchars($label) ?>:</strong>
+                            <?= htmlspecialchars($displayValue) ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-xl-3">
@@ -140,87 +289,6 @@ if (!function_exists('moneyFmt')) {
     </div>
 </div>
 
-<?php if ($msg = Auth::getFlash('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($msg) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-<?php if ($msg = Auth::getFlash('info')): ?>
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($msg) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-<div class="app-panel cohort-filter-panel mb-4">
-    <div class="app-panel__header">
-        <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros financieros</h3>
-            <p class="app-panel__subtitle">Filtra por búsqueda, cohorte, proyecto, fechas, población o estado para análisis de revenue.</p>
-        </div>
-    </div>
-    <form method="GET" action="/cohorts/finance" class="row g-3">
-        <div class="col-12 col-lg-4">
-            <label for="search" class="form-label">Buscar</label>
-            <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <label for="bootcamp_type" class="form-label">Bootcamp name</label>
-            <select class="form-select" id="bootcamp_type" name="bootcamp_type">
-                <option value="">Todos</option>
-                <?php foreach (($bootcampTypes ?? []) as $type): ?>
-                    <option value="<?= htmlspecialchars($type) ?>" <?= (($filters['bootcamp_type'] ?? '') === $type) ? 'selected' : '' ?>><?= htmlspecialchars($type) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <label for="related_project" class="form-label">Proyecto</label>
-            <select class="form-select" id="related_project" name="related_project">
-                <option value="">Todos</option>
-                <?php foreach (($projectNames ?? []) as $project): ?>
-                    <option value="<?= htmlspecialchars($project) ?>" <?= (($filters['related_project'] ?? '') === $project) ? 'selected' : '' ?>><?= htmlspecialchars($project) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <label for="start_date" class="form-label">Desde</label>
-            <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars((string) ($filters['start_date'] ?? '')) ?>">
-        </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <label for="end_date" class="form-label">Hasta</label>
-            <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
-        </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <label for="business_model" class="form-label">Población o sub canal</label>
-            <select class="form-select" id="business_model" name="business_model">
-                <option value="">Todos</option>
-                <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
-                <option value="b2c" <?= (($filters['business_model'] ?? '') === 'b2c') ? 'selected' : '' ?>>B2C</option>
-            </select>
-        </div>
-        <div class="col-6 col-md-3 col-lg-2">
-            <label for="cohort_status" class="form-label">Estado</label>
-            <select class="form-select" id="cohort_status" name="cohort_status">
-                <option value="">Todos</option>
-                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
-                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
-                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
-                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
-            </select>
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-search me-1"></i> Aplicar filtros
-            </button>
-            <?php if (!empty($activeFilters)): ?>
-                <a href="/cohorts/finance?reset_filters=1" class="btn btn-outline-secondary ms-2">
-                    <i class="bi bi-x-circle me-1"></i> Limpiar
-                </a>
-            <?php endif; ?>
-        </div>
-    </form>
-</div>
 
 <textarea id="cohort-finance-data" class="d-none"><?= htmlspecialchars(json_encode($financeChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
 

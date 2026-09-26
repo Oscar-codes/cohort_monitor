@@ -169,6 +169,9 @@ class CohortController extends Controller
                 'search'          => (string) $this->input('search', ''),
                 'bootcamp_type'   => (string) $this->input('bootcamp_type', ''),
                 'related_project' => (string) $this->input('related_project', ''),
+                'month'           => (string) $this->input('month', ''),
+                'target_min'      => (string) $this->input('target_min', ''),
+                'target_max'      => (string) $this->input('target_max', ''),
                 'start_date'      => (string) $this->input('start_date', ''),
                 'end_date'        => (string) $this->input('end_date', ''),
                 'business_model'  => (string) $this->input('business_model', ''),
@@ -181,6 +184,9 @@ class CohortController extends Controller
                 'search'          => (string) ($sessionFilters['search'] ?? ''),
                 'bootcamp_type'   => (string) ($sessionFilters['bootcamp_type'] ?? ''),
                 'related_project' => (string) ($sessionFilters['related_project'] ?? ''),
+                'month'           => (string) ($sessionFilters['month'] ?? ''),
+                'target_min'      => (string) ($sessionFilters['target_min'] ?? ''),
+                'target_max'      => (string) ($sessionFilters['target_max'] ?? ''),
                 'start_date'      => (string) ($sessionFilters['start_date'] ?? ''),
                 'end_date'        => (string) ($sessionFilters['end_date'] ?? ''),
                 'business_model'  => (string) ($sessionFilters['business_model'] ?? ''),
@@ -191,12 +197,13 @@ class CohortController extends Controller
 
         $bootcampTypes = $this->cohortService->getBootcampTypes();
         $projectNames = $this->cohortService->getProjectNames();
-        
+        $availableMonths = $this->cohortService->getAvailableMonths();
+
         // Check if dates were swapped and show a warning
         if (!empty($filters['start_date']) && !empty($filters['end_date']) && $filters['start_date'] > $filters['end_date']) {
             Auth::flash('info', 'Las fechas estaban invertidas y fueron ajustadas automáticamente.');
         }
-        
+
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
 
         $byMonth = $this->cohortService->getFinancialByMonth($filters);
@@ -248,6 +255,7 @@ class CohortController extends Controller
             'activeFilters'  => $activeFilters,
             'bootcampTypes'  => $bootcampTypes,
             'projectNames'   => $projectNames,
+            'availableMonths' => $availableMonths,
             'byMonth'        => $byMonth,
             'byBootcamp'     => $byBootcamp,
             'totalTarget'    => $totalTarget,
@@ -344,6 +352,9 @@ class CohortController extends Controller
             'search'          => '',
             'bootcamp_type'   => '',
             'related_project' => '',
+            'month'           => '',
+            'target_min'      => '',
+            'target_max'      => '',
             'start_date'      => '',
             'end_date'        => '',
             'business_model'  => '',

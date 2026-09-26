@@ -81,6 +81,26 @@ class CohortRepository
         ));
     }
 
+    /**
+     * Distinct months present in cohort start dates, newest first.
+     *
+     * @return string[] List of YYYY-MM keys
+     */
+    public function findAvailableMonths(): array
+    {
+        $rows = $this->db->query(
+            "SELECT DISTINCT DATE_FORMAT(c.start_date, '%Y-%m') AS period_key
+             FROM cohorts c
+             WHERE c.start_date IS NOT NULL
+             ORDER BY period_key DESC"
+        );
+
+        return array_values(array_map(
+            static fn(array $row): string => (string) ($row['period_key'] ?? ''),
+            $rows
+        ));
+    }
+
     public function findCoachNames(): array
     {
         $rows = $this->db->query(
@@ -410,6 +430,21 @@ class CohortRepository
         if (!empty($filters['related_project'])) {
             $where[] = 'c.related_project = :related_project';
             $params['related_project'] = $filters['related_project'];
+        }
+
+        if (!empty($filters['month'])) {
+            $where[] = "DATE_FORMAT(c.start_date, '%Y-%m') = :period_month";
+            $params['period_month'] = (string) $filters['month'];
+        }
+
+        if ($filters['target_min'] !== null && $filters['target_min'] !== '') {
+            $where[] = 'c.b2b_admission_target >= :target_min';
+            $params['target_min'] = (float) $filters['target_min'];
+        }
+
+        if ($filters['target_max'] !== null && $filters['target_max'] !== '') {
+            $where[] = 'c.b2b_admission_target <= :target_max';
+            $params['target_max'] = (float) $filters['target_max'];
         }
 
         if (!empty($filters['start_date'])) {

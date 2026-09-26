@@ -5,6 +5,24 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 
 ---
 
+## Documentación — 2026-09-26
+
+- Se incorporan las habilidades locales PHP senior y tracker de Cohort Monitor.
+- Se crea [seguimiento en docs/prd](prd/backlog.md) con backlog, contexto del proyecto, registro de trabajo de base de datos y evidencias fechadas; el PRD histórico enlaza el estado vigente.
+- Se añade un validador estructural del tracker, comprobado con casos válidos e inválidos. Esta entrega documental no acredita despliegue, ejecución de migraciones ni verificación de datos remotos.
+
+---
+
+## [1.7.0] — 2026-09-26
+
+### 🎛️ Panel de filtros de finanzas
+- El panel de filtros de `/cohorts/finance` se reubicó encima de las tarjetas de montos para aplicarlos antes de visualizar el resumen financiero.
+- Nuevos filtros: **Mes** (selector poblado desde los meses con cohortes), **Meta mínima** y **Meta máxima** (rango de metas de revenue), además de los ya existentes de Bootcamp, Proyecto (tipo de revenue), fechas, población y estado.
+- Los filtros activos se persisten en sesión y se muestran como badges en el panel; botón **Limpiar** restablece los valores por defecto.
+- Repositorio y servicio ampliados con `findAvailableMonths()` y cláusulas WHERE para `month`, `target_min` y `target_max`. Sin pruebas de ejecución contra base de datos en esta entrega.
+
+---
+
 ## [1.6.0] — 2026-03-09
 
 ### 🎯 Acordeón de estados tipo ClickUp

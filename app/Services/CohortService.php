@@ -91,11 +91,21 @@ class CohortService
     }
 
     /**
-     * Get distinct project names for filtering.
+     * Distinct project names for filtering.
      */
     public function getProjectNames(): array
     {
         return $this->cohortRepo->findProjectNames();
+    }
+
+    /**
+     * Distinct months (YYYY-MM) for the finance month filter.
+     *
+     * @return string[]
+     */
+    public function getAvailableMonths(): array
+    {
+        return $this->cohortRepo->findAvailableMonths();
     }
 
     /**
@@ -466,6 +476,9 @@ class CohortService
             'end_date'        => null,
             'business_model'  => null,
             'cohort_status'   => null,
+            'month'           => null,
+            'target_min'      => null,
+            'target_max'      => null,
         ];
 
         if (!empty($filters['search'])) {
@@ -482,6 +495,21 @@ class CohortService
 
         if (!empty($filters['related_project'])) {
             $normalized['related_project'] = trim((string) $filters['related_project']);
+        }
+
+        if (!empty($filters['month'])) {
+            $month = (string) $filters['month'];
+            if (preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
+                $normalized['month'] = $month;
+            }
+        }
+
+        if (isset($filters['target_min']) && $filters['target_min'] !== '' && $filters['target_min'] !== null) {
+            $normalized['target_min'] = max(0.0, (float) $filters['target_min']);
+        }
+
+        if (isset($filters['target_max']) && $filters['target_max'] !== '' && $filters['target_max'] !== null) {
+            $normalized['target_max'] = max(0.0, (float) $filters['target_max']);
         }
 
         // Validate date format (YYYY-MM-DD) before passing to repository

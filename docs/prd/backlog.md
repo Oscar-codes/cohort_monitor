@@ -1,0 +1,39 @@
+# Backlog de Cohort Monitor
+
+Última actualización: 2026-09-26.
+
+Fuente canónica de estados de trabajo. Consultar [contexto](estado-proyecto.md), [base de datos](base-datos.md), [evidencias](registro-cambios.md) y [PRD histórico](../PRD.md).
+
+La línea base distingue funciones presentes en código de su validación pendiente. Los tickets VAL son tareas de comprobación de capacidades existentes, no afirmaciones de que falta implementarlas. Prioridades iniciales sugeridas; FUT representa propuestas del roadmap, no compromisos de implementación. No se verificó el despliegue ni se conectó a bases de datos para crear este registro.
+
+Estados: **Completado**, **En progreso**, **Pendiente**, **Bloqueado**. Para completar se requiere cumplir el criterio y enlazar evidencia fechada con resultado verificado. Las dependencias y la evidencia histórica se conservan aunque se reabra un ticket.
+
+## Backlog
+
+| ID | Área | Prioridad | Estado | Objetivo | Criterio de cierre | Evidencia | Dependencias | Siguiente paso |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CM-DOC-001 | Documentación | P2 | Completado | Crear habilidad PHP senior adaptada al proyecto | Instrucciones basadas en stack/código, mapa y metadatos creados; quick_validate satisfactorio | [E-001](registro-cambios.md#e-001) | - | Usar al desarrollar y refinar |
+| CM-DOC-002 | Documentación | P1 | Completado | Crear tracker y documentación viva con validación estructural | Habilidad válida, backlog/contexto/registro de datos enlazados y validador probado con casos válidos e inválidos | [E-002](registro-cambios.md#e-002), [E-004](registro-cambios.md#e-004) | CM-DOC-001 | Mantener el registro al iniciar y cerrar trabajo |
+| CM-DB-001 | Datos | P1 | En progreso | Documentar el trabajo actual de exploración de datos | Objetivo, entorno lógico, origen/destino y tablas confirmados; resultados reales separados de inspección local | [E-003](registro-cambios.md#e-003) | - | Confirmar alcance y dirección del trabajo de datos |
+| CM-DB-002 | Datos | P1 | Pendiente | Verificar acceso al entorno de datos pertinente | Conexión y consulta mínima comprobadas en entorno identificado; resultado sanitizado con fecha | [E-003](registro-cambios.md#e-003) | CM-DB-001 | Determinar entorno y prueba autorizada |
+| CM-DB-003 | Datos | P1 | Pendiente | Contrastar esquema real con repositorios y migraciones | Matriz de tablas/columnas/constraints comparada con esquema consultado; diferencias documentadas | [E-003](registro-cambios.md#e-003) | CM-DB-002 | Inventariar diferencias sin aplicar DDL |
+| CM-DB-004 | Datos | P1 | Pendiente | Definir mapeo y conciliación de cohortes y finanzas | Correspondencias, duplicados, estados, fechas, nulos y dinero definidos; agregados e integridad verificados según alcance confirmado | [E-003](registro-cambios.md#e-003) | CM-DB-003 | Confirmar si habrá transferencia o solo análisis |
+| CM-VAL-001 | Cohortes | P1 | Pendiente | Validar CRUD, filtros, master y workflow existentes | Casos de escritura/lectura, rol, transición, cancelación y bloqueo de eliminación comprobados en entorno de prueba | [E-002](registro-cambios.md#e-002) | - | Preparar casos sintéticos y fechas límite |
+| CM-VAL-002 | Usuarios | P1 | Pendiente | Validar login, cuenta y permisos existentes | Login y acciones autorizadas/denegadas por rol y campo comprobadas; sesión y cambios de usuario verificados | [E-002](registro-cambios.md#e-002) | - | Revisar matriz y guards antes de probar |
+| CM-VAL-003 | Finanzas | P1 | Pendiente | Validar cálculos, filtros y gráficos de finanzas | Totales y redondeo coinciden con datos controlados; filtros y preferencias de sesión se comportan según criterio | [E-002](registro-cambios.md#e-002) | - | Preparar importes y expectativas reproducibles |
+| CM-VAL-004 | Marketing | P1 | Pendiente | Validar marketing, comentarios y alertas | Estados active/completed, alias históricos y señales de riesgo coherentes entre servicios, UI y esquema | [E-002](registro-cambios.md#e-002) | - | Contrastar normalización y consultas de riesgo |
+| CM-VAL-005 | Reportes | P1 | Pendiente | Validar importación y exportaciones existentes | Archivo válido/inválido, duplicados, fallo parcial y rollback definidos; filtros y resultados de CSV/XLSX/PDF comprobados | [E-002](registro-cambios.md#e-002) | - | Ensayar con archivos sintéticos y base desechable |
+| CM-VAL-006 | Interfaz | P2 | Pendiente | Validar dashboard, calendario y mejoras visuales presentes | Métricas/fechas coherentes; navegación móvil/escritorio, teclado y estados de error revisados | [E-002](registro-cambios.md#e-002) | - | Contrastar plan frontend con comportamiento visible |
+| CM-VAL-007 | Operación | P1 | Pendiente | Validar auditoría y diagnóstico administrativo | Guard admin, eventos y resultado de consulta DB comprobados sin exposición de errores sensibles | [E-002](registro-cambios.md#e-002) | - | Separar revisión del código y prueba del entorno |
+| CM-SEC-001 | Seguridad | P0 | Pendiente | Incorporar defensa CSRF y retirar logout por GET | Escrituras y logout protegidos; ausencia/token inválido rechazados; navegación actualizada | [E-002](registro-cambios.md#e-002) | - | Diseñar mecanismo compartido y cubrir formularios/AJAX |
+| CM-SEC-002 | Seguridad | P1 | Pendiente | Revisar seguridad y revocación de sesiones | Configuración efectiva de cookies, expiración y revocación verificada con pruebas pertinentes | [E-002](registro-cambios.md#e-002) | - | Contrastar Auth con PHP y proxy del entorno |
+| CM-SEC-003 | Seguridad | P1 | Pendiente | Limitar intentos de login y retirar compatibilidad de contraseñas en texto | Política acordada, hashes migrados de forma segura y controles probados sin exponer credenciales | [E-002](registro-cambios.md#e-002) | - | Evaluar cuentas heredadas mediante resultados agregados |
+| CM-SEC-004 | Seguridad | P1 | Pendiente | Sanitizar diagnóstico y logs de autenticación | Respuestas sin DSN/errores internos; logs sin identificadores innecesarios ni secretos; prueba de fallo controlado | [E-002](registro-cambios.md#e-002) | - | Revisar Database, AdminController y AuthService |
+| CM-PERF-001 | Rendimiento | P2 | Pendiente | Acotar consultas de listados y dashboard | Paginación/consulta limitada donde corresponda y comparación de resultados, consultas y memoria documentada | [E-002](registro-cambios.md#e-002) | - | Medir findAll seguido de array_slice y listados |
+| CM-ARCH-001 | Arquitectura | P2 | Pendiente | Reducir acoplamiento al refinar módulos | Primer flujo seleccionado con responsabilidades separadas y regresión comprobada | [E-002](registro-cambios.md#e-002) | - | Seleccionar alcance al implementar una necesidad real |
+| CM-FUT-001 | Roadmap | P3 | Pendiente | Definir alcance del CRUD de estudiantes propuesto | Requisitos y permisos acordados antes de abrir tickets de implementación | [E-002](registro-cambios.md#e-002) | - | Revisar prioridad con necesidades operativas |
+| CM-FUT-002 | Roadmap | P3 | Pendiente | Definir necesidad de API externa propuesta | Consumidores, contrato, autenticación y alcance acordados | [E-002](registro-cambios.md#e-002) | - | Confirmar demanda antes de implementar |
+
+## Criterio de actualización
+
+Registrar cada transición con evidencia en la [bitácora](registro-cambios.md). `En progreso` requiere actividad actual; `Bloqueado` requiere causa y condición de salida. No convertir propuestas, archivos SQL ni respuestas HTTP aisladas en pruebas de funcionalidad o datos correctos. La validación estructural no sustituye la comprobación funcional.

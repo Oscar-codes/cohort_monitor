@@ -1,6 +1,8 @@
 # PRD — Product Requirements Document
 ## Cohort Monitor v1.5
 
+> Seguimiento vigente (2026-09-26): [backlog](prd/backlog.md), [estado del proyecto](prd/estado-proyecto.md), [base de datos](prd/base-datos.md) y [evidencias](prd/registro-cambios.md). Este PRD conserva requisitos e hitos históricos; sus estados y cantidades no sustituyen la verificación actual.
+
 ---
 
 ## 1. Resumen del Producto
