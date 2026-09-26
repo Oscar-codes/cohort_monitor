@@ -137,6 +137,18 @@
 - Observaciones: no se modificó JS. Los `<textarea class="d-none" id="cohort-finance-data">` y los `<details class="visually-hidden">` con tablas accesibles se conservan intactos porque son contenido para tecnología asistiva, no UI visible.
 - Transición: CM-UI-006 sigue En progreso con cinco vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-013
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de los formularios de cohorte `cohorts/create.php` (`/cohorts/create`) y `cohorts/edit.php` (`/cohorts/{id}/edit`) al sistema visual Kodigo. Ambos cambian `app-panel form-workbench` por `kodigo-card form-workbench data-elevation="1"`. La clase interna `.form-workbench` (con sus `__header`/`__body`, `.form-section` y `.form-section-title`) se conserva porque define el layout propio del workbench y los paddings anulan los del contenedor Kodigo, pero ahora recibe la superficie, el borde, el radio y la sombra de Kodigo en lugar de los heredados del antiguo `.app-panel`. En `edit.php` las seis etiquetas inline "Solo lectura" dentro de los títulos de sección pasan de `badge bg-secondary-subtle text-secondary ms-2` a `kodigo-pill ms-2 data-tone="neutral"`, conservando el espaciado original.
+- Fuentes: [cohorts/create](../../app/Views/cohorts/create.php), [cohorts/edit](../../app/Views/cohorts/edit.php), [cohorts-edit.js](../../public/assets/js/cohorts-edit.js), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.form-workbench`).
+- Comprobación: `php -l app/Views/cohorts/create.php` y `php -l app/Views/cohorts/edit.php` sin errores; `node -c public/assets/js/cohorts-edit.js` sin errores; `grep -n 'app-panel\|class="badge bg-' app/Views/cohorts/{create,edit}.php` sin coincidencias; atributos de formulario (`action`, `method`, IDs de campos, `needs-validation novalidate`) y atributos `data-confirm-*` intactos.
+- Observaciones: `cohorts-edit.js` no se modificó; no depende de las clases CSS migradas. La migración aprovecha la convivencia `.kodigo-card.form-workbench` para que las reglas del workbench (padding 0, overflow hidden, fondos de header/body y borde inferior) sigan gobernando el subcomponente y sólo cambie la superficie/externa al Kodigo.
+- Transición: CM-UI-006 sigue En progreso con siete vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006

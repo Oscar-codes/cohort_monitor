@@ -15,7 +15,7 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-8">
-        <div class="app-panel form-workbench">
+        <div class="kodigo-card form-workbench" data-elevation="1">
             <div class="form-workbench__header">
                 <div>
                     <h3><i class="bi bi-pencil-square text-primary"></i> Datos de cohorte</h3>

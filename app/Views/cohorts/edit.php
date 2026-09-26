@@ -95,7 +95,7 @@ if (!$isMarketingBlocked) {
 
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-8">
-        <div class="app-panel form-workbench">
+        <div class="kodigo-card form-workbench" data-elevation="1">
             <div class="form-workbench__header">
                 <div>
                     <h3><i class="bi bi-sliders text-primary"></i> Campos editables</h3>
@@ -111,7 +111,7 @@ if (!$isMarketingBlocked) {
                         <div class="form-section-title">
                             <i class="bi bi-tag"></i> Identificación
                             <?php if (!$canEdit('cohort_code') && !$canEdit('name')): ?>
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                             <?php endif; ?>
                         </div>
                         <div class="row g-3">
@@ -159,7 +159,7 @@ if (!$isMarketingBlocked) {
                             $canEditAny = count(array_intersect($admissionFields, $editableFields ?? [])) > 0;
                             if (!$canEditAny): 
                             ?>
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                             <?php endif; ?>
                         </div>
                         <div class="row g-3">
@@ -225,7 +225,7 @@ if (!$isMarketingBlocked) {
                             $canEditFinance = count(array_intersect($financeFields, $editableFields ?? [])) > 0;
                             if (!$canEditFinance):
                             ?>
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                             <?php endif; ?>
                         </div>
                         <div class="alert alert-light border small mb-3">
@@ -276,7 +276,7 @@ if (!$isMarketingBlocked) {
                         <div class="form-section-title">
                             <i class="bi bi-calendar-event"></i> Fechas de Entrenamiento
                             <?php if (!$canEdit('start_date') && !$canEdit('end_date')): ?>
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                             <?php endif; ?>
                         </div>
                         <div class="row g-3 mb-3">
@@ -312,7 +312,7 @@ if (!$isMarketingBlocked) {
                             $canEditAssign = count(array_intersect($assignFields, $editableFields ?? [])) > 0;
                             if (!$canEditAssign): 
                             ?>
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                             <?php endif; ?>
                         </div>
                         <div class="row g-3">
@@ -366,7 +366,7 @@ if (!$isMarketingBlocked) {
                     <div class="form-section">
                         <div class="form-section-title">
                             <i class="bi bi-flag"></i> Estado
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">Solo lectura</span>
+                            <span class="kodigo-pill ms-2" data-tone="neutral">Solo lectura</span>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
