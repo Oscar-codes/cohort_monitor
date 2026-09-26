@@ -21,13 +21,21 @@ if (file_exists($composerAutoload)) {
 // ─── 1. Load environment variables ──────────────────────────
 loadEnv(APP_ROOT . '/.env');
 
-// ─── 2. Configure error reporting ───────────────────────────
+// ─── 2. Configure error reporting (CM-SEC-004) ──────────────
 if (env('APP_DEBUG', false)) {
+    // Local dev: surface all errors with full messages and stack traces.
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
+    ini_set('log_errors', '1');
 } else {
-    error_reporting(0);
+    // Production: never display errors to clients. Keep them captured so
+    // SafeLog::record() and PHP's error_log retain diagnostic visibility
+    // without showing SQLSTATE codes, host/port hints, or file paths.
+    error_reporting(E_ALL);
     ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    ini_set('html_errors', '0');
+    ini_set('log_errors', '1');
 }
 
 // ─── 3. Set timezone ────────────────────────────────────────

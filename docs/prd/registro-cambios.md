@@ -374,6 +374,54 @@
 - Acción manual requerida en cada entorno: ejecutar `database/migrations/019_login_attempts.sql`. El audit_log no requiere cambios.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
+### E-025
+
+- Fecha: 2026-09-26.
+- Tickets: CM-SEC-004.
+- Resultado: Verificado.
+- Alcance: sanitizar respuestas y logs para impedir que la app filtre DSN, mensajes del driver PDO, IPs en plano y usernames/contraseñas a través de `error_log()` o de mensajes flash de Auth. Auditoría previa:
+  - `app/Core/Database.php:58` lanzaba `'Database connection failed: ' . $e->getMessage() . ' [dsn=' . $dsn . ']'`; cualquier consumidor de `Database::getInstance()` (middleware, controllers) recibía host=*, port=*, dbname=*, charset=utf8mb4 y a menudo `Access denied for user 'X'@'Y' (using password: YES)`.
+  - `app/Controllers/AdminController.php:96` exponía `$e->getMessage()` del driver directamente en `health.checks[].detail`, accesible a cualquier usuario con rol admin.
+  - `app/Services/AuthService.php` tenía 6 patrones `error_log('[auth] X failed: ' . $e->getMessage())` y dos logueos de IP en plano (línea 76 y 101) mezclados con el reason enum.
+  - `bootstrap/app.php` forzaba `error_reporting(0)` en producción, lo que también silenciaba errores en el log de PHP.
+- Cambios aplicados:
+  1. **`app/Core/SafeLog.php`** (nuevo): tres superficies:
+     - `SafeLog::record(category, \Throwable)` — escribe `[category] :: ClassName :: (no message) :: fp=<10-char sha256>` a `error_log()`. Solo para diagnóstico no sensible; no toca PII ni DSN.
+     - `SafeLog::fingerprint(\Throwable, string)` — devuelve un identificador corto determinista; permite correlacionar lo que el usuario ve en pantalla con la entrada del log del servidor.
+     - `SafeLog::redact(string)` — devuelve `redact:<8 chars sha256>` para identificadores arbitrarios (IPs, usernames). Estable, reversible sólo para quien tiene la sal.
+     - `SafeLog::$disabled` flag para silenciar en tests.
+  2. **`app/Core/Database.php:48-60`**: la excepción pública ahora es sólo `'Database connection failed.'`. La DSN queda únicamente en logs vía `SafeLog::record('database.connection', $e)` con fingerprint. Se conserva la cadena `previous` para herramientas que introspeccionan excepciones.
+  3. **`app/Controllers/AdminController.php:96-104`** (rama catch en `health()`): `detail` ahora muestra `Ref de diagnostico: <8 chars>`, derivado del fingerprint. Mensajes del driver PDO/SQLSTATE ya no se exponen al usuario.
+  4. **`app/Services/AuthService.php`**:
+     - Las 6 ramas con `error_log('[auth] X failed: ' . $e->getMessage())` migran a `\App\Core\SafeLog::record('auth.<context>', $e)`.
+     - Dos logueos de IP: `'ip=' . $ip` → `'ip=' . SafeLog::redact($ip)`.
+     - El lockout audit fail ahora también pasa por `SafeLog::record()`.
+  5. **`app/Core/Controller.php`**: `logException()` prefija la línea con `:: fp=<10 chars>` y comparte formato con el helper de `SafeLog`. La traza completa y el mensaje crudo van sólo al log de aplicación (`storage/logs/app.log`), no a respuestas HTTP.
+  6. **`bootstrap/app.php:24-32`**: en producción (`APP_DEBUG=false`) la rama ya no apaga `error_reporting` (sigue capturando) y sí fuerza:
+     - `display_errors=0`
+     - `display_startup_errors=0`
+     - `html_errors=0`
+     - `log_errors=1`
+     Esto garantiza que aunque APP_DEBUG sea `true` por error, ni SQLSTATE ni stack traces se muestran al usuario.
+  7. **`docs/LOG_HARDENING.md`** (nuevo): política + matriz "antes / ahora" + checklist manual de 4 pasos (forzar fallo de conexión, verificar IP redactada, `display_errors` en producción, login_fail no expone identificador).
+- Verificación:
+  - `php -l` sobre los 5 archivos modificados: 0 errores.
+  - `php -r 'putenv("APP_DEBUG=false"); require "bootstrap/app.php";'` produce `display_errors='0'`, `log_errors='1'`, `html_errors='0'`, `display_startup_errors='0'`.
+  - `grep -n 'error_log\s*\(\s*'\'\[auth\][^\']*getMessage' app/Services/AuthService.php` → 0 coincidencias. Todos los logueos de excepción de Auth pasan por `SafeLog`.
+  - `grep -n "\[dsn=" app/Core/Database.php` → 0 coincidencias.
+  - `grep -n "\$e->getMessage\(\)" app/Controllers/AdminController.php` → 0 coincidencias en ramas accesibles al usuario.
+  - `node -c public/assets/js/app.js`: OK (no se modificó JS).
+  - `validate_tracker.py`: `Tracker válido: 27 tickets, 25 evidences. Completado: 10; En progreso: 1; Pendiente: 16`.
+- Observaciones:
+  - El fingerprint corto (`<8 chars sha256`) es suficiente para correlacionar un evento entre sesión y log del servidor; sigue siendo derivable (sha256 sin sal) — si se requiere opacidad entre despliegues, mover a HMAC con clave rotada en KMS. Documentado en `LOG_HARDENING.md`.
+  - El log del servidor todavía puede contener trazas de stack (`$e->getTraceAsString()` en `Controller::logException()`); sólo se escriben a `storage/logs/app.log`, no a respuestas HTTP. La traza puede incluir file paths absolutos — para endurecer, conviene mover el despliegue a un directorio fijo y a un usuario restringido.
+  - Los demás servicios (`CohortService`, `MarketingService`, etc.) aún usan `error_log(... $e->getMessage())`. Por la naturaleza del flujo (mensajes de validación que vienen de `\InvalidArgumentException`), no filtran PDO, pero sí podrían mejorarse en una iteración futura.
+- Limitaciones explícitas:
+  - No se ha probado el flujo de fallo controlado contra una base de datos real con credenciales inválidas. La verificación es estática + lectura del nuevo flujo.
+  - `SafeLog::record()` escribe a `error_log()` de PHP (no a `storage/logs/app.log`) porque no carga `vendor/monolog`. Suficiente como pivot del fingerprint; la traza detallada la sigue escribiendo `Controller::logException()`.
+- Transición: CM-SEC-004 pasa de Pendiente a Completado. CM-UI-004 (a11y) y CM-UI-005 (QA responsive) siguen Pendientes. Los cuatro tickets de seguridad P0/P1 (`CM-SEC-001` a `CM-SEC-004`) quedan cerrados en este commit-pila.
+- Límite: la verificación es estática (`php -l` + grep + `php -r`). No se probó un fallo de DB real que active las ramas nuevas en navegador. El fingerprint cruza logs de PHP (`error_log()`) con la vista; ambos lados están instrumentados, pero no se ha confirmado visualmente.
+
 ### E-006
 
 - Fecha: 2026-09-26.

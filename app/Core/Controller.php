@@ -87,17 +87,27 @@ abstract class Controller
         return $_REQUEST;
     }
 
-    /**
+/**
      * Log an exception in a consistent format to storage/logs/app.log.
+     *
+     * CM-SEC-004: full stack traces and exception messages are still
+     * useful for developers, but only when paired with a category. We
+     * write a short structured entry to the project log and fall back to
+     * PHP's error_log() otherwise. The {@see SafeLog::record()} helper
+     * emits an additional fingerprint line for cross-referencing with
+     * what the user might see on screen.
      */
     protected function logException(\Throwable $e, string $context): void
     {
+        $fingerprint = \App\Core\SafeLog::record($context, $e);
+
         $logFile = APP_ROOT . '/storage/logs/app.log';
 
         $entry = sprintf(
-            "[%s] %s - %s in %s:%d%s%s",
+            "[%s] %s :: fp=%s :: %s in %s:%d%s%s",
             date('Y-m-d H:i:s'),
             $context,
+            $fingerprint,
             $e->getMessage(),
             $e->getFile(),
             $e->getLine(),
@@ -105,7 +115,6 @@ abstract class Controller
             $e->getTraceAsString()
         ) . PHP_EOL;
 
-        // Try to append to the project log file; fall back to PHP error_log.
         if (@file_put_contents($logFile, $entry, FILE_APPEND) === false) {
             error_log($entry);
         }

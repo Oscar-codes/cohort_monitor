@@ -90,10 +90,15 @@ class AdminController extends Controller
                 'detail' => $hasEntityId ? 'Presente' : 'Ausente',
             ];
         } catch (\Throwable $e) {
+            // CM-SEC-004: do not leak driver messages (hostnames, SQLSTATE
+            // codes, table-name hints) to admin-facing views. Surface a
+            // fingerprint so the operator can ask a developer for the
+            // reference id (which is searchable via SafeLog::record).
+            $fingerprint = \App\Core\SafeLog::record('admin.health', $e);
             $checks[] = [
                 'name' => 'Health check',
                 'status' => 'error',
-                'detail' => $e->getMessage(),
+                'detail' => 'Ref de diagnostico: ' . $fingerprint,
             ];
         }
 

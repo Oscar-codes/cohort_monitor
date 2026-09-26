@@ -55,7 +55,12 @@ class Database
             // Reinforce UTF-8 session settings for environments that ignore DSN charset.
             $this->pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
         } catch (PDOException $e) {
-            throw new \RuntimeException('Database connection failed: ' . $e->getMessage() . ' [dsn=' . $dsn . ']');
+            // CM-SEC-004: never leak the DSN or vendor message through the
+            // exception that bubbles up. Log the full diagnostic fingerprint
+            // out-of-band so an operator can correlate with code paths; the
+            // public exception stays opaque (no host/port/user/driver hint).
+            SafeLog::record('database.connection', $e);
+            throw new \RuntimeException('Database connection failed.');
         }
     }
 

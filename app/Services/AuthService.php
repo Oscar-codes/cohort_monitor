@@ -73,7 +73,7 @@ class AuthService
 
         // Rate-limit gate: lock short-circuits everything else.
         if ($this->attemptSvc()->isLocked($normalizedIdentifier, $ip)) {
-            error_log('[auth] login blocked by lockout for ip=' . $ip);
+            error_log('[auth] login blocked by lockout ip=' . \App\Core\SafeLog::redact($ip));
             try {
                 $this->auditRepo()->log([
                     'user_id'     => null,
@@ -82,7 +82,7 @@ class AuthService
                     'new_values'  => ['reason' => 'lockout'],
                 ]);
             } catch (\Throwable $e) {
-                error_log('[auth] lockout audit failed: ' . $e->getMessage());
+                \App\Core\SafeLog::record('auth.audit.lockout', $e);
             }
             return null;
         }
@@ -98,7 +98,7 @@ class AuthService
                     ? ($hash === '' ? $this->attemptSvc()->reasonForBadHash() : $this->attemptSvc()->reasonForInvalid())
                     : $this->attemptSvc()->reasonForInvalid());
             $this->attemptSvc()->recordFailure($normalizedIdentifier, $ip, $reason);
-            error_log('[auth] login failed reason=' . $reason . ' ip=' . $ip);
+            error_log('[auth] login failed reason=' . $reason . ' ip=' . \App\Core\SafeLog::redact($ip));
             return null;
         }
 
@@ -110,7 +110,7 @@ class AuthService
             try {
                 $this->userRepo()->updatePasswordHash((int) $user['id'], password_hash($password, PASSWORD_DEFAULT));
             } catch (\Throwable $e) {
-                error_log('[auth] rehash failed for user id=' . (int) $user['id'] . ': ' . $e->getMessage());
+                \App\Core\SafeLog::record('auth.rehash', $e);
             }
         }
 
@@ -121,7 +121,7 @@ class AuthService
         try {
             $this->userRepo()->updateLastLogin((int) $user['id']);
         } catch (\Throwable $e) {
-            error_log('[auth] updateLastLogin failed: ' . $e->getMessage());
+            \App\Core\SafeLog::record('auth.updateLastLogin', $e);
         }
 
         try {
@@ -132,7 +132,7 @@ class AuthService
                 'entity_key'  => (string) $user['id'],
             ]);
         } catch (\Throwable $e) {
-            error_log('[auth] login audit failed: ' . $e->getMessage());
+            \App\Core\SafeLog::record('auth.audit.login', $e);
         }
 
         return $user;
@@ -157,7 +157,7 @@ class AuthService
                     'entity_key'  => (string) $userId,
                 ]);
             } catch (\Throwable $e) {
-                error_log('[auth] logout audit failed: ' . $e->getMessage());
+                \App\Core\SafeLog::record('auth.audit.logout', $e);
             }
         }
         Auth::logout();
