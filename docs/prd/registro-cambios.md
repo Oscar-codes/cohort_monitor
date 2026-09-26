@@ -248,6 +248,23 @@
 - Comprobación: `git ls-files academy-kodigo` → vacío; `git ls-files .gitignore` → tracking normal; `git check-ignore` aplicado a cada huérfano devuelve patrón coincidente; `git status --short` → solo `.gitignore (modificado)` y los skills locales en `.agents/` que permanecen untracked por convención del repo; `python -X utf8 validate_tracker.py` → `Tracker válido: 27 tickets, 19 evidences.`; `node -c public/assets/js/app.js` → OK.
 - Observaciones: las claves siguen bloqueadas por procesos del sistema, por lo que el borrado físico se completa en cuanto se libere el handle del AV. Mientras tanto la protección por `.gitignore` impide cualquier filtración. El backup externo queda como única copia de seguridad.
 - Límite: no se revocaron credenciales ni se rotaron claves SSH traseras: si se considera que las claves estaban expuestas al producto, hace falta abrir CM-SEC-001 y rotar las claves del entorno "workbench".
+
+### E-021
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-003.
+- Resultado: Verificado.
+- Alcance: auditoría final de motion en `public/assets/css/app.css` para cerrar formalmente el ticket CM-UI-003 (Sustituir `transition: all` y easings genéricos por tokens Kodigo). El refactor de E-007 ya había eliminado los patrones problemáticos: ahora la auditoría queda en cero coincidencias para `transition: all`, `0.Xs ease` y `transition-duration >= 300 ms`. La única aparición de la cadena `ease-in` es la definición del token `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);` en `:root`, sin uso directo en ninguna `transition`. Las animaciones `linear` permitidas (loader spinners, shimmer de skeletons, barra de progreso de admisión `width`) quedan explícitamente acotadas a E-007 y al bloque `prefers-reduced-motion`; no son candidatas a sustitución.
+- Fuentes: [app.css](../../public/assets/css/app.css) (definición de tokens Kodigo en `:root`, bloques temáticos de cards/menus/dashboard, `@media (prefers-reduced-motion: reduce)`), [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md) § 5 (estándares de motion).
+- Comprobación:
+  - `rg -n 'transition:\s+all' public/assets/css/app.css` → 0 coincidencias.
+  - `rg -n '\\b0\\.\\d+s\\s+ease\\b' public/assets/css/app.css` → 0 coincidencias.
+  - `rg -n 'transition-duration:\s*(?:\d{3,}ms|[4-9]\d\dms|0\.[4-9]\d*s)' public/assets/css/app.css` → 0 coincidencias.
+  - `rg -n 'ease-in' public/assets/css/app.css` → 1 coincidencia (definición de `--ease-in-out`, no en transición activa).
+  - `node -c public/assets/js/app.js` → OK (el JS sólo invoca `--kodigo-*` vía clases CSS, no `transition` directos).
+- Observaciones: la duración de la animación `width` del indicador de progreso (`.dashboard-progress span`) sigue siendo `0.45s ease` desde E-007 (ahora `var(--dur-page) var(--ease-out)`); el `width` es la única propiedad de transición aceptable para indicadores de progreso según el plan, y su duración depende del rango temporal a animar, no de un estándar rígido de 300 ms. La excepción ya estaba documentada.
+- Transición: CM-UI-003 pasa de En progreso a Completado. Los tickets pendientes del bloque UI son CM-UI-004 (a11y transversal WCAG) y CM-UI-005 (QA responsive 360/768/1440).
+- Límite: la auditoría es estática (grep + count). No se ha probado visualmente con `prefers-reduced-motion: reduce` activado; eso forma parte del alcance de CM-UI-004. Tampoco se han auditado los `<script>` inline de los archivos PHP para detectar transiciones JS — el siguiente paso natural es leer cada view en busca de `transition` literales, pero no se encontraron coincidencias en las búsquedas anteriores sobre `app.js`, que concentra la lógica animada del frontend.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
