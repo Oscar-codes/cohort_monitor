@@ -228,6 +228,26 @@
 - Observaciones: ni `account-profile.js` ni `auth-login.js` se modificaron. Los `<details>` con `<pre>` para payload JSON se conservan intactos porque son contenido semántico (no UI a estilizar). El toggle de password usa `data-password-toggle="#..."` que ya estaba integrado con el manejador existente.
 - Transición: CM-UI-006 pasa de En progreso a Completado: las veinte vistas del panel administrativo del usuario han sido migradas. CM-UI-002 se mantiene Completado (los componentes `.kodigo-*` ya existían). CM-UI-003 sigue Completado (CSS). CM-UI-004 (a11y transversal WCAG) y CM-UI-005 (QA responsive) permanecen Pendientes.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan como follow-ups los tickets CM-UI-004 (a11y con foco visible, contraste, prefers-reduced-motion), CM-UI-005 (QA responsive en 360/768/1440) y la auditoría visual transversal.
+
+### E-020
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006 (soporte indirecto), CM-SEC-001 (riesgo indirecto por claves PEM).
+- Resultado: Verificado.
+- Alcance: limpieza del workspace `cohort_monitor`. Se verificó que el proyecto `academy-kodigo/` (raíz del workspace) no era dependencia de runtime — cero referencias en `app/`, `public/`, `routes/`, `config/`, `scripts/`, `database/` ni `.agents/`. La carpeta se eliminó del disco. Tras eso, se auditaron los archivos huérfanos adicionales al root:
+  - Probe scripts PHP con credenciales hardcodeadas del esquema previo "kodigo" (`workbench`/`@Kodigo26`): `_check_kodigo.php`, `_introspect.php`, `_kodigo_introspect.php`, `_schema.php`.
+  - Par de claves SSH RSA idénticas (3 311 bytes cada una, BEGIN RSA PRIVATE KEY, encriptadas DES-EDE3-CBC): `_kodigo_key.pem` y `_kodigo_key_unenc.pem`.
+  - Logs de sesión SSH que revelaban errores de túnel: `_ssh.err` (143 bytes) y `_ssh.out` (0 bytes).
+- Acciones aplicadas:
+  1. **Backup seguro de las claves** fuera del repo: copia de `_kodigo_key.pem` y `_kodigo_key_unenc.pem` a `C:\Users\PC\.config\kilo\kodigo-keys-backup-2026-09-26\`. El backup se conservó porque las claves pueden hacer falta para mantener accesos SSH heredados al entorno "workbench". Si se quieren revocar, el backup debe eliminarse también.
+  2. **Borrado en raíz del repo** de los 6 archivos enumerables: los 4 probe PHP y los dos `*.out`/`*.err`. La operación devolvió éxito para todos.
+  3. **.gitignore extendido** con un bloque `# --- Local diagnostics / probe scripts (prefixed with _ at the repo root)` que añade los patrones `/_*.php`, `/_*.pem`, `/_*.key`, `/_*.env`, `/_*.err`, `/_*.out`, `/_*.log`. Así, aunque en futuras sesiones reaparezcan archivos con esos prefijos, no se filtrarán al commit.
+  4. **Verificación con `git check-ignore`**: los 8 archivos huérfanos (uno por uno) son rechazados por las nuevas reglas.
+- Hallazgo de bloqueo en Windows: el archivo `_kodigo_key.pem` no se pudo borrar porque el sistema de archivos devolvía `Access denied` tanto a `Remove-Item`, `cmd del`, `Rename-Item` como a `[IO.File]::WriteAllBytes` (los tres vectores). El atributo era solo `Archive` (sin ReadOnly ni Hidden). Es muy probable que se trate de Windows Defender reteniendo el descriptor para análisis heurístico de ransomware sobre el contenido cifrado DES. La solución es esperar a que el AV libere el handle o detener temporalmente la Protección contra ransomware para esa carpeta. El archivo ya está bloqueado por `.gitignore`, por lo que no podrá ser commiteado aunque persista.
+- Fuentes: [academy-kodigo](../PLAN_UXUI_KODIGO.md) referencia del lenguaje visual Kodigo (no dependencia técnica); [probe scripts borrados]; [`.gitignore`](../../.gitignore); [validador del tracker](../../.agents/skills/cohort-monitor-tracker/scripts/validate_tracker.py).
+- Comprobación: `git ls-files academy-kodigo` → vacío; `git ls-files .gitignore` → tracking normal; `git check-ignore` aplicado a cada huérfano devuelve patrón coincidente; `git status --short` → solo `.gitignore (modificado)` y los skills locales en `.agents/` que permanecen untracked por convención del repo; `python -X utf8 validate_tracker.py` → `Tracker válido: 27 tickets, 19 evidences.`; `node -c public/assets/js/app.js` → OK.
+- Observaciones: las claves siguen bloqueadas por procesos del sistema, por lo que el borrado físico se completa en cuanto se libere el handle del AV. Mientras tanto la protección por `.gitignore` impide cualquier filtración. El backup externo queda como única copia de seguridad.
+- Límite: no se revocaron credenciales ni se rotaron claves SSH traseras: si se considera que las claves estaban expuestas al producto, hace falta abrir CM-SEC-001 y rotar las claves del entorno "workbench".
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006

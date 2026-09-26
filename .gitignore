@@ -32,3 +32,12 @@ node_modules/
 /database/list_users_*.php
 /database/run_migration_*.php
 /database/registros_*.sql
+
+# --- Local diagnostics / probe scripts (prefixed with _ at the repo root)
+/_*.php
+/_*.pem
+/_*.key
+/_*.env
+/_*.err
+/_*.out
+/_*.log
