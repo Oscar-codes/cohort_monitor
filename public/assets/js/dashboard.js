@@ -36,6 +36,19 @@
         return typeof ApexCharts !== 'undefined';
     }
 
+    function prefersReducedMotion() {
+        return typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function chartAnimations() {
+        if (prefersReducedMotion()) {
+            return { enabled: false };
+        }
+        return { enabled: true, speed: 220, easing: 'easeout' };
+    }
+
     function renderSparkline(id, series, color) {
         const el = document.getElementById(id);
         if (!el || !hasApex()) return;
@@ -46,7 +59,7 @@
                 type: 'area',
                 height: 58,
                 sparkline: { enabled: true },
-                animations: { enabled: true, speed: 450 }
+                animations: chartAnimations()
             },
             series: [{ data: values }],
             colors: [color],
@@ -76,7 +89,8 @@
                 type: 'bar',
                 height: 220,
                 toolbar: { show: false },
-                fontFamily: 'Inter, Segoe UI, sans-serif'
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                animations: chartAnimations()
             },
             series: [{
                 name: 'Estudiantes',
@@ -135,7 +149,8 @@
             chart: {
                 type: 'donut',
                 height: 245,
-                fontFamily: 'Inter, Segoe UI, sans-serif'
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                animations: chartAnimations()
             },
             series,
             labels: status.labels || [],
@@ -181,7 +196,8 @@
                 type: 'bar',
                 height: 310,
                 toolbar: { show: false },
-                fontFamily: 'Inter, Segoe UI, sans-serif'
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                animations: chartAnimations()
             },
             series: [{ name: 'Cohortes', data: series }],
             colors: [palette.primary],

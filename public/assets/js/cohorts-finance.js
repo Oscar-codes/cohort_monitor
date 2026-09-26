@@ -34,6 +34,19 @@
         return typeof ApexCharts !== 'undefined';
     }
 
+    function prefersReducedMotion() {
+        return typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function chartAnimations() {
+        if (prefersReducedMotion()) {
+            return { enabled: false };
+        }
+        return { enabled: true, speed: 220, easing: 'easeout' };
+    }
+
     function currencyFmt(value) {
         return new Intl.NumberFormat('es-SV', {
             style: 'currency',
@@ -203,7 +216,8 @@
                 type: 'line',
                 height: 320,
                 toolbar: { show: false },
-                fontFamily: 'Inter, Segoe UI, sans-serif'
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                animations: chartAnimations()
             },
             series: [
                 { name: 'Meta', data: targetExtended },
@@ -276,7 +290,8 @@
                 height: 320,
                 stacked: false,
                 toolbar: { show: false },
-                fontFamily: 'Inter, Segoe UI, sans-serif'
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                animations: chartAnimations()
             },
             series: [
                 { name: 'Actual', data: actual },

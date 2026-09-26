@@ -2,6 +2,7 @@
 <?php use App\Core\Auth; ?>
 <?php
     $active = static fn(string $page): string => ($activePage ?? '') === $page ? 'active' : '';
+    $current = static fn(string $page): string => ($activePage ?? '') === $page ? 'page' : 'false';
 ?>
 <nav id="sidebar" class="offcanvas-lg offcanvas-start sidebar" tabindex="-1" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header d-lg-none border-bottom border-secondary border-opacity-25 px-3 py-2">
@@ -24,7 +25,7 @@
             <?php if (Auth::canAccess('dashboard')): ?>
             <li class="nav-section-label"><span>Principal</span></li>
             <li class="nav-item">
-                <a href="/" class="nav-link <?= $active('dashboard') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                <a href="/" class="nav-link <?= $active('dashboard') ?>" aria-current="<?= $current('dashboard') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
@@ -36,7 +37,7 @@
             <?php endif; ?>
             <?php if (Auth::canAccess('cohorts')): ?>
             <li class="nav-item">
-                <a href="/cohorts" class="nav-link <?= $active('cohorts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Cohortes">
+                <a href="/cohorts" class="nav-link <?= $active('cohorts') ?>" aria-current="<?= $current('cohorts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Cohortes">
                     <i class="bi bi-people"></i>
                     <span>Cohortes</span>
                 </a>
@@ -44,7 +45,7 @@
             <?php endif; ?>
             <?php if (Auth::canAccess('cohorts_master')): ?>
             <li class="nav-item">
-                <a href="/cohorts/master" class="nav-link <?= $active('cohorts-master') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Plan Maestro Cohort">
+                <a href="/cohorts/master" class="nav-link <?= $active('cohorts-master') ?>" aria-current="<?= $current('cohorts-master') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Plan Maestro Cohort">
                     <i class="bi bi-grid-1x2"></i>
                     <span>Plan Maestro</span>
                 </a>
@@ -53,7 +54,7 @@
 
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-item">
-                <a href="/cohorts/import" class="nav-link <?= $active('import') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Importar cohortes">
+                <a href="/cohorts/import" class="nav-link <?= $active('import') ?>" aria-current="<?= $current('import') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Importar cohortes">
                     <i class="bi bi-cloud-arrow-up"></i>
                     <span>Importar</span>
                 </a>
@@ -72,7 +73,7 @@
 
             <?php if (Auth::canAccess('alerts')): ?>
             <li class="nav-item">
-                <a href="/alerts" class="nav-link <?= $active('alerts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
+                <a href="/alerts" class="nav-link <?= $active('alerts') ?>" aria-current="<?= $current('alerts') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Alertas">
                     <i class="bi bi-exclamation-triangle"></i>
                     <span>Alertas</span>
                     <span class="nav-alert-dot" aria-hidden="true"></span>
@@ -82,7 +83,7 @@
 
             <?php if (Auth::canAccess('coaches')): ?>
             <li class="nav-item">
-                <a href="/coaches" class="nav-link <?= $active('coaches') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
+                <a href="/coaches" class="nav-link <?= $active('coaches') ?>" aria-current="<?= $current('coaches') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Coaches">
                     <i class="bi bi-calendar-range"></i>
                     <span>Coaches</span>
                 </a>
@@ -94,7 +95,7 @@
             <?php endif; ?>
             <?php if (Auth::canAccess('reports')): ?>
             <li class="nav-item">
-                <a href="/reports" class="nav-link <?= $active('reports') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
+                <a href="/reports" class="nav-link <?= $active('reports') ?>" aria-current="<?= $current('reports') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
                 </a>
@@ -102,7 +103,7 @@
             <?php endif; ?>
             <?php if (Auth::canAccess('cohorts_finance')): ?>
             <li class="nav-item">
-                <a href="/cohorts/finance" class="nav-link <?= $active('cohorts-finance') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Finanzas Cohort Plan">
+                <a href="/cohorts/finance" class="nav-link <?= $active('cohorts-finance') ?>" aria-current="<?= $current('cohorts-finance') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Finanzas Cohort Plan">
                     <i class="bi bi-cash-coin"></i>
                     <span>Finanzas</span>
                 </a>
@@ -112,19 +113,19 @@
             <?php if (Auth::isAdmin()): ?>
             <li class="nav-section-label"><span>Administracion</span></li>
             <li class="nav-item">
-                <a href="/users" class="nav-link <?= $active('users') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
+                <a href="/users" class="nav-link <?= $active('users') ?>" aria-current="<?= $current('users') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
                     <i class="bi bi-person-gear"></i>
                     <span>Usuarios</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/audit-log" class="nav-link <?= $active('admin-audit-log') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Bitacora de auditoria">
+                <a href="/admin/audit-log" class="nav-link <?= $active('admin-audit-log') ?>" aria-current="<?= $current('admin-audit-log') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Bitacora de auditoria">
                     <i class="bi bi-journal-text"></i>
                     <span>Bitacora</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/health" class="nav-link <?= $active('admin-health') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Estado del sistema">
+                <a href="/admin/health" class="nav-link <?= $active('admin-health') ?>" aria-current="<?= $current('admin-health') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Estado del sistema">
                     <i class="bi bi-heart-pulse"></i>
                     <span>Estado Sistema</span>
                 </a>
@@ -133,7 +134,7 @@
 
             <li class="nav-section-label"><span>Cuenta</span></li>
             <li class="nav-item">
-                <a href="/account" class="nav-link <?= $active('account') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Mi cuenta">
+                <a href="/account" class="nav-link <?= $active('account') ?>" aria-current="<?= $current('account') ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Mi cuenta">
                     <i class="bi bi-person-circle"></i>
                     <span>Mi cuenta</span>
                 </a>

@@ -4848,8 +4848,29 @@ body {
 
 /* Density and accessibility layer */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline: 2px solid var(--app-primary);
     outline-offset: 2px;
+    box-shadow: var(--app-focus-ring);
+    border-radius: 4px;
+}
+
+/* Danger variant for destructive actions */
+:where(a, button)[data-tone="danger"]:focus-visible,
+.btn-outline-danger:focus-visible,
+.btn-danger:focus-visible {
+    outline-color: var(--app-danger);
+    box-shadow: var(--app-focus-ring-danger);
+}
+
+/* Touch targets — minimum 40x40 on interactive elements */
+@media (max-width: 575.98px) {
+    .header-icon-btn,
+    .btn-icon,
+    .sidebar-collapse-btn,
+    .dashboard-action {
+        min-width: 40px;
+        min-height: 40px;
+    }
 }
 
 .header-icon-btn[aria-pressed="true"] {

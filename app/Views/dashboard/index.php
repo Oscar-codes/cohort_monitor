@@ -158,6 +158,7 @@
                 </div>
             </div>
             <div id="kpiAlertsSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
+            <div class="visually-hidden">Resumen: <?= number_format($plannedCohorts) ?> cohortes planificadas, <?= number_format($activeCohorts) ?> activas, <?= number_format($completedCohorts) ?> completadas y <?= number_format($totalAlerts) ?> alertas activas.</div>
             <div class="metric-card__footer">
                 <span><?= $riskStageCount ?> marketing</span>
                 <a href="/alerts">Revisar</a>
@@ -246,7 +247,7 @@
                         <span><i class="bi bi-square-fill text-info"></i> Inscritos B2C <?= number_format($totalB2cAdmissions) ?></span>
                     </div>
                 </div>
-                <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions"></div>
+                <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions" role="img" aria-label="Grafica de progreso de admisiones: meta vs actuales vs pendiente"></div>
             </div>
         </div>
     </div>
@@ -258,7 +259,7 @@
                     <p class="app-panel__subtitle">Distribucion actual por estado.</p>
                 </div>
             </div>
-            <div id="dashboardStatusChart" class="dashboard-chart dashboard-chart--donut"></div>
+            <div id="dashboardStatusChart" class="dashboard-chart dashboard-chart--donut" role="img" aria-label="Grafica de dona con distribucion de cohortes por estado"></div>
             <div class="dashboard-status-list">
                 <?php $statusTotal = array_sum($statusBreakdown) ?: 1; ?>
                 <?php foreach ($statusBreakdown as $key => $count): ?>
@@ -283,7 +284,7 @@
                 </div>
             </div>
             <?php if (!empty($typeRows)): ?>
-                <div id="dashboardBootcampChart" class="dashboard-chart dashboard-chart--bar"></div>
+                <div id="dashboardBootcampChart" class="dashboard-chart dashboard-chart--bar" role="img" aria-label="Grafica de barras con cohortes agrupadas por tipo de bootcamp"></div>
             <?php else: ?>
                 <div class="empty-state py-4">
                     <i class="bi bi-bar-chart empty-state-icon"></i>
@@ -443,4 +444,42 @@
     <i class="bi bi-clock"></i> <span id="dash-time">--:--:--</span>
 </div>
 
-<textarea id="cohort-dashboard-data" class="d-none"><?= htmlspecialchars(json_encode($dashboardChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
+<textarea id="cohort-dashboard-data" class="d-none" aria-hidden="true"><?= htmlspecialchars(json_encode($dashboardChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
+
+<details class="visually-hidden">
+    <summary>Resumen ejecutivo de indicadores</summary>
+    <ul>
+        <li>Total cohortes: <?= number_format($totalCohorts) ?></li>
+        <li>En progreso: <?= number_format($activeCohorts) ?></li>
+        <li>Completadas: <?= number_format($completedCohorts) ?></li>
+        <li>Alertas activas: <?= number_format($totalAlerts) ?></li>
+        <li>Inscritos B2B: <?= number_format($totalB2bAdmissions) ?></li>
+        <li>Inscritos B2C: <?= number_format($totalB2cAdmissions) ?></li>
+        <li>Cumplimiento: <?= number_format($admissionPct, 1) ?>%</li>
+    </ul>
+</details>
+<details class="visually-hidden">
+    <summary>Distribucion por estado de cohortes</summary>
+    <table>
+        <caption>Cohortes por estado</caption>
+        <thead><tr><th>Estado</th><th>Total</th></tr></thead>
+        <tbody>
+            <?php foreach ($statusBreakdown as $key => $count): ?>
+                <?php [$label] = $statusLabels[$key] ?? [ucfirst((string) $key), 'secondary']; ?>
+                <tr><td><?= htmlspecialchars($label) ?></td><td><?= (int) $count ?></td></tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</details>
+<details class="visually-hidden">
+    <summary>Cohortes por tipo de bootcamp</summary>
+    <table>
+        <caption>Top cohortes por tipo</caption>
+        <thead><tr><th>Tipo</th><th>Total</th></tr></thead>
+        <tbody>
+            <?php foreach ($typeRows as $typeName => $typeCount): ?>
+                <tr><td><?= htmlspecialchars((string) ($typeName ?: 'Sin tipo')) ?></td><td><?= (int) $typeCount ?></td></tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</details>

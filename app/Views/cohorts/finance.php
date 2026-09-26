@@ -352,7 +352,7 @@ $spanishMonths = [
                     </select>
                 </div>
             </div>
-            <div id="financeMonthlyChart" style="min-height: 320px;"></div>
+            <div id="financeMonthlyChart" style="min-height: 320px;" role="img" aria-label="Grafica de tendencia mensual de revenue meta vs actual con proyeccion"></div>
         </section>
     </div>
     <div class="col-xl-5">
@@ -371,13 +371,53 @@ $spanishMonths = [
                     </select>
                 </div>
             </div>
-            <div id="financeBootcampChart" style="min-height: 320px;"></div>
+            <div id="financeBootcampChart" style="min-height: 320px;" role="img" aria-label="Grafica de barras horizontales con el top de cohortes por revenue actual contra meta"></div>
         </section>
     </div>
 </div>
 
 
-<textarea id="cohort-finance-data" class="d-none"><?= htmlspecialchars(json_encode($financeChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
+<textarea id="cohort-finance-data" class="d-none" aria-hidden="true"><?= htmlspecialchars(json_encode($financeChartData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
+
+<details class="visually-hidden">
+    <summary>Datos de tendencia mensual</summary>
+    <table>
+        <caption>Revenue mensual (<?= htmlspecialchars($businessModelLabel) ?>)</caption>
+        <thead>
+            <tr><th>Periodo</th><th>Meta</th><th>Actual</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($trendMonths as $monthRow): ?>
+                <tr>
+                    <td><?= htmlspecialchars((string) ($monthRow['label'] ?? '—')) ?></td>
+                    <td><?= number_format((float) ($monthRow['target'] ?? 0), 0, '.', ',') ?></td>
+                    <td><?= number_format((float) ($monthRow['actual'] ?? 0), 0, '.', ',') ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</details>
+<details class="visually-hidden">
+    <summary>Datos por cohorte</summary>
+    <table>
+        <caption>Revenue por cohorte (<?= htmlspecialchars($businessModelLabel) ?>)</caption>
+        <thead>
+            <tr><th>Cohorte</th><th>Meta</th><th>Actual</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach ($byBootcamp as $bcRow):
+                $bcTarget = $resolveTarget($bcRow);
+                $bcActual = $resolveActual($bcRow);
+            ?>
+                <tr>
+                    <td><?= htmlspecialchars((string) ($bcRow['bootcamp_name'] ?? '—')) ?></td>
+                    <td><?= number_format($bcTarget, 0, '.', ',') ?></td>
+                    <td><?= number_format($bcActual, 0, '.', ',') ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</details>
 <textarea id="cohort-finance-trend" class="d-none" data-year="<?= htmlspecialchars($selectedYear, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(json_encode([
     'year' => $selectedYear,
     'current_year' => $currentYear,
