@@ -23,6 +23,7 @@ const App = (() => {
         initAlertsWorkbench();
         initKodigoToast();
         initKodigoReveal();
+        initAlertToKodigoToast();
     }
 
     function initDynamicStyles() {
@@ -184,21 +185,30 @@ const App = (() => {
                 }
 
                 const message = form.dataset.confirm || 'Confirmar accion';
+                const tone = form.dataset.confirmTone || 'warning';
+                const title = form.dataset.confirmTitle || 'Confirmar accion';
+                const confirmText = form.dataset.confirmButton || 'Si, continuar';
+                const icon = tone === 'danger' ? 'warning' : 'question';
 
                 if (typeof Swal !== 'undefined') {
                     e.preventDefault();
 
                     Swal.fire({
-                        title: 'Confirmar accion',
+                        title,
                         text: message,
-                        icon: 'warning',
+                        icon,
                         showCancelButton: true,
-                        confirmButtonText: 'Si, continuar',
+                        confirmButtonText: confirmText,
                         cancelButtonText: 'Cancelar',
                         reverseButtons: true,
+                        focusCancel: tone === 'danger',
                         customClass: {
-                            confirmButton: 'btn btn-danger',
-                            cancelButton: 'btn btn-outline-secondary'
+                            confirmButton: tone === 'danger'
+                                ? 'btn btn-danger'
+                                : 'btn btn-kodigo',
+                            cancelButton: 'btn btn-outline-secondary',
+                            popup: 'kodigo-swal-popup',
+                            title: 'kodigo-swal-title',
                         },
                         buttonsStyling: false
                     }).then(result => {
@@ -383,6 +393,55 @@ const App = (() => {
                 el.style.opacity = '1';
                 el.style.transform = 'translateY(0)';
             });
+        });
+    }
+
+    /**
+     * Convert Bootstrap-flash alerts (alert-success/info/warning/danger) into
+     * Kodigo toasts so feedback is consistent across pages without editing each
+     * view. Hidden after conversion so the same message is not duplicated.
+     */
+    function initAlertToKodigoToast() {
+        if (typeof window.kodigoToast !== 'function') return;
+
+        const toneMap = {
+            'alert-success': 'success',
+            'alert-info': 'info',
+            'alert-warning': 'warning',
+            'alert-danger': 'danger',
+            'alert-primary': 'info',
+            'alert-secondary': 'info',
+        };
+
+        const alerts = Array.from(document.querySelectorAll('.alert'));
+        if (!alerts.length) return;
+
+        alerts.forEach((alert) => {
+            const tone = Object.keys(toneMap).find(cls => alert.classList.contains(cls));
+            if (!tone) return;
+
+            const cloned = alert.cloneNode(true);
+            cloned.querySelectorAll('.btn-close, button').forEach(btn => btn.remove());
+
+            const text = cloned.textContent.replace(/\s+/g, ' ').trim();
+            if (!text) {
+                alert.style.display = 'none';
+                return;
+            }
+
+            const parts = text.split(/(?<=[.!?])\s+/);
+            const title = parts[0] || text;
+            const message = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+            window.kodigoToast({
+                tone: toneMap[tone],
+                title,
+                message,
+                timeout: 4500,
+            });
+
+            alert.style.display = 'none';
+            alert.setAttribute('aria-hidden', 'true');
         });
     }
 

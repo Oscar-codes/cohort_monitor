@@ -169,14 +169,15 @@
 
 <section class="row g-3 mb-4">
     <div class="col-12">
-        <div class="app-panel">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-lightning-charge text-warning"></i> Acciones rapidas</h3>
-                    <p class="app-panel__subtitle">Atajos principales segun permisos del usuario.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-lightning-charge text-warning"></i> Acciones rapidas</h3>
+                    <p class="kodigo-card__subtitle">Atajos principales segun permisos del usuario.</p>
                 </div>
             </div>
-            <div class="dashboard-actions">
+            <div class="kodigo-card__body">
+                <div class="dashboard-actions">
                 <?php if (Auth::canCreateCohort()): ?>
                 <a href="/cohorts/create" class="dashboard-action">
                     <span class="dashboard-action__icon text-primary bg-primary-subtle"><i class="bi bi-plus-lg"></i></span>
@@ -208,6 +209,7 @@
                     <span>Importar</span>
                 </a>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -215,15 +217,16 @@
 
 <section class="row g-3 mb-4">
     <div class="col-xl-8">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-graph-up-arrow text-primary"></i> Progreso de admisiones</h3>
-                    <p class="app-panel__subtitle">Avance global contra la meta total.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-graph-up-arrow text-primary"></i> Progreso de admisiones</h3>
+                    <p class="kodigo-card__subtitle">Avance global contra la meta total.</p>
                 </div>
-                <span class="status-pill status-pill--primary"><?= number_format($admissionPct, 1) ?>%</span>
+                <span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= number_format($admissionPct, 1) ?>%</span>
             </div>
-            <div class="dashboard-admissions-grid">
+            <div class="kodigo-card__body">
+                <div class="dashboard-admissions-grid">
                 <div>
                     <div class="dashboard-number-row">
                         <div>
@@ -248,18 +251,20 @@
                     </div>
                 </div>
                 <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions" role="img" aria-label="Grafica de progreso de admisiones: meta vs actuales vs pendiente"></div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-xl-4">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-pie-chart text-info"></i> Estado de cohortes</h3>
-                    <p class="app-panel__subtitle">Distribucion actual por estado.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-pie-chart text-info"></i> Estado de cohortes</h3>
+                    <p class="kodigo-card__subtitle">Distribucion actual por estado.</p>
                 </div>
             </div>
-            <div id="dashboardStatusChart" class="dashboard-chart dashboard-chart--donut" role="img" aria-label="Grafica de dona con distribucion de cohortes por estado"></div>
+            <div class="kodigo-card__body">
+                <div id="dashboardStatusChart" class="dashboard-chart dashboard-chart--donut" role="img" aria-label="Grafica de dona con distribucion de cohortes por estado"></div>
             <div class="dashboard-status-list">
                 <?php $statusTotal = array_sum($statusBreakdown) ?: 1; ?>
                 <?php foreach ($statusBreakdown as $key => $count): ?>
@@ -269,6 +274,7 @@
                         <strong><?= (int) $count ?> <small><?= round(((int) $count / $statusTotal) * 100) ?>%</small></strong>
                     </div>
                 <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -276,34 +282,38 @@
 
 <section class="row g-3 mb-4">
     <div class="col-xl-5">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-layers text-secondary"></i> Cohortes por tipo</h3>
-                    <p class="app-panel__subtitle">Top <?= count($typeRows) ?> categorias con mas cohortes.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-layers text-secondary"></i> Cohortes por tipo</h3>
+                    <p class="kodigo-card__subtitle">Top <?= count($typeRows) ?> categorias con mas cohortes.</p>
                 </div>
             </div>
-            <?php if (!empty($typeRows)): ?>
-                <div id="dashboardBootcampChart" class="dashboard-chart dashboard-chart--bar" role="img" aria-label="Grafica de barras con cohortes agrupadas por tipo de bootcamp"></div>
-            <?php else: ?>
-                <div class="empty-state py-4">
-                    <i class="bi bi-bar-chart empty-state-icon"></i>
-                    <p class="empty-state-text mb-0">No hay cohortes para graficar.</p>
-                </div>
-            <?php endif; ?>
+            <div class="kodigo-card__body">
+                <?php if (!empty($typeRows)): ?>
+                    <div id="dashboardBootcampChart" class="dashboard-chart dashboard-chart--bar" role="img" aria-label="Grafica de barras con cohortes agrupadas por tipo de bootcamp"></div>
+                <?php else: ?>
+                    <div class="kodigo-empty py-4">
+                        <i class="bi bi-bar-chart kodigo-empty__icon" aria-hidden="true"></i>
+                        <h4 class="kodigo-empty__title">Sin datos por tipo</h4>
+                        <p class="kodigo-empty__text">No hay cohortes suficientes para graficar la distribucion por tipo.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <div class="col-xl-7">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-calendar-event text-primary"></i> Proximos inicios</h3>
-                    <p class="app-panel__subtitle">Cohortes que inician en los proximos 30 dias.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-calendar-event text-primary"></i> Proximos inicios</h3>
+                    <p class="kodigo-card__subtitle">Cohortes que inician en los proximos 30 dias.</p>
                 </div>
                 <a href="/cohorts?cohort_status=planned" class="btn btn-sm btn-outline-primary">Ver agenda</a>
             </div>
-            <?php if (!empty($upcomingCohorts)): ?>
+            <div class="kodigo-card__body">
+                <?php if (!empty($upcomingCohorts)): ?>
                 <div class="dashboard-upcoming-list">
                     <?php foreach (array_slice($upcomingCohorts, 0, 5) as $uc): ?>
                     <?php
@@ -326,28 +336,30 @@
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="empty-state py-4">
-                    <i class="bi bi-calendar-check text-success empty-state-icon"></i>
-                    <p class="empty-state-text mb-0">No hay inicios programados en los proximos 30 dias.</p>
+                <div class="kodigo-empty py-4">
+                    <i class="bi bi-calendar-check text-success kodigo-empty__icon" aria-hidden="true"></i>
+                    <p class="kodigo-empty__text mb-0">No hay inicios programados en los proximos 30 dias.</p>
                 </div>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 </section>
 
 <section class="row g-3 mb-4">
     <div class="col-xl-6">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-exclamation-triangle text-danger"></i> Alertas recientes</h3>
-                    <p class="app-panel__subtitle">Riesgos de marketing y comentarios marcados.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-exclamation-triangle text-danger"></i> Alertas recientes</h3>
+                    <p class="kodigo-card__subtitle">Riesgos de marketing y comentarios marcados.</p>
                 </div>
                 <a href="/alerts" class="btn btn-sm btn-outline-danger">Ver todas</a>
             </div>
-            <?php $hasAlerts = !empty($riskComments) || !empty($atRiskStages); ?>
-            <?php if ($hasAlerts): ?>
-            <div class="dashboard-alert-list">
+            <div class="kodigo-card__body">
+                <?php $hasAlerts = !empty($riskComments) || !empty($atRiskStages); ?>
+                <?php if ($hasAlerts): ?>
+                <div class="dashboard-alert-list">
                 <?php foreach (($atRiskStages ?? []) as $s): ?>
                 <a href="/cohorts/<?= (int) $s['cohort_id'] ?>/marketing" class="dashboard-alert-item">
                     <span class="dashboard-alert-dot is-warning"></span>
@@ -368,26 +380,28 @@
                     <time><?= date('d/m', strtotime($rc['created_at'])) ?></time>
                 </a>
                 <?php endforeach; ?>
-            </div>
+                </div>
             <?php else: ?>
-            <div class="empty-state py-4">
-                <i class="bi bi-shield-check text-success empty-state-icon"></i>
-                <p class="empty-state-text mb-0">Sin alertas activas.</p>
-            </div>
+                <div class="kodigo-empty py-4">
+                    <i class="bi bi-shield-check text-success kodigo-empty__icon" aria-hidden="true"></i>
+                    <p class="kodigo-empty__text mb-0">Sin alertas activas.</p>
+                </div>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <div class="col-xl-6">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-clock-history text-primary"></i> Cohortes recientes</h3>
-                    <p class="app-panel__subtitle">Ultimos registros y avance de admisiones.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-clock-history text-primary"></i> Cohortes recientes</h3>
+                    <p class="kodigo-card__subtitle">Ultimos registros y avance de admisiones.</p>
                 </div>
                 <a href="/cohorts" class="btn btn-sm btn-outline-primary">Ver todas</a>
             </div>
-            <?php if (!empty($recentCohorts)): ?>
+            <div class="kodigo-card__body">
+                <?php if (!empty($recentCohorts)): ?>
             <div class="table-responsive dashboard-table-wrap">
                 <table class="table table-hover align-middle mb-0 dashboard-table">
                     <thead>
@@ -419,7 +433,7 @@
                                 <div class="dashboard-mini-progress mx-auto mt-1"><span data-style-width="<?= $cPct ?>%"></span></div>
                             </td>
                             <td class="text-center">
-                                <span class="status-pill status-pill--<?= $sColor ?>"><?= htmlspecialchars($sLabel) ?></span>
+                                <span class="kodigo-pill" data-tone="<?= $sColor === 'secondary' ? 'neutral' : htmlspecialchars($sColor) ?>"><?= htmlspecialchars($sLabel) ?></span>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -427,11 +441,12 @@
                 </table>
             </div>
             <?php else: ?>
-            <div class="empty-state py-4">
-                <i class="bi bi-inbox text-muted empty-state-icon"></i>
-                <p class="empty-state-text mb-0">No hay cohortes registradas.</p>
-            </div>
+                <div class="kodigo-empty py-4">
+                    <i class="bi bi-inbox text-muted kodigo-empty__icon" aria-hidden="true"></i>
+                    <p class="kodigo-empty__text mb-0">No hay cohortes registradas.</p>
+                </div>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 </section>

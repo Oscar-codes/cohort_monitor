@@ -119,7 +119,7 @@ body {
     text-decoration: none;
     top: 0.75rem;
     transform: translateY(-150%);
-    transition: transform 0.18s ease;
+    transition: transform var(--dur-pop) var(--ease-out);
     z-index: 2000;
 }
 
@@ -492,7 +492,9 @@ body.sidebar-collapsed .nav-alert-dot {
     justify-content: center;
     position: relative;
     text-decoration: none;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color   var(--dur-hover) var(--ease-out),
+                color          var(--dur-hover) var(--ease-out);
     width: 36px;
 }
 
@@ -609,7 +611,8 @@ body.sidebar-collapsed .nav-alert-dot {
 .kpi-card {
     border: none;
     border-radius: 14px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--dur-hover) var(--ease-out),
+                box-shadow var(--dur-hover) var(--ease-out);
     overflow: hidden;
     position: relative;
 }
@@ -1001,7 +1004,7 @@ body.sidebar-collapsed .nav-alert-dot {
     cursor: pointer;
     user-select: none;
     border-left: 4px solid var(--status-color, #6c757d);
-    transition: background 0.15s ease;
+    transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 .status-accordion-header:hover {
@@ -1009,7 +1012,7 @@ body.sidebar-collapsed .nav-alert-dot {
 }
 
 .status-accordion-arrow {
-    transition: transform 0.25s ease;
+    transition: transform var(--dur-pop) var(--ease-out);
     font-size: 0.8rem;
     color: #6c757d;
 }
@@ -1077,7 +1080,7 @@ body.sidebar-collapsed .nav-alert-dot {
 .gantt-row {
     border-bottom: 1px solid #f0f0f0;
     align-items: center;
-    transition: background 0.1s;
+    transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 .gantt-row:hover {
@@ -1348,7 +1351,9 @@ body {
     overflow: hidden;
     padding: 1rem;
     position: relative;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    transition: transform    var(--dur-hover) var(--ease-out),
+                box-shadow    var(--dur-hover) var(--ease-out),
+                border-color  var(--dur-hover) var(--ease-out);
 }
 
 .metric-card:hover,
@@ -1439,7 +1444,7 @@ body {
 
 .app-panel {
     padding: 1rem;
-    transition: box-shadow 0.18s ease;
+    transition: box-shadow var(--dur-hover) var(--ease-out);
 }
 
 .app-panel__header {
@@ -1487,7 +1492,9 @@ body {
     padding: 0.9rem;
     text-align: center;
     text-decoration: none;
-    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    transition: transform       var(--dur-hover) var(--ease-out),
+                border-color     var(--dur-hover) var(--ease-out),
+                background-color var(--dur-hover) var(--ease-out);
 }
 
 .dashboard-action:hover {
@@ -1557,7 +1564,7 @@ body {
     border-radius: inherit;
     display: block;
     height: 100%;
-    transition: width 0.45s ease;
+    transition: width var(--dur-page) var(--ease-out);
 }
 
 .dashboard-mini-progress {
@@ -1682,7 +1689,9 @@ body {
     gap: 0.75rem;
     padding: 0.75rem;
     text-decoration: none;
-    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    transition: transform       var(--dur-hover) var(--ease-out),
+                background-color var(--dur-hover) var(--ease-out),
+                border-color     var(--dur-hover) var(--ease-out);
 }
 
 .dashboard-upcoming-item:hover,
@@ -2015,7 +2024,9 @@ body {
     gap: 0.8rem;
     grid-template-columns: 44px minmax(0, 1fr) auto;
     padding: 0.9rem;
-    transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color    var(--dur-hover) var(--ease-out),
+                transform       var(--dur-press) var(--ease-out);
 }
 
 .risk-item:hover {
@@ -2509,7 +2520,9 @@ body {
     background: var(--app-surface-muted);
     border: 2px dashed #cbd5e1;
     cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color    var(--dur-hover) var(--ease-out),
+                transform       var(--dur-press) var(--ease-out);
 }
 
 .upload-zone:hover,
@@ -3354,7 +3367,8 @@ body {
     min-width: 44px;
     padding: 0 0.8rem;
     text-decoration: none;
-    transition: filter 0.18s ease, transform 0.18s ease;
+    transition: filter    var(--dur-hover) var(--ease-out),
+                transform var(--dur-press) var(--ease-out);
 }
 
 .coach-gantt-modern .coach-gantt-bar:hover {
@@ -5087,6 +5101,9 @@ html.app-density-compact .empty-state {
 
     /* Keep color/opacity changes (no movement) per review-animations/STANDARDS.md */
     .metric-card,
+    .kpi-card,
+    .finance-summary-card,
+    .master-summary-card,
     .dashboard-action,
     .dashboard-upcoming-item,
     .dashboard-alert-item,
@@ -5094,16 +5111,55 @@ html.app-density-compact .empty-state {
     .dashboard-mini-progress span,
     .card,
     .quick-action-card,
+    .kodigo-card,
+    .kodigo-card[data-interactive="true"],
+    .kodigo-stat-card,
+    .kodigo-toast,
+    .kodigo-swal-popup .swal2-confirm,
+    .kodigo-swal-popup .swal2-cancel,
     .btn,
+    .btn-kodigo,
     .sidebar-nav .nav-link,
-    .sidebar-collapse-btn {
-        transition-property: background-color, color, border-color, box-shadow, opacity !important;
+    .sidebar-collapse-btn,
+    .gantt-row,
+    .upload-zone,
+    .risk-item,
+    .coach-gantt-modern .coach-gantt-bar,
+    .status-accordion,
+    .skip-link {
+        transition-property: background-color, color, border-color, box-shadow, opacity, filter !important;
     }
 
     /* Disable movement on hover transforms */
     .card:hover,
     .quick-action-card:hover,
-    .metric-card:hover {
+    .metric-card:hover,
+    .kpi-card:hover,
+    .finance-summary-card:hover,
+    .master-summary-card:hover,
+    .kodigo-card[data-interactive="true"]:hover,
+    .kodigo-stat-card:hover,
+    .dashboard-action:hover,
+    .dashboard-upcoming-item:hover,
+    .dashboard-alert-item:hover,
+    .upload-zone:hover,
+    .coach-gantt-modern .coach-gantt-bar:hover {
+        transform: none !important;
+    }
+
+    /* Skip Kodigo reveal staggers and skeleton shimmers entirely */
+    [data-kodigo-reveal],
+    .kodigo-skeleton,
+    .kodigo-skeleton::after {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    /* Kodigo toast: snap in/out without translate */
+    .kodigo-toast,
+    .kodigo-toast--mounted {
+        transition-property: opacity !important;
         transform: none !important;
     }
 }
@@ -5191,7 +5247,8 @@ html.app-density-compact .empty-state {
     display: flex;
     flex-direction: column;
     padding: 1.25rem;
-    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    transition: box-shadow var(--dur-hover) var(--ease-out),
+                transform  var(--dur-hover) var(--ease-out);
 }
 
 .master-summary-card:hover {
@@ -5314,7 +5371,8 @@ html.app-density-compact .empty-state {
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
-    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    transition: box-shadow var(--dur-hover) var(--ease-out),
+                transform  var(--dur-hover) var(--ease-out);
 }
 
 .finance-summary-card:hover {
@@ -5804,5 +5862,98 @@ html.app-density-compact .empty-state {
         transform: none !important;
     }
 }
+
+/* ─── Kodigo skeleton (Phase 2) ─────────────────────────
+   Skeleton loader visualmente consistente con tokens Kodigo.
+   Usar data-kodigo-skeleton en bloques con clases metric-card,
+   cohort-summary-card o cualquier contenedor para mostrar shimmer
+   mientras cargan datos. */
+.kodigo-skeleton {
+    display: inline-block;
+    width: 100%;
+    height: 0.85rem;
+    background: linear-gradient(
+        90deg,
+        rgba(15, 23, 42, 0.04) 0%,
+        rgba(15, 23, 42, 0.10) 50%,
+        rgba(15, 23, 42, 0.04) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--app-radius-sm, 8px);
+    animation: kodigo-skeleton-shimmer 1.4s linear infinite;
+}
+
+.kodigo-skeleton--lg { height: 1.5rem; }
+.kodigo-skeleton--sm { height: 0.625rem; width: 60%; }
+.kodigo-skeleton--circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+@keyframes kodigo-skeleton-shimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kodigo-skeleton {
+        animation: none;
+        background: rgba(15, 23, 42, 0.06);
+    }
+}
+
+/* ─── Kodigo SweetAlert overrides (Phase 2) ──────────────
+   Aplica el lenguaje Kodigo a dialogs de confirmacion sin
+   reemplazar el CSS de SweetAlert2 (se cargan via customClass). */
+.kodigo-swal-popup {
+    border-radius: var(--app-radius) !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--app-elev-3) !important;
+    padding: 1.5rem !important;
+}
+
+.kodigo-swal-popup .swal2-title {
+    font-size: var(--fs-h3, 1.0625rem) !important;
+    font-weight: 600 !important;
+    color: var(--app-text) !important;
+}
+
+.kodigo-swal-popup .swal2-html-container {
+    font-size: 0.875rem !important;
+    color: var(--app-muted) !important;
+    margin-top: 0.5rem !important;
+}
+
+.kodigo-swal-popup .swal2-actions {
+    margin-top: 1.25rem !important;
+    gap: 0.5rem !important;
+}
+
+.kodigo-swal-popup .swal2-confirm,
+.kodigo-swal-popup .swal2-cancel {
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out),
+                transform var(--dur-press) var(--ease-out),
+                box-shadow var(--dur-hover) var(--ease-out) !important;
+}
+
+.kodigo-swal-popup .swal2-confirm:focus-visible,
+.kodigo-swal-popup .swal2-cancel:focus-visible {
+    box-shadow: var(--app-focus-ring) !important;
+    outline: none !important;
+}
+
+.kodigo-swal-popup .swal2-confirm:active,
+.kodigo-swal-popup .swal2-cancel:active {
+    transform: scale(0.97) !important;
+}
+
+.kodigo-swal-popup .swal2-icon {
+    margin: 0.5rem auto 1rem !important;
+    border-width: 3px !important;
+}
+
 
 

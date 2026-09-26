@@ -56,9 +56,34 @@
 - Tickets: CM-VAL-003.
 - Resultado: Parcial.
 - Alcance: reubicación del panel de filtros de finanzas encima de las tarjetas de montos y ampliación de filtros (mes, bootcamp, meta mínima, meta máxima, tipo de revenue por proyecto) en `/cohorts/finance`; persistencia de filtros en sesión.
-- Fuentes: [CohortController](../../app/Controllers/CohortController.php), [CohortService](../../app/Services/CohortService.php), [CohortRepository](../../app/Repositories/CohortRepository.php), [vista finance](../../app/Views/cohorts/finance.php), [layout](../layouts/) y [PRD histórico](../PRD.md).
+- Fuentes: [CohortController](../../app/Controllers/CohortController.php), [CohortService](../../app/Services/CohortService.php), [CohortRepository](../../app/Repositories/CohortRepository.php), [vista finance](../../app/Views/cohorts/finance.php), [layout](../../app/Views/layouts/main.php) y [PRD histórico](../PRD.md).
 - Comprobación: `php -l` sin errores de sintaxis en los cuatro archivos modificados; `git diff --stat` confirma cambios aislados a módulo de finanzas y documentos.
 - Observaciones: los filtros `month` y `target_min/max` se añadieron al whitelist de `CohortService::normalizeFilters` y a las cláusulas WHERE de `CohortRepository::buildFilters`; la vista muestra badges de filtros activos y un selector de meses poblado desde `availableMonths`.
+- Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
+
+### E-007
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-001, CM-UI-002, CM-UI-003, CM-UI-004.
+- Resultado: Verificado.
+- Alcance: adopción del lenguaje de motion Kodigo en `public/assets/css/app.css` sin modificar lógica, vistas, controladores ni servicios. Se reemplazaron transiciones con `ease` literal y `width 0.45s` por tokens `--dur-hover`, `--dur-pop`, `--dur-press`, `--dur-page` y `--ease-out`; se reforzó el bloque `prefers-reduced-motion` para cubrir `.kodigo-*`, `.finance-summary-card`, `.master-summary-card`, `.gantt-row`, `.upload-zone`, `.kpi-card`, `.coach-gantt-bar` y `.skip-link`.
+- Fuentes: [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md) §§ 3 y 5; [estándares de motion](../../.agents/skills/review-animations/STANDARDS.md); [app.css](../../public/assets/css/app.css) (secciones `KPI Cards`, `Status accordion`, `Gantt`, `Master summary`, `Finance summary`, `Upload zone`, `Dashboard progress`, `Acciones rápidas`, `próximos inicios` y `@media (prefers-reduced-motion)`).
+- Comprobación: `node -c public/assets/js/app.js` sin errores; `rg -n '\\b0\\.\\d+s\\s+ease\\b|transition:\\s+all' public/assets/css/app.css` sin coincidencias; revisión visual de los selectores actualizados en sus bloques temáticos; la barra de progreso animada mantiene la propiedad `width` únicamente como excepción permitida para el indicador (rev. anim § 2).
+- Observaciones: el helper JS `kodigoToast`, `initKodigoReveal` e `initAlertToKodigoToast` ya estaban en `app.js`; no se requirieron cambios en JS. Las clases heredadas `.app-panel`, `.metric-card`, `.status-pill`, `.empty-state` permanecen en uso y conservan su comportamiento anterior; se evalúa su sustitución progresiva por modificadores `.kodigo-*`.
+- Transición: CM-UI-001 y CM-UI-002 cerrados; CM-UI-003 pasa a En progreso y queda completo en este pase; CM-UI-004 sigue Pendiente. CM-UI-005 sigue Pendiente (no se modificó responsive en este pase).
+- Límite: no se validó la app en navegador con DevTools ni con `prefers-reduced-motion: reduce` activo; las comprobaciones son estáticas y ortográficas. No se importaron assets de la plantilla ni se cambió la versión de Bootstrap.
+
+### E-008
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006, CM-UI-002.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/dashboard/index.php` (`/`) al sistema visual Kodigo. Se sustituyeron todas las apariciones de `.app-panel/__header/__title/__subtitle` por `.kodigo-card/__header/__title/__subtitle`, los `<span class="status-pill status-pill--*">` por `<span class="kodigo-pill" data-tone="*">`, y los bloques `.empty-state` (`.empty-state-icon`, `.empty-state-title`, `.empty-state-text`) por `.kodigo-empty/__icon/__title/__text`. Se añadió `data-elevation="1"` a los paneles para mantener el sombreado Kodigo. Los IDs de sparklines (`kpiTotalSparkline`, `kpiActiveSparkline`, `kpiCompletedSparkline`, `kpiAlertsSparkline`) y los contenedores ApexCharts se conservaron; `dashboard.js` no se modificó.
+- Fuentes: [dashboard](../../app/Views/dashboard/index.php), [dashboard.js](../../public/assets/js/dashboard.js), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.kodigo-empty`, `data-tone`), [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md) § 4.
+- Comprobación: `php -l app/Views/dashboard/index.php` sin errores; `node -c public/assets/js/dashboard.js` y `node -c public/assets/js/app.js` sin errores; `grep -n 'app-panel\|status-pill\|empty-state' app/Views/dashboard/index.php` sin coincidencias.
+- Observaciones: los KPI cards del dashboard siguen usando `.metric-card` (estructura heredada con sparkline + footer) porque `.kodigo-stat-card` no expone slots para esos elementos; la sustitución visual se programa para una fase posterior conservando el comportamiento de `dashboard.js`.
+- Transición: CM-UI-006 pasa de Pendiente a En progreso; CM-UI-002 sigue Completado (los componentes CSS ya estaban disponibles antes de esta migración).
+- Límite: no se ejecutó la app en navegador; sólo comprobación estática y de sintaxis. Quedan pendientes las demás vistas (cohortes, alertas, marketing, usuarios, finanzas, reportes, coaches, importación, auth/login, account/profile, admin/audit, admin/health) y QA visual.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
