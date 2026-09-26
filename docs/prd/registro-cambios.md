@@ -108,6 +108,18 @@
 - Observaciones: no se modificó JS; las clases que quitamos no eran blanco de selectores `querySelector`/`getElementsByClassName` en los bundles revisados. La alerta `<div class="alert alert-secondary" role="alert">` del bloque Workflow sin transiciones disponibles se conserva como Bootstrap alert porque es contenido en página (no flash), no es badge semántico.
 - Transición: CM-UI-006 sigue En progreso con tres vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/master`, `cohorts/finance`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-011
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/cohorts/master.php` (`/cohorts/master`) al sistema visual Kodigo. Panel de filtros `master-filters` y sección "Matriz Cohort Plan" se migraron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. La región vacía "Sin resultados" pasó a `.kodigo-empty/__icon/__title/__text` con icono aria-hidden. La variable local `$semaphoreClass` (con clases `bg-*-subtle text-*`) se reemplazó por `$semaphoreTone` (`danger/success/warning`) y se emite como `<span class="kodigo-pill" data-tone="…">` con `kodigo-pill__dot`. Se añadió un helper `masterStatusTone()` que traduce `training_status` al tono Kodigo correspondiente (`neutral/info/success/danger`) para el badge de estado de la fila; el badge de la matriz usa `.kodigo-pill` con `kodigo-pill__dot`.
+- Fuentes: [cohorts/master](../../app/Views/cohorts/master.php), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.kodigo-empty`).
+- Comprobación: `php -l app/Views/cohorts/master.php` sin errores; `node -c` sobre app/cohorts-edit/finance/import.js sin errores; `grep -n 'app-panel\|empty-state\|badge bg-\|\$semaphoreClass' app/Views/cohorts/master.php` sin coincidencias; los IDs `master-filters` y `cohort-filters` se conservaron.
+- Observaciones: no se modificó JS; los bundles revisados no dependen de las clases heredadas. La migración aprovecha el espacio para introducir tonos semánticos explícitos en los badges semáforo/estado en lugar de pares de clases Bootstrap.
+- Transición: CM-UI-006 sigue En progreso con cuatro vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/finance`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006

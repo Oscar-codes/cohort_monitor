@@ -45,6 +45,20 @@ if (!function_exists('masterStatusLabel')) {
         return $labels[$status ?? ''] ?? (string) ($status ?? '—');
     }
 }
+
+if (!function_exists('masterStatusTone')) {
+    function masterStatusTone(?string $status): string
+    {
+        $tones = [
+            'not_started' => 'neutral',
+            'in_progress' => 'info',
+            'completed'   => 'success',
+            'cancelled'   => 'danger',
+        ];
+
+        return $tones[$status ?? ''] ?? 'neutral';
+    }
+}
 ?>
 
 <section class="cohorts-hero mb-4">
@@ -135,14 +149,15 @@ if (!function_exists('masterStatusLabel')) {
     </div>
 </div>
 
-<div class="app-panel cohort-filter-panel mb-4" id="master-filters">
-    <div class="app-panel__header">
+<div class="kodigo-card cohort-filter-panel mb-4" id="master-filters" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros del plan maestro</h3>
-            <p class="app-panel__subtitle">Filtra por busqueda, cohorte, proyecto, fechas, poblacion o sub canal y estado.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Filtros del plan maestro</h3>
+            <p class="kodigo-card__subtitle">Filtra por busqueda, cohorte, proyecto, fechas, poblacion o sub canal y estado.</p>
         </div>
     </div>
-    <form method="GET" action="/cohorts/master" class="row g-3">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/cohorts/master" class="row g-3">
         <div class="col-12 col-xl-4">
             <label for="search" class="form-label">Busqueda</label>
             <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">
@@ -201,21 +216,22 @@ if (!function_exists('masterStatusLabel')) {
             </button>
         </div>
     </form>
+    </div>
 </div>
 
-<section class="app-panel">
-    <div class="app-panel__header">
+<section class="kodigo-card" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-table text-primary"></i> Matriz Cohort Plan</h3>
-            <p class="app-panel__subtitle">Incluye codigo, admisiones, revenue, dias de clase, horario, coach y progreso.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-table text-primary"></i> Matriz Cohort Plan</h3>
+            <p class="kodigo-card__subtitle">Incluye codigo, admisiones, revenue, dias de clase, horario, coach y progreso.</p>
         </div>
     </div>
-
+    <div class="kodigo-card__body">
     <?php if (empty($cohorts)): ?>
-        <div class="empty-state py-5">
-            <div class="empty-state-icon"><i class="bi bi-funnel"></i></div>
-            <h5 class="empty-state-title">Sin resultados</h5>
-            <p class="empty-state-text">No hay cohortes con los filtros actuales.</p>
+        <div class="kodigo-empty py-5">
+            <i class="bi bi-funnel kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">Sin resultados</h5>
+            <p class="kodigo-empty__text">No hay cohortes con los filtros actuales.</p>
         </div>
     <?php else: ?>
         <div class="table-responsive">
@@ -251,13 +267,13 @@ if (!function_exists('masterStatusLabel')) {
                         $revenueProgress = $targetRevenue > 0 ? min(100, (int) round(($actualRevenue / $targetRevenue) * 100)) : 0;
 
                         $semaphore = 'Alto riesgo';
-                        $semaphoreClass = 'bg-danger-subtle text-danger';
+                        $semaphoreTone = 'danger';
                         if ($admissionProgress >= 90 && $revenueProgress >= 90) {
                             $semaphore = 'Saludable';
-                            $semaphoreClass = 'bg-success-subtle text-success';
+                            $semaphoreTone = 'success';
                         } elseif ($admissionProgress >= 70 || $revenueProgress >= 70) {
                             $semaphore = 'Atencion';
-                            $semaphoreClass = 'bg-warning-subtle text-warning';
+                            $semaphoreTone = 'warning';
                         }
                         ?>
                         <tr>
@@ -290,12 +306,12 @@ if (!function_exists('masterStatusLabel')) {
                                 </div>
                                 <div class="dashboard-mini-progress"><span data-style-width="<?= $revenueProgress ?>%"></span></div>
                             </td>
-                            <td>
-                                <span class="badge <?= $semaphoreClass ?>"><?= htmlspecialchars($semaphore) ?></span>
+<td>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($semaphoreTone) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars($semaphore) ?></span>
                                 <div class="small text-muted mt-1">Adm <?= $admissionProgress ?>% | Rev <?= $revenueProgress ?>%</div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border"><?= htmlspecialchars(masterStatusLabel($cohort['training_status'] ?? null)) ?></span>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(masterStatusTone($cohort['training_status'] ?? null)) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars(masterStatusLabel($cohort['training_status'] ?? null)) ?></span>
                                 <div class="small text-muted mt-1"><?= htmlspecialchars(masterDate($cohort['start_date'] ?? null)) ?> - <?= htmlspecialchars(masterDate($cohort['end_date'] ?? null)) ?></div>
                             </td>
                             <td>
@@ -316,4 +332,5 @@ if (!function_exists('masterStatusLabel')) {
             </table>
         </div>
     <?php endif; ?>
+    </div>
 </section>
