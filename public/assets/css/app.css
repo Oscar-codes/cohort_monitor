@@ -1957,6 +1957,7 @@ body {
 .alerts-toolbar {
     align-items: center;
     display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
     justify-content: space-between;
     margin-bottom: 1rem;
@@ -1968,9 +1969,9 @@ body {
     border: 1px solid var(--app-border);
     border-radius: 999px;
     display: flex;
-    flex: 1;
+    flex: 1 1 220px;
     gap: 0.5rem;
-    min-width: 220px;
+    min-width: 0;
     padding: 0.55rem 0.8rem;
 }
 
@@ -3242,7 +3243,15 @@ body {
 .coach-gantt-shell {
     border: 1px solid var(--app-border);
     border-radius: 14px;
-    overflow: hidden;
+    overflow: hidden auto;
+}
+
+/* The first-level wrapper of the coach calendar must scroll horizontally
+   on mobile so the gantt with min-width: 920px doesn't clip on 360 viewports.
+   Swipe is the default interaction. */
+.coach-gantt-shell .gantt-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .coach-gantt-modern {
