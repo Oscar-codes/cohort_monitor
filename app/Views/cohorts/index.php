@@ -89,59 +89,65 @@ function cohortCanDelete(array $cohort): bool
     return in_array($lifecycleStatus, ['not_started', 'cancelled'], true);
 }
 
-/** Helper: render lifecycle badge */
+/** Helper: render lifecycle pill (Kodigo) */
 function lifecycleBadge(array $cohort): string
 {
     $status = cohortLifecycleStatus($cohort);
 
     $map = [
-        'not_started' => ['bg-secondary-subtle text-secondary', 'No iniciado'],
-        'in_progress' => ['bg-primary-subtle text-primary', 'En progreso'],
-        'completed' => ['bg-success-subtle text-success', 'Completado'],
-        'cancelled' => ['bg-danger-subtle text-danger', 'Cancelado'],
+        'not_started' => ['neutral',  'No iniciado'],
+        'in_progress' => ['info',     'En progreso'],
+        'completed'   => ['success',  'Completado'],
+        'cancelled'   => ['danger',   'Cancelado'],
     ];
 
-    [$class, $label] = $map[$status] ?? ['bg-light text-dark', ucfirst($status)];
+    [$tone, $label] = $map[$status] ?? ['neutral', ucfirst($status)];
 
-    return '<span class="badge ' . $class . '">' . htmlspecialchars($label) . '</span>';
+    return '<span class="kodigo-pill" data-tone="' . $tone . '">'
+         . '<span class="kodigo-pill__dot" aria-hidden="true"></span>'
+         . htmlspecialchars($label)
+         . '</span>';
 }
 
-/** Helper: render project badge with color coding */
+/** Helper: render project pill with color coding (Kodigo) */
 function projectBadge(string $project): string
 {
     if ($project === '—' || $project === '') {
         return '<span class="text-muted">—</span>';
     }
 
-    $colors = [
-        'kodigo' => 'bg-primary-subtle text-primary',
-        'lamar'  => 'bg-success-subtle text-success',
-        'incaf'  => 'bg-warning-subtle text-warning',
-        'aldea'  => 'bg-info-subtle text-info',
+    $tones = [
+        'kodigo' => 'info',
+        'lamar'  => 'success',
+        'incaf'  => 'warning',
+        'aldea'  => 'info',
     ];
 
     $key = strtolower(trim($project));
-    $class = $colors[$key] ?? 'bg-light text-dark border';
+    $tone = $tones[$key] ?? 'neutral';
 
-    return '<span class="badge ' . $class . '">' . htmlspecialchars($project) . '</span>';
+    return '<span class="kodigo-pill" data-tone="' . $tone . '">'
+         . '<span class="kodigo-pill__dot" aria-hidden="true"></span>'
+         . htmlspecialchars($project)
+         . '</span>';
 }
 
-/** Helper: detect business model */
+/** Helper: detect business model pill (Kodigo) */
 function businessModelBadge(array $cohort): string
 {
     $hasB2B = ((int) ($cohort['b2b_admission_target'] ?? 0) > 0) || ((int) ($cohort['b2b_admissions'] ?? 0) > 0);
     $hasB2C = ((int) ($cohort['b2c_admission_target'] ?? 0) > 0) || ((int) ($cohort['b2c_admissions'] ?? 0) > 0);
 
     if ($hasB2B && $hasB2C) {
-        return '<span class="badge bg-warning-subtle text-warning">B2B + B2C</span>';
+        return '<span class="kodigo-pill" data-tone="warning"><span class="kodigo-pill__dot" aria-hidden="true"></span>B2B + B2C</span>';
     }
 
     if ($hasB2B) {
-        return '<span class="badge bg-info-subtle text-info">B2B</span>';
+        return '<span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span>B2B</span>';
     }
 
     if ($hasB2C) {
-        return '<span class="badge bg-primary-subtle text-primary">B2C</span>';
+        return '<span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span>B2C</span>';
     }
 
     return '<span class="text-muted">—</span>';
@@ -165,7 +171,7 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
     $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
     $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
 
-    $typeCell = $type ? '<span class="badge bg-light text-dark border">' . $type . '</span>' : '<span class="text-muted">—</span>';
+    $typeCell = $type ? '<span class="kodigo-pill" data-tone="neutral">' . $type . '</span>' : '<span class="text-muted">—</span>';
 
     $deleteBtn = '';
     if ($canDelete && cohortCanDelete($cohort)) {
@@ -369,14 +375,14 @@ $statusConfig = [
 </div>
 
 <!-- ── Filtros ──────────────────────────────────────────── -->
-<div class="app-panel cohort-filter-panel mb-4" id="cohort-filters">
-    <div class="app-panel__header">
+<div class="kodigo-card cohort-filter-panel mb-4" id="cohort-filters" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros</h3>
-            <p class="app-panel__subtitle">Combina busqueda, fechas, tipo, proyecto, modelo y estado.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Filtros</h3>
+            <p class="kodigo-card__subtitle">Combina busqueda, fechas, tipo, proyecto, modelo y estado.</p>
         </div>
     </div>
-    <div>
+    <div class="kodigo-card__body">
         <form method="GET" action="/cohorts" class="row g-3">
             <div class="col-12 col-xl-4">
                 <label for="search" class="form-label">Busqueda</label>
@@ -569,11 +575,11 @@ $statusConfig = [
 <?php else: ?>
     <div class="card">
         <div class="card-body">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="bi bi-funnel"></i></div>
-                <h5 class="empty-state-title">No hay resultados para los filtros aplicados</h5>
-                <p class="empty-state-text">Ajusta o limpia los filtros para ver más cohortes.</p>
-                <a href="/cohorts" class="btn btn-outline-secondary">Limpiar filtros</a>
+            <div class="kodigo-empty">
+                <i class="bi bi-funnel kodigo-empty__icon" aria-hidden="true"></i>
+                <h5 class="kodigo-empty__title">No hay resultados para los filtros aplicados</h5>
+                <p class="kodigo-empty__text">Ajusta o limpia los filtros para ver más cohortes.</p>
+                <a href="/cohorts" class="btn btn-outline-secondary mt-2">Limpiar filtros</a>
             </div>
         </div>
     </div>
@@ -591,10 +597,10 @@ $statusConfig = [
         </div>
         <div class="card-body p-0">
             <?php if (empty($ganttCohorts)): ?>
-                <div class="empty-state">
-                    <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
-                    <h5 class="empty-state-title">Sin cohortes proximas</h5>
-                    <p class="empty-state-text">No hay cohortes que inicien en los proximos 60 dias.</p>
+                <div class="kodigo-empty">
+                    <i class="bi bi-calendar-x kodigo-empty__icon" aria-hidden="true"></i>
+                    <h5 class="kodigo-empty__title">Sin cohortes proximas</h5>
+                    <p class="kodigo-empty__text">No hay cohortes que inicien en los proximos 60 dias.</p>
                 </div>
             <?php else: ?>
                 <div class="gantt-wrapper" id="gantt-wrapper">

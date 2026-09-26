@@ -84,6 +84,18 @@
 - Observaciones: los KPI cards del dashboard siguen usando `.metric-card` (estructura heredada con sparkline + footer) porque `.kodigo-stat-card` no expone slots para esos elementos; la sustitución visual se programa para una fase posterior conservando el comportamiento de `dashboard.js`.
 - Transición: CM-UI-006 pasa de Pendiente a En progreso; CM-UI-002 sigue Completado (los componentes CSS ya estaban disponibles antes de esta migración).
 - Límite: no se ejecutó la app en navegador; sólo comprobación estática y de sintaxis. Quedan pendientes las demás vistas (cohortes, alertas, marketing, usuarios, finanzas, reportes, coaches, importación, auth/login, account/profile, admin/audit, admin/health) y QA visual.
+
+### E-009
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/cohorts/index.php` (`/cohorts`) al sistema visual Kodigo. Se sustituyó el panel de filtros `.app-panel cohort-filter-panel` por `.kodigo-card` con `kodigo-card__header/__title/__subtitle/__body`; las dos regiones vacías (`.empty-state` de "no hay resultados" y "sin cohortes próximas") pasaron a `.kodigo-empty` con sus modificadores `__icon/__title/__text`. Los helpers `lifecycleBadge`, `projectBadge` y `businessModelBadge` se reescribieron para emitir `<span class="kodigo-pill" data-tone="…"><span class="kodigo-pill__dot"></span>…</span>` en lugar de `<span class="badge bg-*-subtle">`; el badge de tipo de cohorte en `renderCohortRow` también se migró.
+- Fuentes: [cohorts/index](../../app/Views/cohorts/index.php), [cohorts-index.js](../../public/assets/js/cohorts-index.js), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.kodigo-empty`).
+- Comprobación: `php -l app/Views/cohorts/index.php` sin errores; `node -c public/assets/js/cohorts-index.js` sin errores; `grep -n 'app-panel\|status-pill\|empty-state\|class="badge bg-' app/Views/cohorts/index.php` sin coincidencias; los IDs `view-list`, `view-gantt`, `cohort-filters` y los botones `data-view`/`data-bs-toggle="tooltip"` se conservaron.
+- Observaciones: `cohorts-index.js` no se modificó; su única dependencia de markup (los IDs de las pestañas y atributos de tooltip) sigue intacta. El badge de conteo redondo (`rounded-pill text-bg-dark`) usado junto al nombre de los grupos permanece como `badge` de Bootstrap porque representa cantidad, no estado semántico.
+- Transición: CM-UI-006 sigue En progreso con un módulo más completado.
+- Límite: sin prueba en navegador; sólo comprobación estática y de sintaxis. Quedan pendientes `cohorts/master`, `cohorts/finance`, `cohorts/show`, `cohorts/create`, `cohorts/edit`, `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
