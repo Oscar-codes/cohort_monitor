@@ -103,14 +103,15 @@ if (!function_exists('userLastLogin')) {
 <?php if (!empty($users)): ?>
 <div class="row g-4 mb-4">
     <div class="col-xl-4">
-        <section class="app-panel users-role-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card users-role-panel h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-person-badge"></i> Roles</h2>
-                    <p class="app-panel__subtitle">Distribucion actual de permisos por area.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-person-badge"></i> Roles</h2>
+                    <p class="kodigo-card__subtitle">Distribucion actual de permisos por area.</p>
                 </div>
             </div>
-            <div class="users-role-list">
+            <div class="kodigo-card__body">
+                <div class="users-role-list">
                 <?php foreach ($roleMeta as $roleKey => $meta): ?>
                     <?php [$label, $badgeClass, $icon, $tone] = $meta; $count = (int) ($roleCounts[$roleKey] ?? 0); ?>
                     <article class="users-role-item">
@@ -124,18 +125,20 @@ if (!function_exists('userLastLogin')) {
                         </div>
                     </article>
                 <?php endforeach; ?>
+                </div>
             </div>
         </section>
     </div>
     <div class="col-xl-8">
-        <section class="app-panel users-directory-panel h-100">
-            <div class="app-panel__header">
+        <section class="kodigo-card users-directory-panel h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h2 class="app-panel__title"><i class="bi bi-table"></i> Directorio</h2>
-                    <p class="app-panel__subtitle">Usuarios ordenados por fecha de creacion reciente.</p>
+                    <h2 class="kodigo-card__title"><i class="bi bi-table"></i> Directorio</h2>
+                    <p class="kodigo-card__subtitle">Usuarios ordenados por fecha de creacion reciente.</p>
                 </div>
             </div>
-            <div class="table-responsive users-table">
+            <div class="kodigo-card__body">
+                <div class="table-responsive users-table">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
@@ -150,7 +153,7 @@ if (!function_exists('userLastLogin')) {
                     <tbody>
                         <?php foreach ($users as $u): ?>
                             <?php
-                            [$roleLabel, $roleClass] = $roleMeta[$u['role']] ?? [$u['role'], 'bg-secondary-subtle text-secondary'];
+                            [$roleLabel, $roleClass, $roleIcon, $roleTone] = $roleMeta[$u['role']] ?? [$u['role'], 'bg-secondary-subtle text-secondary', 'bi-person', 'neutral'];
                             $isSelf = (int) $u['id'] === Auth::id();
                             ?>
                             <tr>
@@ -164,12 +167,12 @@ if (!function_exists('userLastLogin')) {
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell"><small><?= htmlspecialchars($u['email']) ?></small></td>
-                                <td class="text-center"><span class="badge badge-status <?= $roleClass ?>"><?= htmlspecialchars($roleLabel) ?></span></td>
+                                <td class="text-center"><span class="kodigo-pill" data-tone="<?= htmlspecialchars($roleTone) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars($roleLabel) ?></span></td>
                                 <td class="text-center d-none d-sm-table-cell">
                                     <?php if ($u['is_active']): ?>
-                                        <span class="badge badge-status bg-success-subtle text-success">Activo</span>
+                                        <span class="kodigo-pill" data-tone="success"><span class="kodigo-pill__dot" aria-hidden="true"></span>Activo</span>
                                     <?php else: ?>
-                                        <span class="badge badge-status bg-secondary-subtle text-secondary">Inactivo</span>
+                                        <span class="kodigo-pill" data-tone="neutral"><span class="kodigo-pill__dot" aria-hidden="true"></span>Inactivo</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center d-none d-lg-table-cell"><small class="text-muted"><?= htmlspecialchars(userLastLogin($u['last_login_at'] ?? null)) ?></small></td>
@@ -207,7 +210,7 @@ if (!function_exists('userLastLogin')) {
             <div class="users-mobile-list">
                 <?php foreach ($users as $u): ?>
                     <?php
-                    [$roleLabel, $roleClass] = $roleMeta[$u['role']] ?? [$u['role'], 'bg-secondary-subtle text-secondary'];
+                    [$roleLabel, $roleClass, $roleIcon, $roleTone] = $roleMeta[$u['role']] ?? [$u['role'], 'bg-secondary-subtle text-secondary', 'bi-person', 'neutral'];
                     $isSelf = (int) $u['id'] === Auth::id();
                     ?>
                     <article class="users-mobile-card">
@@ -219,7 +222,7 @@ if (!function_exists('userLastLogin')) {
                                     <small><?= htmlspecialchars($u['full_name']) ?></small>
                                 </div>
                             </div>
-                            <span class="badge badge-status <?= $roleClass ?>"><?= htmlspecialchars($roleLabel) ?></span>
+                            <span class="kodigo-pill" data-tone="<?= htmlspecialchars($roleTone) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars($roleLabel) ?></span>
                         </div>
                         <div class="users-mobile-card__meta">
                             <span><i class="bi bi-envelope"></i><?= htmlspecialchars($u['email']) ?></span>
@@ -240,21 +243,22 @@ if (!function_exists('userLastLogin')) {
                         </div>
                     </article>
                 <?php endforeach; ?>
+                </div>
             </div>
         </section>
     </div>
 </div>
 <?php else: ?>
-<section class="app-panel">
-    <div class="empty-state py-5">
-        <div class="empty-state-icon">
-            <i class="bi bi-people"></i>
+<section class="kodigo-card" data-elevation="1">
+    <div class="kodigo-card__body">
+        <div class="kodigo-empty py-5">
+            <i class="bi bi-people kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">No hay usuarios aun</h5>
+            <p class="kodigo-empty__text">Comienza creando el primer usuario del sistema.</p>
+            <a href="/users/create" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-lg me-1"></i> Crear primer usuario
+            </a>
         </div>
-        <h5 class="empty-state-title">No hay usuarios aun</h5>
-        <p class="empty-state-text">Comienza creando el primer usuario del sistema.</p>
-        <a href="/users/create" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Crear primer usuario
-        </a>
     </div>
 </section>
 <?php endif; ?>

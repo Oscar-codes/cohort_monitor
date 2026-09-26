@@ -185,6 +185,19 @@
 - Observaciones: `marketing-show.js` no se modificó; no depende de las clases heredadas. Los `marketing-progress-pill` (mini progress + porcentaje) se conservan porque ya encapsulan su propio microcomponente numérico. `$statusBadge` se conserva para retro-compatibilidad con futuras extensiones; el render actual usa `$statusTone`.
 - Transición: CM-UI-006 sigue En progreso con once vistas completadas (nueve cohorts/alerts + dos marketing).
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-017
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/users/index.php` (`/users`), `users/create.php` (`/users/create`) y `users/edit.php` (`/users/{id}/edit`) al sistema visual Kodigo. En index, los dos paneles principales "Roles" y "Directorio" pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. La región vacía "No hay usuarios aún" se envolvió en un panel Kodigo y migró de `.empty-state` a `.kodigo-empty/__icon (aria-hidden)/__title/__text` con CTA "Crear primer usuario". La destructuración `$roleMeta` se amplió para extraer también el tono (`$roleTone`) y los badges de rol en la fila de tabla y en la tarjeta móvil pasaron de `badge badge-status bg-X-subtle text-X` a `kodigo-pill[data-tone]` con `kodigo-pill__dot`. Los badges inline de estado ("Activo"/"Inactivo") también se migraron a `kodigo-pill` con tonos `success` y `neutral`. Las alertas flash (`alert-success/alert-danger`) y la hero `users-hero` se conservan; el filtro `users-role-panel/users-directory-panel` y clases adyacentes (`users-role-item`, `users-person`, `users-table`) se mantienen porque encapsulan layouts específicos.
+- En create/edit, el envoltorio `app-panel form-workbench` se reemplazó por `kodigo-card form-workbench data-elevation="1"`. La convivencia `.kodigo-card.form-workbench` mantiene intactas las reglas internas del workbench (padding 0, overflow hidden, headers/secciones propias) y aporta la superficie Kodigo.
+- Fuentes: [users/index](../../app/Views/users/index.php), [users/create](../../app/Views/users/create.php), [users/edit](../../app/Views/users/edit.php), [users-form.js](../../public/assets/js/users-form.js), [tokens Kodigo](../../public/assets/css/app.css).
+- Comprobación: `php -l app/Views/users/index.php` y `php -l app/Views/users/{create,edit}.php` sin errores; `node -c public/assets/js/users-form.js` sin errores; `grep -n 'app-panel\|class="badge bg-\|class="badge badge-status\|empty-state-icon\|empty-state-text\|empty-state-title' app/Views/users/{index,create,edit}.php` sin coincidencias; IDs de formulario (`data-confirm`, `action`, `method`) intactos.
+- Observaciones: `users-form.js` no se modificó. Se amplía `$roleMeta` para extraer también `$roleTone` (cuarto elemento) tanto en el desktop (`[$roleLabel, $roleClass, $roleIcon, $roleTone]`) como en la tarjeta móvil; el campo `$roleClass` queda disponible para usos legacy futuros sin generar errores.
+- Transición: CM-UI-006 sigue En progreso con catorce vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006

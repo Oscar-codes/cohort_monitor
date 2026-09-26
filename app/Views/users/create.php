@@ -31,7 +31,7 @@
 
 <div class="row justify-content-center">
     <div class="col-xl-9">
-        <section class="app-panel form-workbench">
+        <section class="kodigo-card form-workbench" data-elevation="1">
             <div class="form-workbench__header">
                 <div>
                     <h3><i class="bi bi-person-gear"></i> Datos de acceso</h3>
