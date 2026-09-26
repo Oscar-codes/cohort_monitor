@@ -52,9 +52,18 @@
         }
     }
 
+    $detailTones = [
+        'admin'          => 'danger',
+        'admissions_b2b' => 'info',
+        'admissions_b2c' => 'info',
+        'finance'        => 'success',
+        'marketing'      => 'warning',
+    ];
+
     foreach ($riskComments as $comment) {
         $cohortId = (int) $comment['cohort_id'];
-        [$roleLabel, $roleClass] = $roleLabels[$comment['author_role'] ?? ''] ?? [$comment['author_role'] ?? 'Usuario', 'bg-secondary-subtle text-secondary'];
+        $authorRole = (string) ($comment['author_role'] ?? '');
+        [$roleLabel, $roleClass] = $roleLabels[$authorRole] ?? [$authorRole ?: 'Usuario', 'bg-secondary-subtle text-secondary'];
         $riskItems[] = [
             'type' => 'comment',
             'severity' => 'Critica',
@@ -66,6 +75,7 @@
             'title' => 'Comentario de riesgo',
             'detail' => $roleLabel,
             'detail_class' => $roleClass,
+            'detail_tone' => $detailTones[$authorRole] ?? 'neutral',
             'body' => $comment['body'] ?? '',
             'actor' => $comment['author_name'] ?? 'Sin autor',
             'date' => $comment['created_at'] ?? null,
@@ -163,13 +173,14 @@
 <?php if ($totalRisks > 0): ?>
 <section class="row g-3">
     <div class="col-xl-8">
-        <div class="app-panel alerts-workbench">
-            <div class="app-panel__header">
+        <div class="kodigo-card alerts-workbench" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-list-check text-danger"></i> Riesgos activos</h3>
-                    <p class="app-panel__subtitle">Filtra por tipo o busca por cohorte, responsable, etapa o comentario.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-list-check text-danger"></i> Riesgos activos</h3>
+                    <p class="kodigo-card__subtitle">Filtra por tipo o busca por cohorte, responsable, etapa o comentario.</p>
                 </div>
             </div>
+            <div class="kodigo-card__body">
 
             <div class="alerts-toolbar">
                 <div class="alerts-search">
@@ -205,13 +216,13 @@
                                 <a href="/cohorts/<?= (int) $item['cohort_id'] ?>" class="risk-item__cohort"><?= htmlspecialchars($item['cohort_code']) ?></a>
                                 <span class="risk-item__name"><?= htmlspecialchars($item['cohort_name']) ?></span>
                             </div>
-                            <span class="status-pill status-pill--<?= htmlspecialchars($item['tone']) ?>"><?= htmlspecialchars($item['severity']) ?></span>
+                            <span class="kodigo-pill" data-tone="<?= htmlspecialchars($item['tone']) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars($item['severity']) ?></span>
                         </div>
                         <h4><?= htmlspecialchars($item['title']) ?></h4>
                         <p><?= htmlspecialchars($item['body']) ?></p>
                         <div class="risk-item__meta">
                             <?php if (!empty($item['detail_class'])): ?>
-                                <span class="badge <?= htmlspecialchars($item['detail_class']) ?>"><?= htmlspecialchars($item['detail']) ?></span>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($item['detail_tone'] ?? 'neutral') ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars($item['detail']) ?></span>
                             <?php else: ?>
                                 <span><i class="bi bi-diagram-3"></i><?= htmlspecialchars($item['detail']) ?></span>
                             <?php endif; ?>
@@ -235,18 +246,20 @@
                 <strong>Sin coincidencias</strong>
                 <span>Ajusta la busqueda o cambia el tipo de riesgo.</span>
             </div>
+            </div>
         </div>
     </div>
 
     <div class="col-xl-4">
-        <div class="app-panel h-100">
-            <div class="app-panel__header">
+        <div class="kodigo-card h-100" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-people text-info"></i> Cohortes afectadas</h3>
-                    <p class="app-panel__subtitle">Ordenadas por volumen de riesgos.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-people text-info"></i> Cohortes afectadas</h3>
+                    <p class="kodigo-card__subtitle">Ordenadas por volumen de riesgos.</p>
                 </div>
             </div>
-            <div class="affected-cohort-list">
+            <div class="kodigo-card__body">
+                <div class="affected-cohort-list">
                 <?php foreach (array_slice($affectedCohorts, 0, 8, true) as $cohort): ?>
                 <?php $cohortTotal = (int) $cohort['marketing'] + (int) $cohort['comments']; ?>
                 <a href="/cohorts/<?= (int) $cohort['id'] ?>" class="affected-cohort-item">
@@ -257,6 +270,7 @@
                     <span class="affected-cohort-count"><?= $cohortTotal ?></span>
                 </a>
                 <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -264,12 +278,10 @@
 <?php else: ?>
 <div class="card">
     <div class="card-body">
-        <div class="empty-state">
-            <div class="empty-state-icon text-success">
-                <i class="bi bi-shield-check"></i>
-            </div>
-            <h5 class="empty-state-title">Todo en orden</h5>
-            <p class="empty-state-text">No hay alertas de riesgo activas.</p>
+        <div class="kodigo-empty">
+            <i class="bi bi-shield-check text-success kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">Todo en orden</h5>
+            <p class="kodigo-empty__text">No hay alertas de riesgo activas.</p>
         </div>
     </div>
 </div>

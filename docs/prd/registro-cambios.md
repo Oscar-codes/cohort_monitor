@@ -161,6 +161,18 @@
 - Observaciones: `cohorts-import.js` no se modificó; sólo depende de IDs y selectores Bootstrap que se preservaron. La zona de drop `.upload-zone` (con `drag-over`, transiciones Kodigo refactorizadas en E-007) se conserva intacta y sigue gestionando el ciclo de selección de archivo.
 - Transición: CM-UI-006 sigue En progreso con ocho vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Queden pendientes `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-015
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/alerts/index.php` (`/alerts`) al sistema visual Kodigo. Los dos paneles del workbench (`.app-panel alerts-workbench` "Riesgos activos" y `.app-panel h-100` "Cohortes afectadas") pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. Las pills de severidad (`<span class="status-pill status-pill--<?= $item['tone'] ?>">`) se cambiaron por `<span class="kodigo-pill" data-tone="…">` con `kodigo-pill__dot` (las tonalidades posibles son `warning` y `danger`, según el flujo actual). El badge de rol del autor del comentario (`<span class="badge <?= $item['detail_class'] ?>">`) se sustituyó por `kodigo-pill data-tone="…"` con dot; para preservar el mapping semántico se añadió un mapa local `$detailTones` (admin→danger, admissions→info, finance→success, marketing→warning, default→neutral) y cada `$riskItem` ahora lleva también `detail_tone`. La región vacía "Todo en orden" pasó a `.kodigo-empty/__icon (aria-hidden)/__title/__text`.
+- Fuentes: [alerts/index](../../app/Views/alerts/index.php), [app.js `initAlertsWorkbench`](../../public/assets/js/app.js), [tokens Kodigo](../../public/assets/css/app.css) (`.kodigo-card`, `.kodigo-pill`, `.kodigo-empty`), [PLAN_UXUI_KODIGO](../PLAN_UXUI_KODIGO.md).
+- Comprobación: `php -l app/Views/alerts/index.php` sin errores; `node -c public/assets/js/app.js` sin errores; `grep -n 'app-panel\|status-pill\|empty-state-$\|empty-state-icon\|empty-state-text\|empty-state-title\|class="badge bg-' app/Views/alerts/index.php` sin coincidencias; atributos `data-alert-item`, `data-alert-search`, `data-alert-type`, `data-alert-filter` y el id `alertsEmptyFilter` se conservaron.
+- Observaciones: `initAlertsWorkbench` en `app.js` consulta los selectores por atributo y por id (no por clase), por lo que la migración no requiere cambios en JS. El `.alerts-empty-filter` inline (mensaje "Sin coincidencias" cuando un filtro no devuelve resultados) se conserva como bloque propio porque tiene su propio layout horizontal con icono.
+- Transición: CM-UI-006 sigue En progreso con nueve vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
