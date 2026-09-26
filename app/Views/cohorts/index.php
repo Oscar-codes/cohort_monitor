@@ -467,7 +467,7 @@ $statusConfig = [
 <!-- ── Summary cards ───────────────────────────────────── -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--primary">
+        <div class="cohort-summary-card cohort-summary-card--primary" data-kodigo-reveal>
             <span><i class="bi bi-search"></i></span>
             <div>
                 <strong><?= count($cohorts) ?></strong>
@@ -476,7 +476,7 @@ $statusConfig = [
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--secondary">
+        <div class="cohort-summary-card cohort-summary-card--secondary" data-kodigo-reveal>
             <span><i class="bi bi-clock"></i></span>
             <div>
                 <strong><?= $upcomingCount ?></strong>
@@ -485,7 +485,7 @@ $statusConfig = [
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--info">
+        <div class="cohort-summary-card cohort-summary-card--info" data-kodigo-reveal>
             <span><i class="bi bi-play-circle"></i></span>
             <div>
                 <strong><?= $inProgressCount ?></strong>
@@ -494,7 +494,7 @@ $statusConfig = [
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--success">
+        <div class="cohort-summary-card cohort-summary-card--success" data-kodigo-reveal>
             <span><i class="bi bi-check-circle"></i></span>
             <div>
                 <strong><?= $completedCount ?></strong>

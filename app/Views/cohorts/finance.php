@@ -259,7 +259,7 @@ $spanishMonths = [
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-xl-3">
-        <article class="cohort-summary-card cohort-summary-card--primary h-100">
+        <article class="cohort-summary-card cohort-summary-card--primary h-100" data-kodigo-reveal>
             <span><i class="bi bi-bullseye"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalTarget)) ?></strong>
@@ -268,7 +268,7 @@ $spanishMonths = [
         </article>
     </div>
     <div class="col-6 col-xl-3">
-        <article class="cohort-summary-card cohort-summary-card--success h-100">
+        <article class="cohort-summary-card cohort-summary-card--success h-100" data-kodigo-reveal>
             <span><i class="bi bi-currency-dollar"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalActual)) ?></strong>
@@ -277,7 +277,7 @@ $spanishMonths = [
         </article>
     </div>
     <div class="col-6 col-xl-3">
-        <article class="cohort-summary-card cohort-summary-card--warning h-100">
+        <article class="cohort-summary-card cohort-summary-card--warning h-100" data-kodigo-reveal>
             <span><i class="bi bi-percent"></i></span>
             <div>
                 <strong><?= $totalPct ?>%</strong>
@@ -286,7 +286,7 @@ $spanishMonths = [
         </article>
     </div>
     <div class="col-6 col-xl-3">
-        <article class="cohort-summary-card cohort-summary-card--danger h-100">
+        <article class="cohort-summary-card cohort-summary-card--danger h-100" data-kodigo-reveal>
             <span><i class="bi bi-graph-down"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalGap)) ?></strong>

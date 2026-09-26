@@ -101,7 +101,7 @@
 
 <section class="row g-3 mb-4" aria-label="Indicadores principales">
     <div class="col-12 col-sm-6 col-xl-3">
-        <article class="metric-card metric-card--primary">
+        <article class="metric-card metric-card--primary" data-kodigo-reveal>
             <div class="metric-card__body">
                 <span class="metric-card__icon"><i class="bi bi-people-fill"></i></span>
                 <div>
@@ -117,7 +117,7 @@
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <article class="metric-card metric-card--success">
+        <article class="metric-card metric-card--success" data-kodigo-reveal>
             <div class="metric-card__body">
                 <span class="metric-card__icon"><i class="bi bi-play-circle-fill"></i></span>
                 <div>
@@ -133,7 +133,7 @@
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <article class="metric-card metric-card--info">
+        <article class="metric-card metric-card--info" data-kodigo-reveal>
             <div class="metric-card__body">
                 <span class="metric-card__icon"><i class="bi bi-check-circle-fill"></i></span>
                 <div>
@@ -149,7 +149,7 @@
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <article class="metric-card metric-card--danger">
+        <article class="metric-card metric-card--danger" data-kodigo-reveal>
             <div class="metric-card__body">
                 <span class="metric-card__icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
                 <div>

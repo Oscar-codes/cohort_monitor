@@ -5502,3 +5502,286 @@ html.app-density-compact .empty-state {
     padding-right: .5rem;
 }
 
+/* ─── Kodigo component system (Phase 1) ─────────────── */
+
+/* Kodigo card — unifica paneles y permite elevacion declarativa */
+.kodigo-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-elev-1);
+    transition: box-shadow var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out);
+}
+
+.kodigo-card[data-elevation="0"] { box-shadow: var(--app-elev-0); }
+.kodigo-card[data-elevation="1"] { box-shadow: var(--app-elev-1); }
+.kodigo-card[data-elevation="2"] { box-shadow: var(--app-elev-2); }
+.kodigo-card[data-elevation="3"] { box-shadow: var(--app-elev-3); }
+
+.kodigo-card[data-interactive="true"]:hover {
+    box-shadow: var(--app-elev-3);
+    border-color: rgba(37, 99, 235, .25);
+}
+
+.kodigo-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.125rem;
+    border-bottom: 1px solid var(--app-border);
+}
+
+.kodigo-card__title {
+    margin: 0;
+    font-size: var(--fs-h3, 1.0625rem);
+    font-weight: 600;
+    color: var(--app-text);
+}
+
+.kodigo-card__subtitle {
+    margin: 0.25rem 0 0;
+    font-size: var(--fs-caption, 0.8125rem);
+    color: var(--app-muted);
+}
+
+.kodigo-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.kodigo-card__body {
+    padding: 1rem 1.125rem;
+}
+
+/* Kodigo button — estilo Kodigo sin reemplazar Bootstrap */
+.btn-kodigo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--app-radius-sm, 8px);
+    font-weight: 600;
+    background: var(--app-primary);
+    color: #fff;
+    border: 1px solid var(--app-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out),
+                box-shadow var(--dur-hover) var(--ease-out),
+                transform var(--dur-press) var(--ease-out);
+}
+
+.btn-kodigo:hover {
+    background: var(--app-primary-strong);
+    border-color: var(--app-primary-strong);
+    color: #fff;
+}
+
+.btn-kodigo:active {
+    transform: scale(0.97);
+}
+
+.btn-kodigo:focus-visible {
+    outline: none;
+    box-shadow: var(--app-focus-ring);
+}
+
+.btn-kodigo--ghost {
+    background: transparent;
+    color: var(--app-primary);
+    border-color: var(--app-border);
+}
+
+.btn-kodigo--ghost:hover {
+    background: var(--app-primary-soft);
+    color: var(--app-primary-strong);
+}
+
+/* Kodigo stat card — sustituto visual de metric-card */
+.kodigo-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.125rem;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-elev-1);
+    transition: box-shadow var(--dur-hover) var(--ease-out),
+                transform var(--dur-hover) var(--ease-out),
+                border-color var(--dur-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .kodigo-stat-card:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--app-elev-2);
+        border-color: rgba(37, 99, 235, .25);
+    }
+}
+
+.kodigo-stat-card__icon {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--app-radius-sm, 8px);
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+    font-size: 1.125rem;
+}
+
+.kodigo-stat-card[data-tone="success"] .kodigo-stat-card__icon {
+    background: rgba(22, 163, 74, .12);
+    color: var(--app-success);
+}
+.kodigo-stat-card[data-tone="warning"] .kodigo-stat-card__icon {
+    background: rgba(245, 158, 11, .14);
+    color: var(--app-warning);
+}
+.kodigo-stat-card[data-tone="danger"] .kodigo-stat-card__icon {
+    background: rgba(220, 38, 38, .12);
+    color: var(--app-danger);
+}
+.kodigo-stat-card[data-tone="info"] .kodigo-stat-card__icon {
+    background: rgba(8, 145, 178, .12);
+    color: var(--app-info);
+}
+
+.kodigo-stat-card__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kodigo-stat-card__label {
+    margin: 0;
+    font-size: var(--fs-caption, 0.8125rem);
+    color: var(--app-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+}
+
+.kodigo-stat-card__value {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--app-text);
+    line-height: 1.15;
+}
+
+.kodigo-stat-card__delta {
+    margin-top: 0.125rem;
+    font-size: var(--fs-caption, 0.8125rem);
+    font-weight: 600;
+}
+
+.kodigo-stat-card__delta[data-direction="up"]   { color: var(--app-success); }
+.kodigo-stat-card__delta[data-direction="down"] { color: var(--app-danger); }
+.kodigo-stat-card__delta[data-direction="flat"] { color: var(--app-muted); }
+
+/* Kodigo pill — estado semantico con dot opcional */
+.kodigo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--app-radius-pill, 999px);
+    font-size: var(--fs-caption, 0.8125rem);
+    font-weight: 600;
+    background: var(--app-surface-muted);
+    color: var(--app-text);
+    border: 1px solid transparent;
+    line-height: 1.2;
+}
+
+.kodigo-pill__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 auto;
+}
+
+.kodigo-pill[data-tone="success"] {
+    background: rgba(22, 163, 74, .12);
+    color: #15803d;
+}
+.kodigo-pill[data-tone="warning"] {
+    background: rgba(245, 158, 11, .14);
+    color: #b45309;
+}
+.kodigo-pill[data-tone="danger"]  {
+    background: rgba(220, 38, 38, .12);
+    color: #b91c1c;
+}
+.kodigo-pill[data-tone="info"]    {
+    background: rgba(8, 145, 178, .12);
+    color: #0e7490;
+}
+.kodigo-pill[data-tone="neutral"] {
+    background: var(--app-surface-muted);
+    color: var(--app-muted);
+}
+
+/* Kodigo empty state — reemplazo visual de .empty-state */
+.kodigo-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    color: var(--app-muted);
+}
+
+.kodigo-empty__icon {
+    font-size: 2.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--app-primary);
+    opacity: 0.7;
+}
+
+.kodigo-empty__title {
+    margin: 0 0 0.25rem;
+    font-size: var(--fs-h3, 1.0625rem);
+    font-weight: 600;
+    color: var(--app-text);
+}
+
+.kodigo-empty__text {
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+    color: var(--app-muted);
+}
+
+/* Kodigo reveal — trabajado por initKodigoReveal() en app.js.
+   Estado inicial ya esta en inline style para evitar FOUC. */
+[data-kodigo-reveal] {
+    will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kodigo-card,
+    .kodigo-stat-card,
+    .btn-kodigo,
+    .kodigo-pill {
+        transition-property: background-color, color, border-color, box-shadow, opacity !important;
+    }
+
+    .kodigo-card[data-interactive="true"]:hover,
+    .kodigo-stat-card:hover,
+    .btn-kodigo:active {
+        transform: none !important;
+    }
+}
+
+
