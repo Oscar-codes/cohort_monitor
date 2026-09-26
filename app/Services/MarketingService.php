@@ -98,9 +98,14 @@ class MarketingService
     /**
      * Get all at-risk stages (for admin alerts).
      */
-    public function getAtRiskStages(): array
+    public function getAtRiskStages(?int $limit = null): array
     {
-        return $this->stageRepo->findAtRisk();
+        return $this->stageRepo->findAtRisk($limit);
+    }
+
+    public function countAtRiskStages(): int
+    {
+        return $this->stageRepo->countAtRisk();
     }
 
     /**

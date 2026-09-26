@@ -26,7 +26,9 @@ Estas capacidades están representadas en rutas y código. **Implementación obs
 
 ## Foco actual y siguiente avance
 
-La petición actual establece seguimiento del proyecto y del trabajo con datos. La habilidad de seguimiento y su línea base documental quedaron creadas y validadas ([E-004](registro-cambios.md#e-004)); la exploración de base de datos indicada por el usuario tiene scripts locales asociados, pero aún falta confirmar su objetivo y sus resultados operativos. Ver [registro de datos](base-datos.md).
+El usuario cambió el foco a CM-PERF-001. Se acotaron a cinco las tres listas de detalle del dashboard y se conservaron los totales mediante COUNT. Pruebas sintéticas de regresión y memoria pasaron en SQLite y MariaDB desechable ([E-029](registro-cambios.md#e-029), [medición](../PERFORMANCE.md)). La paginación de listados que alimentan contadores/Gantt sigue pendiente; no se modificó la base configurada de la aplicación.
+
+Se retomó CM-DB-001 con inventario actualizado de siete tablas consumidoras y migraciones 002–019 ([E-028](registro-cambios.md#e-028)). Los cuatro scripts de exploración citados originalmente ya no están en la raíz del checkout. Se documentaron diferencias locales en las migraciones 014, 016 y 019, sin ejecutarlas. El objetivo operativo, el alias del entorno y cualquier dirección de transferencia siguen pendientes de confirmar. Ver [registro de datos](base-datos.md).
 
 Al retomar: consultar CM-DB-001 para confirmar objetivo/origen/destino, después comprobar acceso y esquema según el alcance autorizado. Elegir una validación funcional acotada al siguiente módulo que se vaya a modificar. Las tareas de seguridad están priorizadas en el backlog; su inclusión no significa que se estén implementando en esta sesión.
 

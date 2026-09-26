@@ -35,7 +35,7 @@ class CommentRepository
     }
 
     /** Get ALL risk comments across cohorts (for alerts). */
-    public function findAllRisks(): array
+    public function findAllRisks(?int $limit = null): array
     {
         return $this->db->query(
             'SELECT cc.*, u.full_name AS author_name, u.role AS author_role,
@@ -46,8 +46,22 @@ class CommentRepository
              JOIN users u   ON u.id = cc.user_id
              JOIN cohorts c ON c.id = cc.cohort_id
              WHERE cc.category = "risk"
-             ORDER BY cc.created_at DESC'
+             ORDER BY cc.created_at DESC, cc.id DESC'
+            . ($limit === null ? '' : ' LIMIT ' . max(1, min(100, $limit)))
         );
+    }
+
+    /** Match the listing joins so orphaned comments do not inflate the total. */
+    public function countAllRisks(): int
+    {
+        $rows = $this->db->query(
+            'SELECT COUNT(*) AS total
+             FROM cohort_comments cc
+             JOIN users u ON u.id = cc.user_id
+             JOIN cohorts c ON c.id = cc.cohort_id
+             WHERE cc.category = "risk"'
+        );
+        return (int) $rows[0]['total'];
     }
 
     /** Create a comment. */

@@ -38,16 +38,15 @@ class DashboardService
         $admissionPct    = $totalTarget > 0 ? round(($totalAdmissions / $totalTarget) * 100, 1) : 0;
 
         // Risk alerts
-        $riskComments = $this->commentRepo->findAllRisks();
-        $atRiskStages = $this->marketingService->getAtRiskStages();
-        $totalAlerts  = count($riskComments) + count($atRiskStages);
+        $riskComments = $this->commentRepo->findAllRisks(5);
+        $atRiskStages = $this->marketingService->getAtRiskStages(5);
+        $totalAlerts  = $this->commentRepo->countAllRisks() + $this->marketingService->countAtRiskStages();
 
         // Upcoming cohorts (next 30 days) — dedicated query with LIMIT
         $upcoming = $this->cohortRepo->findUpcoming(30, 10);
 
         // Recent 5 cohorts
-        $recentCohorts = $this->cohortRepo->findAll();
-        $recentCohorts = array_slice($recentCohorts, 0, 5);
+        $recentCohorts = $this->cohortRepo->findFirst(5);
 
         // Cohorts by bootcamp type — aggregated in SQL
         $typeRows = $this->cohortRepo->countByBootcampType();
@@ -80,8 +79,8 @@ class DashboardService
             'totalB2cAdmissions'=> $totalB2cAdmissions,
             'admissionPct'      => $admissionPct,
             'totalAlerts'       => $totalAlerts,
-            'riskComments'      => array_slice($riskComments, 0, 5),
-            'atRiskStages'      => array_slice($atRiskStages, 0, 5),
+            'riskComments'      => $riskComments,
+            'atRiskStages'      => $atRiskStages,
             'upcomingCohorts'   => $upcoming,
             'recentCohorts'     => $recentCohorts,
             'byType'            => $byType,

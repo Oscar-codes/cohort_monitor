@@ -481,6 +481,32 @@ y evidencias
 - Transición: CM-UI-005 pasa de Pendiente a Completado. Cierre formal del bloque UI + seguridad. Pendientes: CM-VAL-001..007, CM-DB-001..004, CM-PERF-001, CM-ARCH-001, CM-FUT-001/002.
 - Límite: la verificación es estática (inspección de CSS + lints). Capturas visuales y Playwright quedan para una sesión con navegador headless.
 
+### E-028
+
+- Fecha: 2026-09-26.
+- Tickets: CM-DB-001.
+- Resultado: Parcial.
+- Alcance: reanudación solicitada de CM-DB-001; inventario local para precisar el trabajo de exploración. No se presupone una transferencia.
+- Fuentes: [registro de datos](base-datos.md), [repositorios](../../app/Repositories/), [LoginAttemptService](../../app/Services/LoginAttemptService.php), [configuración](../../config/database.php), [PDO](../../app/Core/Database.php), [migraciones](../../database/migrations/).
+- Comprobación: inspección de consultas en repositorios y servicios, búsqueda de nombres de tablas en app/config/routes, listado de migraciones y verificación de presencia de scripts locales. Solo se extrajeron nombres de variables DB_* de .env, sin valores ni credenciales.
+- Hallazgos: siete tablas consumidoras identificadas; migraciones actuales hasta 019; los cuatro scripts de exploración de E-003 están ausentes en la raíz. La 014 usa cohort_sections frente a cohorts en código; la 016 contiene un fragmento duplicado/truncado; la 019 mezcla charset utf8mb4 y collation utf8 y un comentario de ejecución con psql. Las diferencias se documentan para contraste posterior, sin afirmar estado del servidor.
+- Verificación documental: validador del tracker y git diff --check ejecutados después de actualizar los cuatro documentos, sin errores.
+- Transición: CM-DB-001 permanece En progreso. CM-DB-002 a CM-DB-004 siguen pendientes. Se solicitó aclarar objetivo y, si procede, origen/destino; también falta identificar el entorno lógico y confirmar tablas del alcance.
+- Límite: no se estableció conexión, no se ejecutó SELECT 1, túnel, migración ni importación. No se leyeron claves privadas ni filas personales. Inventario estático no equivale a esquema real validado.
+
+### E-029
+
+- Fecha: 2026-09-26.
+- Tickets: CM-PERF-001.
+- Resultado: Parcial.
+- Alcance: acotar las tres listas de detalle del dashboard a cinco filas en SQL, conservar totales completos de alertas y medir resultados/consultas/memoria. La paginación de listados sigue pendiente.
+- Fuentes: [DashboardService](../../app/Services/DashboardService.php), [MarketingService](../../app/Services/MarketingService.php), [CohortRepository](../../app/Repositories/CohortRepository.php), [CommentRepository](../../app/Repositories/CommentRepository.php), [MarketingStageRepository](../../app/Repositories/MarketingStageRepository.php), [harness](../../tests/dashboard_queries.php), [medición y pendientes](../PERFORMANCE.md).
+- Comprobación: `php tests/dashboard_queries.php` y variante `--mysql-port=13317` satisfactorios con 0/3/10000 filas sintéticas por grupo. MariaDB 10.4.32 desechable, prepares nativos y servicio completo; SQLite omite únicamente la consulta existente de próximos inicios. Igualdad de listas, total global, límites, empates, nulos, huérfanos y propagación de fallos comprobados. Seis archivos PHP pasan `php -l`; tracker y diff pasan validación.
+- Medición: en MariaDB, el bloque modificado pasa de 3 a 5 consultas, de 42 331 712 a 64 760 bytes de pico adicional PHP y de 212,770 a 104,029 ms con 10 000 filas por lista. Dashboard completo: 6 → 8 consultas. Los tiempos no certifican producción ni sustituyen EXPLAIN; conteos y ordenaciones siguen examinando candidatos.
+- Compatibilidad: el orden de cohortes se conserva; las alertas añaden ID descendente para desempatar fechas. Consumidores de alertas sin límite siguen obteniendo todas las filas. No se truncaron reportes, exportaciones, Plan Maestro, Finanzas ni Gantt.
+- Transición: CM-PERF-001 pasa de Pendiente a En progreso. Resta separar totales/Gantt para paginar listados y medir consultas/índices en un entorno representativo.
+- Límite: datos exclusivamente sintéticos; no se cargó .env, ni se usó la base operativa, ni se aplicaron migraciones. La instancia temporal de MariaDB se cerró tras las pruebas; sus bases de fixtures fueron eliminadas por el harness. No hubo QA de navegador porque no se modificaron vistas ni interacción.
+
 ### E-027 — checkpoint del sprint UI + seguridad
 
 | Bloque | Tickets cubiertos | Estado |

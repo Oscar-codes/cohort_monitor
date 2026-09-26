@@ -51,7 +51,7 @@ class MarketingStageRepository
     }
 
     /** Get all stages that are at_risk across all cohorts. */
-    public function findAtRisk(): array
+    public function findAtRisk(?int $limit = null): array
     {
         return $this->db->query(
             'SELECT ms.*, c.cohort_code AS cohort_code,
@@ -62,8 +62,22 @@ class MarketingStageRepository
              JOIN cohorts c ON c.id = ms.cohort_id
              LEFT JOIN users u ON u.id = ms.updated_by
              WHERE ms.status = "at_risk"
-             ORDER BY ms.updated_at DESC'
+             ORDER BY ms.updated_at DESC, ms.id DESC'
+            . ($limit === null ? '' : ' LIMIT ' . max(1, min(100, $limit)))
         );
+    }
+
+    /** Preserve the listing's inner cohort join and optional author semantics. */
+    public function countAtRisk(): int
+    {
+        $rows = $this->db->query(
+            'SELECT COUNT(*) AS total
+             FROM marketing_stages ms
+             JOIN cohorts c ON c.id = ms.cohort_id
+             LEFT JOIN users u ON u.id = ms.updated_by
+             WHERE ms.status = "at_risk"'
+        );
+        return (int) $rows[0]['total'];
     }
 
     /** Ensure all 4 stages exist for a cohort (initialise if missing). */

@@ -38,6 +38,15 @@ class CohortRepository
         return $this->db->query($sql);
     }
 
+    /** First cohorts in the same order as findAll(), without loading the full list. */
+    public function findFirst(int $limit = 5): array
+    {
+        $limit = max(1, min(100, $limit));
+        return $this->db->query(
+            $this->baseSelect() . ' ORDER BY c.start_date IS NULL ASC, c.start_date ASC, c.id ASC LIMIT ' . $limit
+        );
+    }
+
     public function findByFilters(array $filters): array
     {
         $sql = $this->baseSelect();
