@@ -47,14 +47,14 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <!-- Instructions Card -->
-        <div class="app-panel mb-4">
-            <div class="app-panel__header">
+        <div class="kodigo-card mb-4" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-info-circle text-primary"></i> Instrucciones</h3>
-                    <p class="app-panel__subtitle">Antes de importar, revisa formato, tamano y columnas requeridas.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-info-circle text-primary"></i> Instrucciones</h3>
+                    <p class="kodigo-card__subtitle">Antes de importar, revisa formato, tamano y columnas requeridas.</p>
                 </div>
             </div>
-            <div>
+            <div class="kodigo-card__body">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <h6 class="fw-semibold text-primary mb-2">
@@ -88,14 +88,14 @@
         </div>
 
         <!-- Upload Card -->
-        <div class="app-panel">
-            <div class="app-panel__header">
+        <div class="kodigo-card" data-elevation="1">
+            <div class="kodigo-card__header">
                 <div>
-                    <h3 class="app-panel__title"><i class="bi bi-upload text-primary"></i> Subir archivo</h3>
-                    <p class="app-panel__subtitle">Acepta .xlsx, .xls y .csv hasta 5 MB.</p>
+                    <h3 class="kodigo-card__title"><i class="bi bi-upload text-primary"></i> Subir archivo</h3>
+                    <p class="kodigo-card__subtitle">Acepta .xlsx, .xls y .csv hasta 5 MB.</p>
                 </div>
             </div>
-            <div>
+            <div class="kodigo-card__body">
                 <form method="POST" action="/cohorts/import" enctype="multipart/form-data" id="importForm">
                     <!-- Drag & Drop Zone -->
                     <div class="upload-zone text-center p-5 rounded-3 mb-3" id="dropZone">
@@ -208,7 +208,7 @@
     <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
         <h6 class="mb-0 fw-semibold">
             <i class="bi bi-bug text-danger me-1"></i> Detalle de Errores
-            <span class="badge bg-danger-subtle text-danger ms-2"><?= count($s['errors']) ?></span>
+            <span class="kodigo-pill ms-2" data-tone="danger"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= count($s['errors']) ?></span>
         </h6>
     </div>
     <div class="table-responsive">
@@ -225,7 +225,7 @@
                     <tr>
                         <td>
                             <?php if ((int) $err['row'] > 0): ?>
-                                <span class="badge bg-secondary-subtle text-secondary"># <?= (int) $err['row'] ?></span>
+                                <span class="kodigo-pill" data-tone="neutral"># <?= (int) $err['row'] ?></span>
                             <?php else: ?>
                                 <span class="text-muted">General</span>
                             <?php endif; ?>

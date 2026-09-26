@@ -149,6 +149,18 @@
 - Observaciones: `cohorts-edit.js` no se modificó; no depende de las clases CSS migradas. La migración aprovecha la convivencia `.kodigo-card.form-workbench` para que las reglas del workbench (padding 0, overflow hidden, fondos de header/body y borde inferior) sigan gobernando el subcomponente y sólo cambie la superficie/externa al Kodigo.
 - Transición: CM-UI-006 sigue En progreso con siete vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `cohorts/import`, `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-014
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/cohorts/import.php` (`/cohorts/import`) al sistema visual Kodigo. El panel "Instrucciones" y el panel "Subir archivo" pasaron de `.app-panel` a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`. El badge de conteo de errores (`<?= count($s['errors']) ?>`) pasó a `kodigo-pill ms-2 data-tone="danger"` con `kodigo-pill__dot`; el badge `#N` de fila de error pasó a `kodigo-pill data-tone="neutral"`. Las tarjetas de resumen (Total Procesados, Insertados, Fallidos, Duplicados) permanecen como `.card` de Bootstrap porque ya encapsulan su propio grid visual y KPI numérico (no son wrappers `.app-panel`); los `<div class="alert">` de resultado de importación se conservan porque son contenido en página, no badges semánticos.
+- Fuentes: [cohorts/import](../../app/Views/cohorts/import.php), [cohorts-import.js](../../public/assets/js/cohorts-import.js), [tokens Kodigo](../../public/assets/css/app.css).
+- Comprobación: `php -l app/Views/cohorts/import.php` sin errores; `node -c public/assets/js/cohorts-import.js` sin errores; `grep -n 'app-panel\|class="badge bg-' app/Views/cohorts/import.php` sin coincidencias; IDs conservados (`importForm`, `dropZone`, `importFile`, `fileInfo`, `fileName`, `fileSize`, `btnSelectFile`, `btnClearFile`, `btnSubmit`, `spinner`).
+- Observaciones: `cohorts-import.js` no se modificó; sólo depende de IDs y selectores Bootstrap que se preservaron. La zona de drop `.upload-zone` (con `drag-over`, transiciones Kodigo refactorizadas en E-007) se conserva intacta y sigue gestionando el ciclo de selección de archivo.
+- Transición: CM-UI-006 sigue En progreso con ocho vistas completadas.
+- Límite: sin prueba en navegador; sólo comprobación estática. Queden pendientes `alerts/index`, `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
