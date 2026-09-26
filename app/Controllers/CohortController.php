@@ -218,11 +218,40 @@ class CohortController extends Controller
         $byMonth = $this->cohortService->getFinancialByMonth($filters);
         $byBootcamp = $this->cohortService->getFinancialByBootcamp($filters);
 
+        $businessModel = (string) ($filters['business_model'] ?? '');
+        $businessModelLabel = match ($businessModel) {
+            'b2b'    => 'B2B',
+            'b2c'    => 'B2C',
+            default  => 'B2B + B2C',
+        };
+        $businessModelKey = match ($businessModel) {
+            'b2b', 'b2c' => $businessModel,
+            default      => 'combined',
+        };
+
+        $sumChannel = static function (array $row, string $channel): array {
+            $isB2b = $channel === 'b2b';
+            $targetKey = $isB2b ? 'b2b_target' : 'b2c_target';
+            $actualKey = $isB2b ? 'b2b_actual' : 'b2c_actual';
+            return [
+                'target' => max(0.0, (float) ($row[$targetKey] ?? 0)),
+                'actual' => max(0.0, (float) ($row[$actualKey] ?? 0)),
+            ];
+        };
+
         $totalTarget = 0.0;
         $totalActual = 0.0;
         foreach ($byMonth as $row) {
-            $totalTarget += max(0.0, (float) ($row['target_revenue'] ?? 0));
-            $totalActual += max(0.0, (float) ($row['actual_revenue'] ?? 0));
+            if ($businessModelKey === 'combined') {
+                $totalTarget += max(0.0, (float) ($row['b2b_target'] ?? 0))
+                              + max(0.0, (float) ($row['b2c_target'] ?? 0));
+                $totalActual += max(0.0, (float) ($row['b2b_actual'] ?? 0))
+                              + max(0.0, (float) ($row['b2c_actual'] ?? 0));
+            } else {
+                $sum = $sumChannel($row, $businessModelKey);
+                $totalTarget += $sum['target'];
+                $totalActual += $sum['actual'];
+            }
         }
 
         $financeChartData = [
@@ -232,11 +261,21 @@ class CohortController extends Controller
                     $byMonth
                 )),
                 'target' => array_values(array_map(
-                    static fn(array $row): float => (float) ($row['target_revenue'] ?? 0),
+                    static function (array $row) use ($businessModelKey, $sumChannel): float {
+                        if ($businessModelKey === 'combined') {
+                            return (float) ($row['b2b_target'] ?? 0) + (float) ($row['b2c_target'] ?? 0);
+                        }
+                        return $sumChannel($row, $businessModelKey)['target'];
+                    },
                     $byMonth
                 )),
                 'actual' => array_values(array_map(
-                    static fn(array $row): float => (float) ($row['actual_revenue'] ?? 0),
+                    static function (array $row) use ($businessModelKey, $sumChannel): float {
+                        if ($businessModelKey === 'combined') {
+                            return (float) ($row['b2b_actual'] ?? 0) + (float) ($row['b2c_actual'] ?? 0);
+                        }
+                        return $sumChannel($row, $businessModelKey)['actual'];
+                    },
                     $byMonth
                 )),
             ],
@@ -246,15 +285,26 @@ class CohortController extends Controller
                     $byBootcamp
                 )),
                 'target' => array_values(array_map(
-                    static fn(array $row): float => (float) ($row['target_revenue'] ?? 0),
+                    static function (array $row) use ($businessModelKey, $sumChannel): float {
+                        if ($businessModelKey === 'combined') {
+                            return (float) ($row['b2b_target'] ?? 0) + (float) ($row['b2c_target'] ?? 0);
+                        }
+                        return $sumChannel($row, $businessModelKey)['target'];
+                    },
                     $byBootcamp
                 )),
                 'actual' => array_values(array_map(
-                    static fn(array $row): float => (float) ($row['actual_revenue'] ?? 0),
+                    static function (array $row) use ($businessModelKey, $sumChannel): float {
+                        if ($businessModelKey === 'combined') {
+                            return (float) ($row['b2b_actual'] ?? 0) + (float) ($row['b2c_actual'] ?? 0);
+                        }
+                        return $sumChannel($row, $businessModelKey)['actual'];
+                    },
                     $byBootcamp
                 )),
             ],
             'preferences' => $chartPrefs,
+            'business_model' => $businessModelKey,
         ];
 
         $this->view('cohorts.finance', [
@@ -271,6 +321,8 @@ class CohortController extends Controller
             'byBootcamp'     => $byBootcamp,
             'totalTarget'    => $totalTarget,
             'totalActual'    => $totalActual,
+            'businessModelKey'   => $businessModelKey,
+            'businessModelLabel' => $businessModelLabel,
             'chartPrefs'     => $chartPrefs,
             'financeChartData' => $financeChartData,
             'styles' => [

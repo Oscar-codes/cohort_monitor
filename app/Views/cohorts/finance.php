@@ -15,6 +15,8 @@ $availableMonths = isset($availableMonths) && is_array($availableMonths) ? $avai
 $availableYears = isset($availableYears) && is_array($availableYears) ? $availableYears : [];
 $currentYear = (string) ($currentYear ?? date('Y'));
 $selectedYear = (string) ($filters['year'] ?? $currentYear);
+$businessModelKey = (string) ($businessModelKey ?? 'combined');
+$businessModelLabel = (string) ($businessModelLabel ?? 'B2B + B2C');
 $monthLabels = [
     '01' => 'Ene', '02' => 'Feb', '03' => 'Mar',
     '04' => 'Abr', '05' => 'May', '06' => 'Jun',
@@ -28,16 +30,32 @@ foreach ($byMonth as $row) {
         $monthlyByKey[$key] = $row;
     }
 }
+$pickChannelValue = static function (array $row, string $channel, string $kind): float {
+    $key = ($channel === 'b2b' ? 'b2b_' : 'b2c_') . ($kind === 'target' ? 'target' : 'actual');
+    return (float) ($row[$key] ?? 0);
+};
+$resolveTarget = static function (array $row) use ($businessModelKey, $pickChannelValue): float {
+    if ($businessModelKey === 'combined') {
+        return $pickChannelValue($row, 'b2b', 'target') + $pickChannelValue($row, 'b2c', 'target');
+    }
+    return $pickChannelValue($row, $businessModelKey, 'target');
+};
+$resolveActual = static function (array $row) use ($businessModelKey, $pickChannelValue): float {
+    if ($businessModelKey === 'combined') {
+        return $pickChannelValue($row, 'b2b', 'actual') + $pickChannelValue($row, 'b2c', 'actual');
+    }
+    return $pickChannelValue($row, $businessModelKey, 'actual');
+};
 $trendMonths = [];
 for ($m = 1; $m <= 12; $m++) {
     $mm = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
     $key = $selectedYear . '-' . $mm;
-    $row = $monthlyByKey[$key] ?? null;
+    $row = $monthlyByKey[$key] ?? ['b2b_target' => 0, 'b2b_actual' => 0, 'b2c_target' => 0, 'b2c_actual' => 0];
     $trendMonths[] = [
-        'key'   => $key,
-        'label' => ($monthLabels[$mm] ?? $mm) . ' ' . $selectedYear,
-        'target' => (float) ($row['target_revenue'] ?? 0),
-        'actual' => (float) ($row['actual_revenue'] ?? 0),
+        'key'    => $key,
+        'label'  => ($monthLabels[$mm] ?? $mm) . ' ' . $selectedYear,
+        'target' => $resolveTarget($row),
+        'actual' => $resolveActual($row),
     ];
 }
 
@@ -245,7 +263,7 @@ $spanishMonths = [
             <span><i class="bi bi-bullseye"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalTarget)) ?></strong>
-                <small>Meta revenue</small>
+                <small>Meta revenue <?= htmlspecialchars($businessModelLabel) ?></small>
             </div>
         </article>
     </div>
@@ -254,7 +272,7 @@ $spanishMonths = [
             <span><i class="bi bi-currency-dollar"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalActual)) ?></strong>
-                <small>Revenue actual</small>
+                <small>Revenue actual <?= htmlspecialchars($businessModelLabel) ?></small>
             </div>
         </article>
     </div>
@@ -263,7 +281,7 @@ $spanishMonths = [
             <span><i class="bi bi-percent"></i></span>
             <div>
                 <strong><?= $totalPct ?>%</strong>
-                <small>Cumplimiento global</small>
+                <small>Cumplimiento <?= htmlspecialchars($businessModelLabel) ?></small>
             </div>
         </article>
     </div>
@@ -272,7 +290,7 @@ $spanishMonths = [
             <span><i class="bi bi-graph-down"></i></span>
             <div>
                 <strong><?= htmlspecialchars(moneyFmt($totalGap)) ?></strong>
-                <small>Brecha pendiente</small>
+                <small>Brecha pendiente <?= htmlspecialchars($businessModelLabel) ?></small>
             </div>
         </article>
     </div>
@@ -342,7 +360,7 @@ $spanishMonths = [
             <div class="app-panel__header">
                 <div>
                     <h3 class="app-panel__title"><i class="bi bi-bar-chart-line"></i> Cumplimiento por cohorte</h3>
-                    <p class="app-panel__subtitle">Top de revenue actual con referencia de meta.</p>
+                    <p class="app-panel__subtitle">Top de revenue actual <?= htmlspecialchars($businessModelLabel) ?> con referencia de meta.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <label for="financeTopN" class="form-label mb-0 small text-muted">Top</label>
@@ -413,7 +431,7 @@ $spanishMonths = [
             <div class="app-panel__header">
                 <div>
                     <h3 class="app-panel__title"><i class="bi bi-layers"></i> Revenue por cohorte</h3>
-                    <p class="app-panel__subtitle">Ranking financiero por cohorte.</p>
+                    <p class="app-panel__subtitle">Ranking financiero por cohorte (<?= htmlspecialchars($businessModelLabel) ?>).</p>
                 </div>
             </div>
             <div class="table-responsive">
@@ -430,12 +448,11 @@ $spanishMonths = [
                         <?php if (empty($byBootcamp)): ?>
                             <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
                         <?php else: ?>
-                            <?php foreach ($byBootcamp as $row): ?>
-                                <?php
-                                $target = max(0.0, (float) ($row['target_revenue'] ?? 0));
-                                $actual = max(0.0, (float) ($row['actual_revenue'] ?? 0));
+                            <?php foreach ($byBootcamp as $row):
+                                $target = $resolveTarget($row);
+                                $actual = $resolveActual($row);
                                 $gap = max(0.0, $target - $actual);
-                                ?>
+                            ?>
                                 <tr>
                                     <td><?= htmlspecialchars((string) ($row['bootcamp_name'] ?? '—')) ?></td>
                                     <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
