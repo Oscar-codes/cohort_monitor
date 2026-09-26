@@ -15,6 +15,12 @@ $statusBadge = [
     'pending' => 'bg-primary-subtle text-primary',
     'at_risk' => 'bg-primary-subtle text-primary',
 ];
+$statusTone = [
+    'active' => 'info',
+    'completed' => 'success',
+    'pending' => 'info',
+    'at_risk' => 'warning',
+];
 $statusIcon = [
     'active' => 'bi-broadcast',
     'completed' => 'bi-check-circle',
@@ -142,14 +148,15 @@ if (!function_exists('marketingStageStatusLabel')) {
 </div>
 
 <!-- Campaña -->
-<section class="app-panel mb-4">
-    <div class="app-panel__header">
+<section class="kodigo-card mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-megaphone-fill text-primary"></i> Campaña marketing</h3>
-            <p class="app-panel__subtitle">Estado de la campaña para esta cohorte. Solo Active o Completed.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-megaphone-fill text-primary"></i> Campaña marketing</h3>
+            <p class="kodigo-card__subtitle">Estado de la campaña para esta cohorte. Solo Active o Completed.</p>
         </div>
     </div>
-    <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info" class="row g-3 align-items-end">
+    <div class="kodigo-card__body">
+        <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info" class="row g-3 align-items-end">
         <div class="col-md-6 col-xl-5">
             <label for="campaign_status" class="form-label">Estado de la campaña</label>
             <select id="campaign_status" name="campaign_status" class="form-select" required>
@@ -163,30 +170,33 @@ if (!function_exists('marketingStageStatusLabel')) {
             </button>
         </div>
         <div class="col-md-6 col-xl-4">
-            <span class="badge <?= $campaignStatus === 'Active' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' ?>">
-                <i class="bi <?= $campaignStatus === 'Active' ? 'bi-broadcast' : 'bi-check-circle' ?> me-1"></i>
-                <?= $campaignStatus ?>
+            <span class="kodigo-pill" data-tone="<?= $campaignStatus === 'Active' ? 'info' : 'success' ?>">
+                <span class="kodigo-pill__dot" aria-hidden="true"></span>
+                <i class="bi <?= $campaignStatus === 'Active' ? 'bi-broadcast' : 'bi-check-circle' ?> me-1" aria-hidden="true"></i>
+                <?= htmlspecialchars($campaignStatus) ?>
             </span>
         </div>
         <?php foreach ($textFields as $f): ?>
             <input type="hidden" name="<?= $f ?>" value="<?= htmlspecialchars((string) ($marketingInfo[$f] ?? '')) ?>">
         <?php endforeach; ?>
     </form>
+    </div>
 </section>
 
 <!-- Campos manuales -->
-<section class="app-panel mb-4">
-    <div class="app-panel__header">
+<section class="kodigo-card mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-pencil-square"></i> Información de marketing</h3>
-            <p class="app-panel__subtitle">Campos manuales por cohorte. Completados <?= $fieldsFilledCount ?> de <?= $fieldsTotalCount ?> (<?= $fieldsPct ?>%).</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-pencil-square"></i> Información de marketing</h3>
+            <p class="kodigo-card__subtitle">Campos manuales por cohorte. Completados <?= $fieldsFilledCount ?> de <?= $fieldsTotalCount ?> (<?= $fieldsPct ?>%).</p>
         </div>
         <div class="marketing-progress-pill" style="min-width: 180px;">
             <span><?= $fieldsPct ?>%</span>
             <div class="dashboard-mini-progress"><span data-style-width="<?= $fieldsPct ?>%"></span></div>
         </div>
     </div>
-    <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info">
+    <div class="kodigo-card__body">
+        <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>/marketing/info">
         <input type="hidden" name="campaign_status" value="<?= htmlspecialchars($campaignStatus) ?>">
         <div class="row g-3">
             <?php
@@ -228,26 +238,27 @@ if (!function_exists('marketingStageStatusLabel')) {
             </button>
         </div>
     </form>
+    </div>
 </section>
 
 <!-- Workflow stages como tabla -->
-<section class="app-panel">
-    <div class="app-panel__header">
+<section class="kodigo-card" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-diagram-3 text-primary"></i> Etapas del workflow</h3>
-            <p class="app-panel__subtitle">Actualiza el estado de cada etapa y documenta condiciones de riesgo.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-diagram-3 text-primary"></i> Etapas del workflow</h3>
+            <p class="kodigo-card__subtitle">Actualiza el estado de cada etapa y documenta condiciones de riesgo.</p>
         </div>
         <div class="marketing-progress-pill" style="min-width: 180px;">
             <span><?= $completionPct ?>%</span>
             <div class="dashboard-mini-progress"><span data-style-width="<?= $completionPct ?>%"></span></div>
         </div>
     </div>
-
+    <div class="kodigo-card__body">
     <?php if (empty($stages)): ?>
-        <div class="empty-state py-5">
-            <div class="empty-state-icon"><i class="bi bi-diagram-3"></i></div>
-            <h5 class="empty-state-title">Sin etapas</h5>
-            <p class="empty-state-text">Esta cohorte aún no tiene etapas de marketing registradas.</p>
+        <div class="kodigo-empty py-5">
+            <i class="bi bi-diagram-3 kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">Sin etapas</h5>
+            <p class="kodigo-empty__text">Esta cohorte aún no tiene etapas de marketing registradas.</p>
         </div>
     <?php else: ?>
         <div class="table-responsive">
@@ -279,8 +290,9 @@ if (!function_exists('marketingStageStatusLabel')) {
                                 <strong><?= htmlspecialchars($stageLabels[$stageName] ?? $stageName) ?></strong>
                             </td>
                             <td>
-                                <span class="badge badge-status <?= $statusBadge[$stageStatus] ?? 'bg-info-subtle text-info' ?>">
-                                    <i class="bi <?= $statusIcon[$stageStatus] ?? 'bi-info-circle' ?> me-1"></i>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($statusTone[$stageStatus] ?? 'info') ?>">
+                                    <span class="kodigo-pill__dot" aria-hidden="true"></span>
+                                    <i class="bi <?= htmlspecialchars($statusIcon[$stageStatus] ?? 'bi-info-circle') ?> me-1" aria-hidden="true"></i>
                                     <?= htmlspecialchars(marketingStageStatusLabel($stageStatus)) ?>
                                 </span>
                             </td>
@@ -344,4 +356,5 @@ if (!function_exists('marketingStageStatusLabel')) {
             </table>
         </div>
     <?php endif; ?>
+    </div>
 </section>

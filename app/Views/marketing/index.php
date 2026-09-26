@@ -27,6 +27,19 @@ if (!function_exists('marketingStatusLabel')) {
         return $labels[$status ?? ''] ?? (string) ($status ?? '—');
     }
 }
+
+if (!function_exists('marketingStatusTone')) {
+    function marketingStatusTone(?string $status): string
+    {
+        $tones = [
+            'not_started' => 'neutral',
+            'in_progress' => 'info',
+            'completed'   => 'success',
+            'cancelled'   => 'danger',
+        ];
+        return $tones[$status ?? ''] ?? 'neutral';
+    }
+}
 ?>
 
 <section class="cohorts-hero mb-4">
@@ -105,14 +118,15 @@ if (!function_exists('marketingStatusLabel')) {
     </div>
 </div>
 
-<div class="app-panel cohort-filter-panel mb-4">
-    <div class="app-panel__header">
+<div class="kodigo-card cohort-filter-panel mb-4" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-funnel text-primary"></i> Filtros de marketing</h3>
-            <p class="app-panel__subtitle">Filtra por búsqueda, bootcamp name, proyecto, fechas, población o estado.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Filtros de marketing</h3>
+            <p class="kodigo-card__subtitle">Filtra por búsqueda, bootcamp name, proyecto, fechas, población o estado.</p>
         </div>
     </div>
-    <form method="GET" action="/marketing" class="row g-3">
+    <div class="kodigo-card__body">
+        <form method="GET" action="/marketing" class="row g-3">
         <div class="col-12 col-xl-4">
             <label for="search" class="form-label">Búsqueda</label>
             <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Código, cohorte, coach, proyecto...">
@@ -171,21 +185,22 @@ if (!function_exists('marketingStatusLabel')) {
             </button>
         </div>
     </form>
+    </div>
 </div>
 
-<section class="app-panel">
-    <div class="app-panel__header">
+<section class="kodigo-card" data-elevation="1">
+    <div class="kodigo-card__header">
         <div>
-            <h3 class="app-panel__title"><i class="bi bi-table text-primary"></i> Matriz de campañas por cohorte</h3>
-            <p class="app-panel__subtitle">Estado de la campaña, avance de etapas y últimas actualizaciones por cohorte.</p>
+            <h3 class="kodigo-card__title"><i class="bi bi-table text-primary"></i> Matriz de campañas por cohorte</h3>
+            <p class="kodigo-card__subtitle">Estado de la campaña, avance de etapas y últimas actualizaciones por cohorte.</p>
         </div>
     </div>
-
+    <div class="kodigo-card__body">
     <?php if (empty($cohorts)): ?>
-        <div class="empty-state py-5">
-            <div class="empty-state-icon"><i class="bi bi-megaphone"></i></div>
-            <h5 class="empty-state-title">Sin cohortes disponibles</h5>
-            <p class="empty-state-text">No hay cohortes con los filtros actuales o crea una nueva cohorte para empezar.</p>
+        <div class="kodigo-empty py-5">
+            <i class="bi bi-megaphone kodigo-empty__icon" aria-hidden="true"></i>
+            <h5 class="kodigo-empty__title">Sin cohortes disponibles</h5>
+            <p class="kodigo-empty__text">No hay cohortes con los filtros actuales o crea una nueva cohorte para empezar.</p>
         </div>
     <?php else: ?>
         <div class="table-responsive">
@@ -244,7 +259,7 @@ if (!function_exists('marketingStatusLabel')) {
                                 <div class="dashboard-mini-progress"><span data-style-width="<?= $cPct ?>%"></span></div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(marketingStatusTone($c['training_status'] ?? null)) ?>">
                                     <?= htmlspecialchars(marketingStatusLabel($c['training_status'] ?? null)) ?>
                                 </span>
                             </td>
@@ -264,4 +279,5 @@ if (!function_exists('marketingStatusLabel')) {
             </table>
         </div>
     <?php endif; ?>
+    </div>
 </section>

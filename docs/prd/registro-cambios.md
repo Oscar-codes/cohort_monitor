@@ -173,6 +173,18 @@
 - Observaciones: `initAlertsWorkbench` en `app.js` consulta los selectores por atributo y por id (no por clase), por lo que la migración no requiere cambios en JS. El `.alerts-empty-filter` inline (mensaje "Sin coincidencias" cuando un filtro no devuelve resultados) se conserva como bloque propio porque tiene su propio layout horizontal con icono.
 - Transición: CM-UI-006 sigue En progreso con nueve vistas completadas.
 - Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `marketing/index`, `marketing/show`, `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
+
+### E-016
+
+- Fecha: 2026-09-26.
+- Tickets: CM-UI-006.
+- Resultado: Verificado.
+- Alcance: migración de `app/Views/marketing/index.php` (`/marketing`) y `app/Views/marketing/show.php` (`/cohorts/{id}/marketing`) al sistema visual Kodigo. En index, el panel de filtros y el panel "Matriz de campañas por cohorte" pasaron a `.kodigo-card data-elevation="1"` con `kodigo-card__header/__title/__subtitle/__body`; el empty state "Sin cohortes disponibles" pasó a `.kodigo-empty/__icon (aria-hidden)/__title/__text`. El badge de estado de fila dejó de ser `bg-light text-dark border` y pasó a `kodigo-pill data-tone="…"` mapeado por el nuevo helper `marketingStatusTone()` (`not_started→neutral`, `in_progress→info`, `completed→success`, `cancelled→danger`). En show, los tres paneles (Campaña marketing, Información de marketing, Etapas del workflow) se migraron al mismo `.kodigo-card`. El badge de estado de campaña ("Active/Completed") pasó a `kodigo-pill data-tone="info|success"` con `kodigo-pill__dot`. El badge de etapa del workflow pasó a `kodigo-pill data-tone="…"` con dot; para traducir el badge se introdujo `$statusTone` (`active|pending→info`, `completed→success`, `at_risk→warning`) en paralelo al `$statusBadge` existente; el icon y el label se conservan del mapa original. El empty state "Sin etapas" pasó a `.kodigo-empty` con icono aria-hidden.
+- Fuentes: [marketing/index](../../app/Views/marketing/index.php), [marketing/show](../../app/Views/marketing/show.php), [marketing-show.js](../../public/assets/js/marketing-show.js), [tokens Kodigo](../../public/assets/css/app.css).
+- Comprobación: `php -l app/Views/marketing/index.php` y `php -l app/Views/marketing/show.php` sin errores; `node -c public/assets/js/marketing-show.js` sin errores; `grep -n 'app-panel\|class="badge bg-\|empty-state-icon\|empty-state-text\|empty-state-title\|status-pill status-pill--'` en ambos archivos sin coincidencias; IDs `data-bs-target="#modal-…"` y atributos `data-bs-toggle="modal"` conservados.
+- Observaciones: `marketing-show.js` no se modificó; no depende de las clases heredadas. Los `marketing-progress-pill` (mini progress + porcentaje) se conservan porque ya encapsulan su propio microcomponente numérico. `$statusBadge` se conserva para retro-compatibilidad con futuras extensiones; el render actual usa `$statusTone`.
+- Transición: CM-UI-006 sigue En progreso con once vistas completadas (nueve cohorts/alerts + dos marketing).
+- Límite: sin prueba en navegador; sólo comprobación estática. Quedan pendientes `users/index`, `users/create`, `users/edit`, `reports/index`, `coaches/calendar`, `account/profile`, `auth/login`, `admin/audit-log`, `admin/health`.
 - Límite: sin prueba funcional en navegador ni ejecución contra base de datos; los totales y gráficos pueden variar al cambiar filtros hasta que se ejecute la página. No se importaron scripts de diagnóstico ni archivos SQL.
 
 ### E-006
