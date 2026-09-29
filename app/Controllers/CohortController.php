@@ -229,30 +229,8 @@ class CohortController extends Controller
             default      => 'combined',
         };
 
-        $sumChannel = static function (array $row, string $channel): array {
-            $isB2b = $channel === 'b2b';
-            $targetKey = $isB2b ? 'b2b_target' : 'b2c_target';
-            $actualKey = $isB2b ? 'b2b_actual' : 'b2c_actual';
-            return [
-                'target' => max(0.0, (float) ($row[$targetKey] ?? 0)),
-                'actual' => max(0.0, (float) ($row[$actualKey] ?? 0)),
-            ];
-        };
-
-        $totalTarget = 0.0;
-        $totalActual = 0.0;
-        foreach ($byMonth as $row) {
-            if ($businessModelKey === 'combined') {
-                $totalTarget += max(0.0, (float) ($row['b2b_target'] ?? 0))
-                              + max(0.0, (float) ($row['b2c_target'] ?? 0));
-                $totalActual += max(0.0, (float) ($row['b2b_actual'] ?? 0))
-                              + max(0.0, (float) ($row['b2c_actual'] ?? 0));
-            } else {
-                $sum = $sumChannel($row, $businessModelKey);
-                $totalTarget += $sum['target'];
-                $totalActual += $sum['actual'];
-            }
-        }
+        $totalTarget = array_sum(array_column($byMonth, 'financial_target_revenue'));
+        $totalActual = array_sum(array_column($byMonth, 'financial_actual_revenue'));
 
         $financeChartData = [
             'monthly' => [
@@ -261,21 +239,11 @@ class CohortController extends Controller
                     $byMonth
                 )),
                 'target' => array_values(array_map(
-                    static function (array $row) use ($businessModelKey, $sumChannel): float {
-                        if ($businessModelKey === 'combined') {
-                            return (float) ($row['b2b_target'] ?? 0) + (float) ($row['b2c_target'] ?? 0);
-                        }
-                        return $sumChannel($row, $businessModelKey)['target'];
-                    },
+                    static fn(array $row): float => (float) ($row['financial_target_revenue'] ?? 0),
                     $byMonth
                 )),
                 'actual' => array_values(array_map(
-                    static function (array $row) use ($businessModelKey, $sumChannel): float {
-                        if ($businessModelKey === 'combined') {
-                            return (float) ($row['b2b_actual'] ?? 0) + (float) ($row['b2c_actual'] ?? 0);
-                        }
-                        return $sumChannel($row, $businessModelKey)['actual'];
-                    },
+                    static fn(array $row): float => (float) ($row['financial_actual_revenue'] ?? 0),
                     $byMonth
                 )),
             ],
@@ -285,21 +253,11 @@ class CohortController extends Controller
                     $byBootcamp
                 )),
                 'target' => array_values(array_map(
-                    static function (array $row) use ($businessModelKey, $sumChannel): float {
-                        if ($businessModelKey === 'combined') {
-                            return (float) ($row['b2b_target'] ?? 0) + (float) ($row['b2c_target'] ?? 0);
-                        }
-                        return $sumChannel($row, $businessModelKey)['target'];
-                    },
+                    static fn(array $row): float => (float) ($row['financial_target_revenue'] ?? 0),
                     $byBootcamp
                 )),
                 'actual' => array_values(array_map(
-                    static function (array $row) use ($businessModelKey, $sumChannel): float {
-                        if ($businessModelKey === 'combined') {
-                            return (float) ($row['b2b_actual'] ?? 0) + (float) ($row['b2c_actual'] ?? 0);
-                        }
-                        return $sumChannel($row, $businessModelKey)['actual'];
-                    },
+                    static fn(array $row): float => (float) ($row['financial_actual_revenue'] ?? 0),
                     $byBootcamp
                 )),
             ],

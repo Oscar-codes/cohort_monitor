@@ -45,3 +45,5 @@ Al retomar: consultar CM-DB-001 para confirmar objetivo/origen/destino, después
 No se comprobó qué entorno está desplegado, qué migraciones se aplicaron, cuántas filas existen, si se transfirieron datos entre bases ni si los scripts locales se ejecutaron. No se encontró suite versionada de PHPUnit/PHPStan/Psalm en la revisión inicial. La documentación creada hoy no certifica operación en producción.
 
 Las decisiones de arquitectura y desarrollo están recogidas en [PHP senior](../../.agents/skills/php-senior-cohort-monitor/SKILL.md); las reglas de mantenimiento de estos registros en [tracker](../../.agents/skills/cohort-monitor-tracker/SKILL.md).
+
+Finance utiliza las columnas financieras de meta e ingreso para tarjetas, gráficos y tablas; CM-VAL-003 está En progreso con regresión sintética de cálculos aprobada. Falta comprobar navegador y MySQL del entorno pertinente ([E-030](registro-cambios.md#e-030)).

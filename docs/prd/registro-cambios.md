@@ -517,3 +517,15 @@ y evidencias
 | QA responsive | CM-UI-005 | Completado |
 | Seguridad P0/P1 | CM-SEC-001..004 | Completados |
 | Pendientes restantes | CM-VAL-001..007, CM-DB-001..004, CM-PERF-001, CM-ARCH-001, CM-FUT-001/002 | 14 tickets |
+
+### E-030
+
+- Fecha: 2026-09-29.
+- Tickets: CM-VAL-003.
+- Resultado: Parcial.
+- Alcance: Finance usa exclusivamente `financial_target_revenue` para meta y `financial_actual_revenue` para ingreso; se eliminan las sumas de admisiones B2B/B2C de los importes.
+- Fuentes: [repositorio](../../app/Repositories/CohortRepository.php), [controlador](../../app/Controllers/CohortController.php), [vista](../../app/Views/cohorts/finance.php), [regresión](../../tests/finance_revenue.php).
+- Comprobación: `php tests/finance_revenue.php` satisfactorio con SQLite en memoria y DATE_FORMAT adaptado: repositorio, servicio, controlador y render PHP; totales, ambos gráficos, tendencia de 12 meses, ranking, rango inclusivo con centavos, nulos y resultados vacíos. Los importes de fixtures difieren de sus admisiones para detectar regresiones de fuente. `php -l` en los cuatro PHP modificados sin errores.
+- Regla: B2B/B2C conserva su función de filtro de cohortes, sin repartir ni sustituir sus importes financieros; mínimo/máximo usa la meta financiera y admite centavos. Filtros ausentes no generan avisos de claves indefinidas.
+- Transición: CM-VAL-003 pasa a En progreso. Falta validar en MySQL del entorno pertinente, preferencias de sesión y navegador. No se modifican datos ni esquema.
+- Límite: prueba aislada con datos sintéticos, sin .env ni base operativa; render PHP no equivale a QA visual o ejecución de ApexCharts en navegador.

@@ -1,6 +1,6 @@
 # Backlog de Cohort Monitor
 
-Última actualización: 2026-09-26.
+Última actualización: 2026-09-29.
 
 Fuente canónica de estados de trabajo. Consultar [contexto](estado-proyecto.md), [base de datos](base-datos.md), [evidencias](registro-cambios.md) y [PRD histórico](../PRD.md).
 
@@ -20,7 +20,7 @@ Estados: **Completado**, **En progreso**, **Pendiente**, **Bloqueado**. Para com
 | CM-DB-004 | Datos | P1 | Pendiente | Definir mapeo y conciliación de cohortes y finanzas | Correspondencias, duplicados, estados, fechas, nulos y dinero definidos; agregados e integridad verificados según alcance confirmado | [E-003](registro-cambios.md#e-003) | CM-DB-003 | Confirmar si habrá transferencia o solo análisis |
 | CM-VAL-001 | Cohortes | P1 | Pendiente | Validar CRUD, filtros, master y workflow existentes | Casos de escritura/lectura, rol, transición, cancelación y bloqueo de eliminación comprobados en entorno de prueba | [E-002](registro-cambios.md#e-002) | - | Preparar casos sintéticos y fechas límite |
 | CM-VAL-002 | Usuarios | P1 | Pendiente | Validar login, cuenta y permisos existentes | Login y acciones autorizadas/denegadas por rol y campo comprobadas; sesión y cambios de usuario verificados | [E-002](registro-cambios.md#e-002) | - | Revisar matriz y guards antes de probar |
-| CM-VAL-003 | Finanzas | P1 | Pendiente | Validar cálculos, filtros y gráficos de finanzas | Totales y redondeo coinciden con datos controlados; filtros y preferencias de sesión se comportan según criterio | [E-002](registro-cambios.md#e-002) | - | Preparar importes y expectativas reproducibles |
+| CM-VAL-003 | Finanzas | P1 | En progreso | Validar cálculos, filtros y gráficos de finanzas | Totales y redondeo coinciden con datos controlados; filtros y preferencias de sesión se comportan según criterio | [E-002](registro-cambios.md#e-002), [E-030](registro-cambios.md#e-030) | - | Cálculos financieros verificados con fixtures; falta MySQL real, navegador y preferencias de sesión |
 | CM-VAL-004 | Marketing | P1 | Pendiente | Validar marketing, comentarios y alertas | Estados active/completed, alias históricos y señales de riesgo coherentes entre servicios, UI y esquema | [E-002](registro-cambios.md#e-002) | - | Contrastar normalización y consultas de riesgo |
 | CM-VAL-005 | Reportes | P1 | Pendiente | Validar importación y exportaciones existentes | Archivo válido/inválido, duplicados, fallo parcial y rollback definidos; filtros y resultados de CSV/XLSX/PDF comprobados | [E-002](registro-cambios.md#e-002) | - | Ensayar con archivos sintéticos y base desechable |
 | CM-VAL-006 | Interfaz | P2 | Pendiente | Validar dashboard, calendario y mejoras visuales presentes | Métricas/fechas coherentes; navegación móvil/escritorio, teclado y estados de error revisados | [E-002](registro-cambios.md#e-002) | - | Contrastar plan frontend con comportamiento visible |

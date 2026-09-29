@@ -296,8 +296,7 @@ class CohortRepository
     /**
      * Financial aggregation by cohort start month.
      *
-     * Returns B2B and B2C revenue separately so the controller can decide
-     * whether to surface a single channel or the combined total.
+     * Returns financial revenue amounts for the filtered cohorts.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -307,10 +306,8 @@ class CohortRepository
             SELECT
                 DATE_FORMAT(c.start_date, '%Y-%m') AS period_key,
                 DATE_FORMAT(c.start_date, '%b %Y') AS period_label,
-                COALESCE(SUM(c.b2b_admission_target), 0) AS b2b_target,
-                COALESCE(SUM(c.b2b_admissions), 0) AS b2b_actual,
-                COALESCE(SUM(c.b2c_admission_target), 0) AS b2c_target,
-                COALESCE(SUM(c.b2c_admissions), 0) AS b2c_actual,
+                COALESCE(SUM(c.financial_target_revenue), 0) AS financial_target_revenue,
+                COALESCE(SUM(c.financial_actual_revenue), 0) AS financial_actual_revenue,
                 COUNT(DISTINCT c.id) AS cohorts_total
             FROM cohorts c";
 
@@ -329,8 +326,7 @@ class CohortRepository
     /**
      * Financial aggregation by bootcamp.
      *
-     * Returns B2B and B2C revenue separately so the controller can decide
-     * whether to surface a single channel or the combined total.
+     * Returns financial revenue amounts for the filtered cohorts.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -339,10 +335,8 @@ class CohortRepository
         $sql = "
             SELECT
                 COALESCE(NULLIF(c.bootcamp_type, ''), 'Sin cohorte') AS bootcamp_name,
-                COALESCE(SUM(c.b2b_admission_target), 0) AS b2b_target,
-                COALESCE(SUM(c.b2b_admissions), 0) AS b2b_actual,
-                COALESCE(SUM(c.b2c_admission_target), 0) AS b2c_target,
-                COALESCE(SUM(c.b2c_admissions), 0) AS b2c_actual,
+                COALESCE(SUM(c.financial_target_revenue), 0) AS financial_target_revenue,
+                COALESCE(SUM(c.financial_actual_revenue), 0) AS financial_actual_revenue,
                 COUNT(DISTINCT c.id) AS cohorts_total
             FROM cohorts c";
 
@@ -353,7 +347,7 @@ class CohortRepository
 
         $sql .= "
             GROUP BY COALESCE(NULLIF(c.bootcamp_type, ''), 'Sin cohorte')
-            ORDER BY (COALESCE(SUM(c.b2b_admissions), 0) + COALESCE(SUM(c.b2c_admissions), 0)) DESC, bootcamp_name ASC";
+            ORDER BY COALESCE(SUM(c.financial_actual_revenue), 0) DESC, bootcamp_name ASC";
 
         return $this->db->query($sql, $params);
     }
@@ -481,13 +475,13 @@ class CohortRepository
             $params['period_year'] = (string) $filters['year'];
         }
 
-        if ($filters['target_min'] !== null && $filters['target_min'] !== '') {
-            $where[] = 'c.b2b_admission_target >= :target_min';
+        if (isset($filters['target_min']) && $filters['target_min'] !== '') {
+            $where[] = 'c.financial_target_revenue >= :target_min';
             $params['target_min'] = (float) $filters['target_min'];
         }
 
-        if ($filters['target_max'] !== null && $filters['target_max'] !== '') {
-            $where[] = 'c.b2b_admission_target <= :target_max';
+        if (isset($filters['target_max']) && $filters['target_max'] !== '') {
+            $where[] = 'c.financial_target_revenue <= :target_max';
             $params['target_max'] = (float) $filters['target_max'];
         }
 
