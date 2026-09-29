@@ -116,11 +116,11 @@ class LoginAttemptService
         $stmt = $pdo->prepare(
             'SELECT COUNT(*) FROM login_attempts
              WHERE identifier_hash = :h
-               AND (ip_address = :ip OR :ip = "")
+               AND (ip_address = :ip OR :ip_empty = "")
                AND success = 0
                AND created_at >= FROM_UNIXTIME(:since)'
         );
-        $stmt->execute(['h' => $hash, 'ip' => $ip, 'since' => $since]);
+        $stmt->execute(['h' => $hash, 'ip' => $ip, 'ip_empty' => $ip, 'since' => $since]);
         return (int) $stmt->fetchColumn();
     }
 
@@ -130,12 +130,12 @@ class LoginAttemptService
         $stmt = $pdo->prepare(
             'SELECT UNIX_TIMESTAMP(created_at) FROM login_attempts
              WHERE identifier_hash = :h
-               AND (ip_address = :ip OR :ip = "")
+               AND (ip_address = :ip OR :ip_empty = "")
                AND success = 0
                AND created_at >= FROM_UNIXTIME(:since)
              ORDER BY created_at DESC LIMIT 1'
         );
-        $stmt->execute(['h' => $hash, 'ip' => $ip, 'since' => $since]);
+        $stmt->execute(['h' => $hash, 'ip' => $ip, 'ip_empty' => $ip, 'since' => $since]);
         $v = $stmt->fetchColumn();
         return $v === false ? null : (int) $v;
     }

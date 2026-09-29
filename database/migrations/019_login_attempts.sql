@@ -23,4 +23,4 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_login_attempts_identifier (identifier_hash, created_at),
   INDEX idx_login_attempts_ip (ip_address, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
