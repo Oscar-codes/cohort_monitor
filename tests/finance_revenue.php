@@ -61,6 +61,25 @@ foreach (['' => [3501.0, 4501.5], 'b2b' => [1500.5, 3301.25], 'b2c' => [3000.75,
         check(abs(array_sum($data['financeChartData'][$chart]['actual']) - $actual) < 0.001, 'Chart actual');
     }
     $html = renderFinance($data);
+    $dom = new DOMDocument();
+    $previousErrors = libxml_use_internal_errors(true);
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previousErrors);
+    $xpath = new DOMXPath($dom);
+    $tableColumns = $xpath->query('//*[@id="finance-revenue-tables"]/div');
+    check($tableColumns->length === 2, 'Revenue tables must be sibling grid columns');
+    foreach ($tableColumns as $column) {
+        check($xpath->query('.//table', $column)->length === 1, 'One table per grid column');
+    }
+    $summaryValues = $xpath->query('//article[contains(@class,"cohort-summary-card")]//strong');
+    check($summaryValues->item(0)->textContent === '$' . number_format($target, 2), 'Target card');
+    check($summaryValues->item(1)->textContent === '$' . number_format($actual, 2), 'Actual card');
+    foreach ($data['byBootcamp'] as $index => $row) {
+        $cells = $xpath->query('.//tbody/tr', $tableColumns->item(1))->item($index)->getElementsByTagName('td');
+        check($cells->item(1)->textContent === '$' . number_format((float) $row['financial_target_revenue'], 2), 'Table target');
+        check($cells->item(2)->textContent === '$' . number_format((float) $row['financial_actual_revenue'], 2), 'Table actual');
+    }
     preg_match('/<textarea id="cohort-finance-trend"[^>]*>(.*?)<\/textarea>/s', $html, $match);
     $trend = json_decode(html_entity_decode($match[1], ENT_QUOTES, 'UTF-8'), true, 512, JSON_THROW_ON_ERROR);
     check(count($trend['months']) === 12, 'Twelve-month trend');

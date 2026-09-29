@@ -87,6 +87,33 @@
                         </div>
                     </div>
 
+                    <!-- ─── Ingresos ─────────────────────────────────────────── -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="bi bi-cash-coin"></i> Ingresos (USD)
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label for="financial_target_revenue" class="form-label">Meta de ingresos</label>
+                                <input type="number" class="form-control" id="financial_target_revenue" name="financial_target_revenue"
+                                       step="0.01" min="0" value="0"
+                                       aria-describedby="financial_target_help">
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="financial_actual_revenue" class="form-label">Ingreso actual</label>
+                                <input type="number" class="form-control" id="financial_actual_revenue" name="financial_actual_revenue"
+                                       step="0.01" min="0" value="0"
+                                       aria-describedby="financial_actual_help">
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <div id="financial_target_help" class="form-text">Meta acumulada del cohorte; visible en /cohorts/finance y tarjetas del dashboard.</div>
+                                <div id="financial_actual_help" class="form-text">Ingreso real acumulado; si falta, la página de finanzas mostrará $0.00 en esa fila.</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- â”€â”€â”€ Fechas de Entrenamiento â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
                     <div class="form-section">
                         <div class="form-section-title">

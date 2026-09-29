@@ -57,7 +57,7 @@ $totalPct = $totalTarget > 0 ? min(100, (int) round(($totalActual / $totalTarget
 if (!function_exists('moneyFmt')) {
     function moneyFmt(float $value): string
     {
-        return '$' . number_format($value, 2);
+        return '$' . number_format($value, 2, '.', ',');
     }
 }
 
@@ -418,7 +418,7 @@ $spanishMonths = [
     'months' => $trendMonths,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?></textarea>
 
-<div class="row g-4">
+<div class="row g-4" id="finance-revenue-tables">
     <div class="col-xl-6">
         <section class="kodigo-card h-100" data-elevation="1">
             <div class="kodigo-card__header">
@@ -429,40 +429,41 @@ $spanishMonths = [
             </div>
             <div class="kodigo-card__body">
                 <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Periodo</th>
-                            <th class="text-end">Meta</th>
-                            <th class="text-end">Actual</th>
-                            <th class="text-end">Cumplimiento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($trendMonths)): ?>
-                            <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($trendMonths as $monthRow):
-                                $target = (float) ($monthRow['target'] ?? 0);
-                                $actual = (float) ($monthRow['actual'] ?? 0);
-                                $pct = $target > 0 ? min(100, (int) round(($actual / $target) * 100)) : 0;
-                            ?>
-                                <tr>
-                                    <td><?= htmlspecialchars((string) ($monthRow['label'] ?? '—')) ?></td>
-                                    <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
-                                    <td class="text-end"><?= htmlspecialchars(moneyFmt($actual)) ?></td>
-                                    <td class="text-end"><?= $pct ?>%</td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-</tbody>
-                </table>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Periodo</th>
+                                <th class="text-end">Meta</th>
+                                <th class="text-end">Actual</th>
+                                <th class="text-end">Cumplimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($trendMonths)): ?>
+                                <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($trendMonths as $monthRow):
+                                    $target = (float) ($monthRow['target'] ?? 0);
+                                    $actual = (float) ($monthRow['actual'] ?? 0);
+                                    $pct = $target > 0 ? min(100, (int) round(($actual / $target) * 100)) : 0;
+                                ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars((string) ($monthRow['label'] ?? '—')) ?></td>
+                                        <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
+                                        <td class="text-end"><?= htmlspecialchars(moneyFmt($actual)) ?></td>
+                                        <td class="text-end"><?= $pct ?>%</td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
+    </div>
 
     <div class="col-xl-6">
-<section class="kodigo-card h-100" data-elevation="1">
+        <section class="kodigo-card h-100" data-elevation="1">
             <div class="kodigo-card__header">
                 <div>
                     <h3 class="kodigo-card__title"><i class="bi bi-layers"></i> Revenue por cohorte</h3>
@@ -471,34 +472,34 @@ $spanishMonths = [
             </div>
             <div class="kodigo-card__body">
                 <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Bootcamp name</th>
-                            <th class="text-end">Meta</th>
-                            <th class="text-end">Actual</th>
-                            <th class="text-end">Brecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($byBootcamp)): ?>
-                            <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($byBootcamp as $row):
-                                $target = $resolveTarget($row);
-                                $actual = $resolveActual($row);
-                                $gap = max(0.0, $target - $actual);
-                            ?>
-                                <tr>
-                                    <td><?= htmlspecialchars((string) ($row['bootcamp_name'] ?? '—')) ?></td>
-                                    <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
-                                    <td class="text-end"><?= htmlspecialchars(moneyFmt($actual)) ?></td>
-                                    <td class="text-end"><?= htmlspecialchars(moneyFmt($gap)) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bootcamp name</th>
+                                <th class="text-end">Meta</th>
+                                <th class="text-end">Actual</th>
+                                <th class="text-end">Brecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($byBootcamp)): ?>
+                                <tr><td colspan="4" class="text-center text-muted py-4">Sin datos</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($byBootcamp as $row):
+                                    $target = $resolveTarget($row);
+                                    $actual = $resolveActual($row);
+                                    $gap = max(0.0, $target - $actual);
+                                ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars((string) ($row['bootcamp_name'] ?? '—')) ?></td>
+                                        <td class="text-end"><?= htmlspecialchars(moneyFmt($target)) ?></td>
+                                        <td class="text-end"><?= htmlspecialchars(moneyFmt($actual)) ?></td>
+                                        <td class="text-end"><?= htmlspecialchars(moneyFmt($gap)) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>

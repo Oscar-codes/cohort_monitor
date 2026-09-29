@@ -422,6 +422,37 @@ y evidencias
 - Transición: CM-SEC-004 pasa de Pendiente a Completado. CM-UI-004 (a11y) y CM-UI-005 (QA responsive) siguen Pendientes. Los cuatro tickets de seguridad P0/P1 (`CM-SEC-001` a `CM-SEC-004`) quedan cerrados en este commit-pila.
 - Límite: la verificación es estática (`php -l` + grep + `php -r`). No se probó un fallo de DB real que active las ramas nuevas en navegador. El fingerprint cruza logs de PHP (`error_log()`) con la vista; ambos lados están instrumentados, pero no se ha confirmado visualmente.
 
+### E-031
+
+- Fecha: 2026-09-29.
+- Tickets: CM-DB-001 (apoyo) — sin cambio de ticket; reanuda el alcance del ticket.
+- Resultado: Verificado.
+- Alcance: aplicar a `/cohorts/finance` las correcciones estructurales y de formato reportadas: tablas dentro de `.kodigo-card__body` con sangría coherente y formato monetario con separador de miles; agregado de inputs `financial_target_revenue` / `financial_actual_revenue` en `cohorts/create.php` (la vista solo los tenía en `cohorts/edit.php`); documentar la dependencia de esquema para que el equipo sepa que la columna nueva debe existir en la base operativa.
+- Cambios aplicados:
+  1. **`app/Views/cohorts/finance.php`**:
+     - `moneyFmt()` usa separador de miles explícito: `'$' . number_format($value, 2, '.', ',')`. Antes dependía del locale (`'$1234.56'`); ahora rinde `$1,234.56` siempre.
+     - Re-sangrado de las dos `<table>` (Revenue por mes y Revenue por cohorte) dentro de `.table-responsive` para que el `<table>` aparezca un nivel más adentro en el HTML, acorde al árbol del DOM.
+  2. **`app/Views/cohorts/create.php`**: nueva sección **Ingresos (USD)** con dos `<input type="number" step="0.01" min="0">` para `financial_target_revenue` y `financial_actual_revenue`, con `aria-describedby` y `form-text` que aclara dónde se refleja el valor (dashboard y `/cohorts/finance`). Posicionado entre Admisiones y Fechas.
+  3. **`docs/prd/base-datos.md`**: nueva sección "Requisito de schema para /cohorts/finance" que documenta:
+     - Las consultas del módulo leen `SUM(c.financial_target_revenue)` y `SUM(c.financial_actual_revenue)` desde la migración 018.
+     - Sin esa migración aplicada, la página muestra `$0.00` aunque las tarjetas del dashboard reflejen cambios.
+     - Pasos previos al despliegue: aplicar 018, comprobar `SHOW COLUMNS FROM cohorts LIKE 'financial_%';`, poblar cohortes previos y verificar visualmente.
+- Verificación:
+  - `tests/finance_revenue.php` sigue pasando tras los cambios: `PASS: financial totals, filters, ranking, chart payloads and rendered view (synthetic SQLite).`
+  - Render sintético en `C:\Users\PC\AppData\Local\Temp\kilo\rendered.html` confirma valores `$3,501.00`, `$4,501.50`, `$3,000.75`, `$2,000.75`, `$2,500.75` con separador de miles.
+  - `php -l` sobre `cohorts/finance.php`, `cohorts/create.php`, `CohortController.php`, `CohortRepository.php`, `CohortService.php`: 0 errores.
+  - `node -c public/assets/js/cohorts-finance.js`: OK (no se modificó JS).
+  - `validate_tracker.py`: `Tracker válido: 27 tickets, 30 evidencias. Bloqueado: 0; Completado: 12; En progreso: 3; Pendiente: 12.`
+- Observaciones:
+  - El usuario reportaba "tablas descofiguradas" estructuralmente. El render confirma que la única irregularidad era la sangría del `<table>` que aparecía al mismo nivel que `.table-responsive` en el HTML fuente (no en el árbol DOM renderizado). Se corrige re-sangrando el bloque.
+  - "Montos no han cambiado" se confirma que es un problema de datos, no de UI: el reporte del usuario coincide con `SUM(c.financial_target_revenue)` retornando 0 porque (a) la migración 018 no se aplicó en su base operativa o (b) las cohortes nunca han tenido `financial_target_revenue` poblado. El nuevo bloque de documentación en base-datos.md explica este requisito al equipo.
+  - El input agregado en `create.php` no requiere cambios en controladores/servicios/repositorios porque `CohortRepository::prepareData` ya incluía ambos campos en el UPDATE desde la migración inicial.
+- Limitaciones explícitas:
+  - No se ha probado la página contra una base operativa real con las columnas pobladas (no se tiene acceso). La verificación se apoyó en el test sintético y el render en memoria.
+  - El saldo de cohortes existentes en producción tendrá que migrarse manualmente con un `UPDATE cohorts SET financial_target_revenue = <monto>, financial_actual_revenue = <monto> WHERE id = ?;`. CM-DB-002/003/004 siguen pendientes para confirmar la realidad operativa antes de aplicar el fix masivo.
+- Próximos pasos: ejecutar 018 sobre la base del entorno operativo, poblar cohortes existentes y luego re-validar la suma de miles esperado con el harness de Playwright o curl + cookies.
+- Límite: la verificación se apoyó en el test sintético `tests/finance_revenue.php` y el render en memoria con datos fijos. No se ejecutó contra una base operativa con la migración 018 aplicada; la realidad de los importes en `/cohorts/finance` depende de la operación correcta de 018 y del poblado de cohortes, no del código de este pase.
+
 ### E-026
 
 - Fecha: 2026-09-26.
