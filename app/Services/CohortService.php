@@ -443,6 +443,15 @@ class CohortService
             }
         }
 
+        // INCAF fields are optional: NULL means "no data", otherwise a non-negative integer
+        foreach (['incaf_enrolled', 'incaf_b2b', 'incaf_b2c'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                if (!$this->isNonNegativeInteger($data[$field])) {
+                    throw new \InvalidArgumentException("El campo {$field} debe ser un número positivo.");
+                }
+            }
+        }
+
         $revenueFields = ['financial_target_revenue', 'financial_actual_revenue'];
         foreach ($revenueFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -622,6 +631,9 @@ class CohortService
             'b2b_admission_target' => 'Meta B2B',
             'b2c_admission_target' => 'Meta B2C',
             'total_admission_target' => 'Meta a inscribir',
+            'incaf_enrolled' => 'INCAF Inscritos',
+            'incaf_b2b' => 'INCAF B2B',
+            'incaf_b2c' => 'INCAF B2C',
         ];
 
         $oldValues = [];

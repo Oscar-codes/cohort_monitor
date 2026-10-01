@@ -156,7 +156,7 @@ if (!$isMarketingBlocked) {
                         <div class="form-section-title">
                             <i class="bi bi-people"></i> Admisiones
                             <?php 
-                            $admissionFields = ['total_admission_target', 'b2b_admission_target', 'b2c_admission_target', 'b2b_admissions', 'b2c_admissions'];
+                            $admissionFields = ['total_admission_target', 'b2b_admission_target', 'b2c_admission_target', 'b2b_admissions', 'b2c_admissions', 'incaf_enrolled', 'incaf_b2b', 'incaf_b2c'];
                             $canEditAny = count(array_intersect($admissionFields, $editableFields ?? [])) > 0;
                             if (!$canEditAny): 
                             ?>
@@ -205,6 +205,24 @@ if (!$isMarketingBlocked) {
                                        id="b2c_admissions" name="b2c_admissions"
                                        min="0" <?= $disabled('b2c_admissions') ?>
                                        value="<?= htmlspecialchars($cohort['b2c_admissions'] ?? 0) ?>">
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="incaf_enrolled" class="form-label">INCAF Inscritos</label>
+                                <input type="number" class="<?= $fieldClass('incaf_enrolled') ?>" id="incaf_enrolled" name="incaf_enrolled"
+                                       min="0" <?= $disabled('incaf_enrolled') ?>
+                                       value="<?= htmlspecialchars((string) ($cohort['incaf_enrolled'] ?? '')) ?>">
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="incaf_b2b" class="form-label">INCAF B2B</label>
+                                <input type="number" class="<?= $fieldClass('incaf_b2b') ?>" id="incaf_b2b" name="incaf_b2b"
+                                       min="0" <?= $disabled('incaf_b2b') ?>
+                                       value="<?= htmlspecialchars((string) ($cohort['incaf_b2b'] ?? '')) ?>">
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="incaf_b2c" class="form-label">INCAF B2C</label>
+                                <input type="number" class="<?= $fieldClass('incaf_b2c') ?>" id="incaf_b2c" name="incaf_b2c"
+                                       min="0" <?= $disabled('incaf_b2c') ?>
+                                       value="<?= htmlspecialchars((string) ($cohort['incaf_b2c'] ?? '')) ?>">
                             </div>
                         </div>
                         <div class="row g-3 mt-1">

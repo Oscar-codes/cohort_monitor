@@ -815,6 +815,9 @@ class CohortController extends Controller
             'b2c_admission_target'     => (int) $this->input('b2c_admission_target', '0'),
             'b2b_admissions'           => (int) $this->input('b2b_admissions', '0'),
             'b2c_admissions'           => (int) $this->input('b2c_admissions', '0'),
+            'incaf_enrolled'           => $this->nullableIntInput('incaf_enrolled'),
+            'incaf_b2b'                => $this->nullableIntInput('incaf_b2b'),
+            'incaf_b2c'                => $this->nullableIntInput('incaf_b2c'),
             'financial_target_revenue' => $this->normalizeDecimalInput($this->input('financial_target_revenue', '0')),
             'financial_actual_revenue' => $this->normalizeDecimalInput($this->input('financial_actual_revenue', '0')),
             'admission_deadline_date'  => $this->input('admission_deadline_date') ?: null,
@@ -827,6 +830,15 @@ class CohortController extends Controller
             'assigned_class_schedule'  => $this->normalizeTextInput($this->input('assigned_class_schedule')),
             'training_status'          => $this->input('training_status', 'not_started'),
         ];
+    }
+
+    /**
+     * Read an optional integer field: empty input means "no data" (NULL), not 0.
+     */
+    private function nullableIntInput(string $key): ?int
+    {
+        $value = trim((string) $this->input($key, ''));
+        return $value === '' ? null : (int) $value;
     }
 
     private function normalizeDecimalInput(mixed $value): string

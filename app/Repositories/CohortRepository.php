@@ -14,6 +14,7 @@ use App\Core\Database;
  *   id, cohort_code, name, correlative_number,
  *   total_admission_target, b2b_admission_target, b2c_admission_target,
  *   b2b_admissions, b2c_admissions,
+ *   incaf_enrolled, incaf_b2b, incaf_b2c,
  *   financial_target_revenue, financial_actual_revenue,
  *   admission_deadline_date, start_date, end_date,
  *   related_project, assigned_coach, bootcamp_type, area,
@@ -162,6 +163,7 @@ class CohortRepository
                 cohort_code, name, correlative_number,
                 total_admission_target, b2b_admission_target, b2c_admission_target,
                 b2b_admissions, b2c_admissions,
+                incaf_enrolled, incaf_b2b, incaf_b2c,
                 financial_target_revenue, financial_actual_revenue,
                 admission_deadline_date, start_date, end_date,
                 related_project, assigned_coach, bootcamp_type, area,
@@ -170,6 +172,7 @@ class CohortRepository
                 :cohort_code, :name, :correlative_number,
                 :total_admission_target, :b2b_admission_target, :b2c_admission_target,
                 :b2b_admissions, :b2c_admissions,
+                :incaf_enrolled, :incaf_b2b, :incaf_b2c,
                 :financial_target_revenue, :financial_actual_revenue,
                 :admission_deadline_date, :start_date, :end_date,
                 :related_project, :assigned_coach, :bootcamp_type, :area,
@@ -193,6 +196,9 @@ class CohortRepository
                 b2c_admission_target = :b2c_admission_target,
                 b2b_admissions = :b2b_admissions,
                 b2c_admissions = :b2c_admissions,
+                incaf_enrolled = :incaf_enrolled,
+                incaf_b2b = :incaf_b2b,
+                incaf_b2c = :incaf_b2c,
                 financial_target_revenue = :financial_target_revenue,
                 financial_actual_revenue = :financial_actual_revenue,
                 admission_deadline_date = :admission_deadline_date,
@@ -417,6 +423,9 @@ class CohortRepository
                 c.b2c_admission_target,
                 c.b2b_admissions,
                 c.b2c_admissions,
+                c.incaf_enrolled,
+                c.incaf_b2b,
+                c.incaf_b2c,
                 c.financial_target_revenue,
                 c.financial_actual_revenue,
                 c.admission_deadline_date,
@@ -565,6 +574,9 @@ class CohortRepository
             'b2c_admission_target'     => $b2cTarget,
             'b2b_admissions'           => max(0, (int) ($data['b2b_admissions'] ?? 0)),
             'b2c_admissions'           => max(0, (int) ($data['b2c_admissions'] ?? 0)),
+            'incaf_enrolled'           => $this->nullableNonNegativeInt($data['incaf_enrolled'] ?? null),
+            'incaf_b2b'                => $this->nullableNonNegativeInt($data['incaf_b2b'] ?? null),
+            'incaf_b2c'                => $this->nullableNonNegativeInt($data['incaf_b2c'] ?? null),
             'financial_target_revenue' => max(0.0, (float) ($data['financial_target_revenue'] ?? 0)),
             'financial_actual_revenue' => max(0.0, (float) ($data['financial_actual_revenue'] ?? 0)),
             'admission_deadline_date'  => $this->normalizeDate($data['admission_deadline_date'] ?? null),
@@ -586,6 +598,14 @@ class CohortRepository
         }
         $ts = strtotime((string) $value);
         return $ts ? date('Y-m-d', $ts) : null;
+    }
+
+    private function nullableNonNegativeInt($value): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+        return max(0, (int) $value);
     }
 
     private function emptyToNull($value): ?string
