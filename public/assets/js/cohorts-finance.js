@@ -51,7 +51,8 @@
         return new Intl.NumberFormat('es-SV', {
             style: 'currency',
             currency: 'USD',
-            maximumFractionDigits: 0
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(Number(value || 0));
     }
 

@@ -60,6 +60,18 @@ Este inventario identifica consumidores locales; no afirma que las tablas exista
 
 La migración [018](../../database/migrations/018_add_missing_cohort_finance_fields.sql) define `b2c_admission_target INT UNSIGNED` y `financial_target_revenue`/`financial_actual_revenue DECIMAL(12,2)`. Son columnas usadas por el repositorio, no cantidades comprobadas. `training_date_50` y `training_date_75` aparecen como alias NULL en su SELECT y se calculan en la aplicación; no exigirlos como columnas físicas por esos alias.
 
+## Requisito de schema para `/cohorts/finance`
+
+Las consultas del módulo de finanzas (`CohortRepository::getFinancialByMonth` y `getFinancialByBootcamp`) leen `SUM(c.financial_target_revenue)` y `SUM(c.financial_actual_revenue)`. Si la base operativa no tiene aplicadas las columnas de la migración 018, esas consultas devuelven cero en todas las filas (o fallan con `Unknown column`) y la página `/cohorts/finance` muestra `$0.00` aunque el resto de módulos reflejen cambios.
+
+Acciones requeridas antes del primer despliegue funcional:
+
+1. Aplicar `database/migrations/018_add_missing_cohort_finance_fields.sql` sobre la base operativa. La migración es idempotente solo si se ejecuta en MySQL 8.0.29+ (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`); en versiones anteriores, validar con `SHOW COLUMNS FROM cohorts LIKE 'financial_target_revenue';` y solo aplicarla si la columna no existe.
+2. Confirmar que las cohortes existentes tengan `financial_target_revenue` y `financial_actual_revenue` mayores que cero antes de validar la página. Las inserciones anteriores a la migración quedaron en 0; reasignar manualmente si hace falta (`UPDATE cohorts SET financial_target_revenue = <monto>, financial_actual_revenue = <monto> WHERE id = ?;`).
+3. Validar visualmente que los totales de las tarjetas y los gráficos ApexCharts coincidan con la suma por mes/bootcamp. Los helpers `tests/finance_revenue.php` (sintético SQLite) y el render con datos reales deben coincidir.
+
+Capturas de valor monetario que actualmente muestran cero se documentan como dato del entorno, no como defecto del frontend: tras aplicar la migración y poblar las columnas, la página refleja los importes sin cambio de código adicional.
+
 No se encontraron referencias a `kodigo_cohorts`, `cohort_sections` ni `cohort_finance` en `app/`, `config/` y `routes/`. La mención histórica de `kodigo_cohorts` se conserva como antecedente, sin asignarle equivalencia ni dirección de transferencia.
 
 ### Diferencias locales para contrastar en CM-DB-003
