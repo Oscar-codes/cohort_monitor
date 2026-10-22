@@ -21,27 +21,7 @@ if (file_exists($composerAutoload)) {
 // ─── 1. Load environment variables ──────────────────────────
 loadEnv(APP_ROOT . '/.env');
 
-// ─── 2. Configure error reporting (CM-SEC-004) ──────────────
-if (env('APP_DEBUG', false)) {
-    // Local dev: surface all errors with full messages and stack traces.
-    error_reporting(E_ALL);
-    ini_set('display_errors', '1');
-    ini_set('log_errors', '1');
-} else {
-    // Production: never display errors to clients. Keep them captured so
-    // SafeLog::record() and PHP's error_log retain diagnostic visibility
-    // without showing SQLSTATE codes, host/port hints, or file paths.
-    error_reporting(E_ALL);
-    ini_set('display_errors', '0');
-    ini_set('display_startup_errors', '0');
-    ini_set('html_errors', '0');
-    ini_set('log_errors', '1');
-}
-
-// ─── 3. Set timezone ────────────────────────────────────────
-date_default_timezone_set('UTC');
-
-// ─── 4. Register PSR-4 autoloader ───────────────────────────
+// ─── 2. Register PSR-4 autoloader ───────────────────────────
 spl_autoload_register(function (string $class): void {
     // Namespace prefix → base directory mapping
     $prefixes = [
@@ -64,6 +44,26 @@ spl_autoload_register(function (string $class): void {
         }
     }
 });
+
+// ─── 3. Configure error reporting (CM-SEC-004 / COH-004) ────
+// Details reach the client only with APP_DEBUG on outside production;
+// APP_ENV=production (or any unknown value) never displays errors, even
+// when APP_DEBUG is true. Uncaught exceptions and fatal errors go through
+// ErrorHandler: full detail to storage/logs/app.log, generic page + ref
+// to the client.
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+if (\App\Core\ErrorHandler::showDetails()) {
+    ini_set('display_errors', '1');
+} else {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    ini_set('html_errors', '0');
+}
+\App\Core\ErrorHandler::register();
+
+// ─── 4. Set timezone ────────────────────────────────────────
+date_default_timezone_set('UTC');
 
 // ─── 5. Boot authentication / session ───────────────────────
 \App\Core\Auth::boot();

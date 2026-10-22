@@ -67,11 +67,13 @@ class ReportController extends Controller
             $reportData = $this->reportService->getReportData($filters);
 
             $this->reportService->exportToExcel($reportData['cohorts'], $filters);
-        } catch (\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException | \DomainException $e) {
+            // Business validation messages are safe to show.
             Auth::flash('error', $e->getMessage());
             $this->redirect('/reports');
-        } catch (\RuntimeException $e) {
-            Auth::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'ReportController@exportExcel');
+            Auth::flash('error', "No se pudo generar el Excel (ref: {$ref}).");
             $this->redirect('/reports');
         }
     }
@@ -92,11 +94,13 @@ class ReportController extends Controller
             }
 
             $this->reportService->exportToPdf($reportData, $filters, $mode);
-        } catch (\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException | \DomainException $e) {
+            // Business validation messages are safe to show.
             Auth::flash('error', $e->getMessage());
             $this->redirect('/reports');
-        } catch (\RuntimeException $e) {
-            Auth::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'ReportController@exportPdf');
+            Auth::flash('error', "No se pudo generar el PDF (ref: {$ref}).");
             $this->redirect('/reports');
         }
     }

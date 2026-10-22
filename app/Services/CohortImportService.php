@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\ErrorHandler;
 use App\Repositories\CohortRepository;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -167,10 +168,11 @@ class CohortImportService
             $worksheet   = $spreadsheet->getActiveSheet();
             $rows        = $worksheet->toArray(null, true, true, true);
         } catch (\Throwable $e) {
+            $ref = ErrorHandler::report($e, 'CohortImportService@processFile.read');
             $summary['errors'][] = [
                 'row'     => 0,
                 'field'   => 'archivo',
-                'message' => 'No se pudo leer el archivo: ' . $e->getMessage(),
+                'message' => "No se pudo leer el archivo. Verifica que sea un .xlsx, .xls o .csv válido (ref: {$ref}).",
             ];
             return $summary;
         }
@@ -552,20 +554,22 @@ class CohortImportService
                     $repo->create($row);
                     $summary['inserted']++;
                 } catch (\Throwable $e) {
+                    $ref = ErrorHandler::report($e, 'CohortImportService@bulkInsert.row');
                     $summary['failed']++;
                     $summary['errors'][] = [
                         'row'     => $rowNum,
                         'field'   => 'db',
-                        'message' => 'Error al insertar: ' . $e->getMessage(),
+                        'message' => "No se pudo guardar la fila (ref: {$ref}).",
                     ];
                 }
             }
 
         } catch (\Throwable $e) {
+            $ref = ErrorHandler::report($e, 'CohortImportService@bulkInsert');
             $summary['errors'][] = [
                 'row'     => 0,
                 'field'   => 'transacción',
-                'message' => 'Error en la transacción: ' . $e->getMessage(),
+                'message' => "No se pudo completar la importación (ref: {$ref}).",
             ];
         }
 

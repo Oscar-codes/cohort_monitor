@@ -147,14 +147,14 @@ class ReportService
      *
      * @param array $cohorts  Filtered cohort rows
      * @param array $filters  Applied filters (for sheet metadata)
-     * @throws \RuntimeException if no data to export
+     * @throws \DomainException if no data to export
      */
     public function exportToExcel(array $cohorts, array $filters = []): void
     {
             $areaLabels = $this->getAreaLabels();
 
         if (empty($cohorts)) {
-            throw new \RuntimeException('No hay datos para exportar.');
+            throw new \DomainException('No hay datos para exportar.');
         }
 
         $spreadsheet = new Spreadsheet();
@@ -260,7 +260,7 @@ class ReportService
     public function exportToPdf(array $reportData, array $filters = [], string $mode = 'download'): void
     {
         if (empty($reportData['cohorts'])) {
-            throw new \RuntimeException('No hay datos para generar el PDF.');
+            throw new \DomainException('No hay datos para generar el PDF.');
         }
 
         // Build HTML content

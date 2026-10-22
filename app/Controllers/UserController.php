@@ -60,6 +60,10 @@ class UserController extends Controller
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
             $this->redirect('/users/create');
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'UserController@store');
+            Auth::flash('error', "No se pudo crear el usuario en este momento (ref: {$ref}).");
+            $this->redirect('/users/create');
         }
     }
 
@@ -102,8 +106,8 @@ class UserController extends Controller
             Auth::flash('error', $e->getMessage());
             $this->redirect('/users/' . $id . '/edit');
         } catch (\Throwable $e) {
-            $this->logException($e, 'User update failed');
-            Auth::flash('error', 'No se pudo actualizar el usuario en este momento. Intenta nuevamente.');
+            $ref = $this->logException($e, 'UserController@update');
+            Auth::flash('error', "No se pudo actualizar el usuario en este momento. Intenta nuevamente (ref: {$ref}).");
             $this->redirect('/users/' . $id . '/edit');
         }
     }
@@ -116,6 +120,9 @@ class UserController extends Controller
             Auth::flash('success', 'Usuario eliminado.');
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'UserController@destroy');
+            Auth::flash('error', "No se pudo eliminar el usuario en este momento (ref: {$ref}).");
         }
         $this->redirect('/users');
     }
@@ -129,6 +136,9 @@ class UserController extends Controller
             Auth::flash('success', "Usuario {$label} exitosamente.");
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'UserController@toggleStatus');
+            Auth::flash('error', "No se pudo cambiar el estado del usuario (ref: {$ref}).");
         }
         $this->redirect('/users');
     }
@@ -141,6 +151,9 @@ class UserController extends Controller
             Auth::flash('success', "Contraseña restablecida. Nueva contraseña temporal: <code>{$newPassword}</code>");
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            $ref = $this->logException($e, 'UserController@resetPassword');
+            Auth::flash('error', "No se pudo restablecer la contraseña (ref: {$ref}).");
         }
         $this->redirect('/users');
     }

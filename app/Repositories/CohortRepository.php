@@ -509,7 +509,9 @@ class CohortRepository
                 $where[] = 'c.b2b_admission_target > 0';
             }
             if ($filters['business_model'] === 'b2c') {
-                $where[] = '(c.total_admission_target - c.b2b_admission_target) > 0';
+                // Compare instead of subtracting: both columns are INT UNSIGNED and
+                // `total - b2b` overflows (BIGINT UNSIGNED out of range) when b2b > total.
+                $where[] = 'c.total_admission_target > c.b2b_admission_target';
             }
         }
 

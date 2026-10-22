@@ -97,27 +97,9 @@ abstract class Controller
      * emits an additional fingerprint line for cross-referencing with
      * what the user might see on screen.
      */
-    protected function logException(\Throwable $e, string $context): void
+    protected function logException(\Throwable $e, string $context): string
     {
-        $fingerprint = \App\Core\SafeLog::record($context, $e);
-
-        $logFile = APP_ROOT . '/storage/logs/app.log';
-
-        $entry = sprintf(
-            "[%s] %s :: fp=%s :: %s in %s:%d%s%s",
-            date('Y-m-d H:i:s'),
-            $context,
-            $fingerprint,
-            $e->getMessage(),
-            $e->getFile(),
-            $e->getLine(),
-            PHP_EOL,
-            $e->getTraceAsString()
-        ) . PHP_EOL;
-
-        if (@file_put_contents($logFile, $entry, FILE_APPEND) === false) {
-            error_log($entry);
-        }
+        return ErrorHandler::report($e, $context);
     }
 
 }
