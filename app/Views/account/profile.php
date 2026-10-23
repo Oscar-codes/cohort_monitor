@@ -118,10 +118,6 @@ $createdAt = $userCreatedAt !== '' ? date('d/m/Y', strtotime($userCreatedAt)) : 
                     <dd><?= $userIsActive ? 'Activo' : 'Inactivo' ?></dd>
                 </div>
                 <div>
-                    <dt>PHP</dt>
-                    <dd><?= htmlspecialchars(PHP_VERSION) ?></dd>
-                </div>
-                <div>
                     <dt>Fecha</dt>
                     <dd id="systemDate">--/--/----</dd>
                 </div>

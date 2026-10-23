@@ -12,6 +12,14 @@
  *  4. Error reporting configuration
  */
 
+// ─── Hide server version (ACC-002) ──────────────────────────
+// php -S on php:8.2-cli ships without php.ini, so expose_php defaults
+// to On and every PHP response carries "X-Powered-By: PHP/x.y.z".
+// expose_php is PHP_INI_SYSTEM (ini_set can't change it at runtime);
+// removing the header before any output is what actually takes effect.
+// Done first so even early bootstrap errors don't leak it.
+header_remove('X-Powered-By');
+
 // ─── 0. Composer autoloader (for vendor packages) ───────────
 $composerAutoload = APP_ROOT . '/vendor/autoload.php';
 if (file_exists($composerAutoload)) {

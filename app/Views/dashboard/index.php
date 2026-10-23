@@ -452,8 +452,6 @@
 </section>
 
 <div class="dashboard-system-note">
-    <i class="bi bi-code-slash"></i> PHP <?= PHP_VERSION ?>
-    <span>&bull;</span>
     <i class="bi bi-calendar3"></i> <span id="dash-date">--/--/----</span>
     <span>&bull;</span>
     <i class="bi bi-clock"></i> <span id="dash-time">--:--:--</span>
