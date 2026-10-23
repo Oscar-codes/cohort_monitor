@@ -15,7 +15,8 @@ $totalRevenueTarget = max(0.0, (float) ($totalRevenueTarget ?? 0));
 $totalRevenueActual = max(0.0, (float) ($totalRevenueActual ?? 0));
 $atRiskAdmissionsCount = max(0, (int) ($atRiskAdmissionsCount ?? 0));
 
-$admissionsPct = $totalAdmissionsTarget > 0 ? min(100, (int) round(($totalAdmissionsActual / $totalAdmissionsTarget) * 100)) : 0;
+// DATA-003: same formula and 1 decimal as the Dashboard (CohortService::admissionPct).
+$admissionsPct = (float) ($admissionsPct ?? \App\Services\CohortService::admissionPct($totalAdmissionsActual, $totalAdmissionsTarget));
 $revenuePct = $totalRevenueTarget > 0 ? min(100, (int) round(($totalRevenueActual / $totalRevenueTarget) * 100)) : 0;
 
 if (!function_exists('masterDate')) {
@@ -35,28 +36,14 @@ if (!function_exists('masterCurrency')) {
 if (!function_exists('masterStatusLabel')) {
     function masterStatusLabel(?string $status): string
     {
-        $labels = [
-            'not_started' => 'No iniciado',
-            'in_progress' => 'En progreso',
-            'completed' => 'Completado',
-            'cancelled' => 'Cancelado',
-        ];
-
-        return $labels[$status ?? ''] ?? (string) ($status ?? '—');
+        return \App\Services\CohortStatus::label($status);
     }
 }
 
 if (!function_exists('masterStatusTone')) {
     function masterStatusTone(?string $status): string
     {
-        $tones = [
-            'not_started' => 'neutral',
-            'in_progress' => 'info',
-            'completed'   => 'success',
-            'cancelled'   => 'danger',
-        ];
-
-        return $tones[$status ?? ''] ?? 'neutral';
+        return \App\Services\CohortStatus::tone($status);
     }
 }
 ?>
@@ -125,7 +112,7 @@ if (!function_exists('masterStatusTone')) {
             <span><i class="bi bi-people"></i></span>
             <div>
                 <strong><?= $totalAdmissionsActual ?> / <?= $totalAdmissionsTarget ?></strong>
-                <small>Inscritos (<?= $admissionsPct ?>%)</small>
+                <small>Inscritos (<?= number_format($admissionsPct, 1) ?>%)</small>
             </div>
         </article>
     </div>
@@ -204,10 +191,9 @@ if (!function_exists('masterStatusTone')) {
             <label for="cohort_status" class="form-label">Estado</label>
             <select class="form-select" id="cohort_status" name="cohort_status">
                 <option value="">Todos</option>
-                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
-                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
-                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
-                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                <?php foreach (\App\Services\CohortStatus::LABELS as $statusKey => $statusLabel): ?>
+                <option value="<?= $statusKey ?>" <?= (($filters['cohort_status'] ?? '') === $statusKey) ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-12">
@@ -216,6 +202,8 @@ if (!function_exists('masterStatusTone')) {
             </button>
         </div>
     </form>
+    <?php $emptyFiltersText = 'Sin filtros: todas las cohortes'; ?>
+    <?php require APP_ROOT . '/app/Views/partials/active-filters.php'; ?>
     </div>
 </div>
 
@@ -311,7 +299,7 @@ if (!function_exists('masterStatusTone')) {
                                 <div class="small text-muted mt-1">Adm <?= $admissionProgress ?>% | Rev <?= $revenueProgress ?>%</div>
                             </td>
                             <td>
-                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(masterStatusTone($cohort['training_status'] ?? null)) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars(masterStatusLabel($cohort['training_status'] ?? null)) ?></span>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(masterStatusTone($cohort['effective_status'] ?? null)) ?>"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= htmlspecialchars(masterStatusLabel($cohort['effective_status'] ?? null)) ?></span>
                                 <div class="small text-muted mt-1"><?= htmlspecialchars(masterDate($cohort['start_date'] ?? null)) ?> - <?= htmlspecialchars(masterDate($cohort['end_date'] ?? null)) ?></div>
                             </td>
                             <td>

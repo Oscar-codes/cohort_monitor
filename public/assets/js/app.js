@@ -189,6 +189,22 @@ const App = (() => {
                 const title = form.dataset.confirmTitle || 'Confirmar accion';
                 const confirmText = form.dataset.confirmButton || 'Si, continuar';
                 const icon = tone === 'danger' ? 'warning' : 'question';
+                // Typed confirmation (COH-009): the user must re-type this code;
+                // it is sent as confirm_code and checked again on the server.
+                const expectedCode = form.dataset.confirmCode;
+                const codeInput = form.querySelector('input[name="confirm_code"]');
+                const needsCode = typeof expectedCode === 'string' && codeInput !== null;
+                const codePrompt = needsCode
+                    ? {
+                        input: 'text',
+                        inputLabel: 'Escribe el código de la cohorte para confirmar: ' + expectedCode,
+                        inputPlaceholder: expectedCode,
+                        inputAttributes: { autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' },
+                        inputValidator: (value) => (value || '').trim() === expectedCode
+                            ? undefined
+                            : 'El código no coincide.',
+                    }
+                    : {};
 
                 if (typeof Swal !== 'undefined') {
                     e.preventDefault();
@@ -197,6 +213,7 @@ const App = (() => {
                         title,
                         text: message,
                         icon,
+                        ...codePrompt,
                         showCancelButton: true,
                         confirmButtonText: confirmText,
                         cancelButtonText: 'Cancelar',
@@ -213,6 +230,9 @@ const App = (() => {
                         buttonsStyling: false
                     }).then(result => {
                         if (result.isConfirmed) {
+                            if (needsCode) {
+                                codeInput.value = String(result.value || '').trim();
+                            }
                             form.dataset.confirmed = 'true';
                             if (typeof form.requestSubmit === 'function') {
                                 form.requestSubmit();
@@ -222,6 +242,16 @@ const App = (() => {
                         }
                     });
 
+                    return;
+                }
+
+                if (needsCode) {
+                    const typed = window.prompt(message + '\n\nEscribe el código de la cohorte para confirmar: ' + expectedCode);
+                    if (typed === null || typed.trim() !== expectedCode) {
+                        e.preventDefault();
+                        return;
+                    }
+                    codeInput.value = typed.trim();
                     return;
                 }
 

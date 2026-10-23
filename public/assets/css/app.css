@@ -2323,6 +2323,16 @@ body {
     color: var(--app-success);
 }
 
+.cohort-summary-card--danger > span {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--app-danger);
+}
+
+.cohort-summary-card--warning > span {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--app-warning);
+}
+
 .cohort-mobile-list {
     display: grid;
     gap: 0.75rem;

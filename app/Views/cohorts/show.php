@@ -12,38 +12,18 @@ $workflowTransitions = isset($workflowTransitions) && is_array($workflowTransiti
 $isAdmin = (bool) ($isAdmin ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 
-$statusMap = [
-    'not_started' => ['neutral',  'No iniciado',  'bi-hourglass-split'],
-    'in_progress' => ['info',     'En progreso',  'bi-play-circle'],
-    'completed'   => ['success',  'Completado',   'bi-check-circle'],
-    'cancelled'   => ['danger',   'Cancelado',    'bi-x-circle'],
-];
-
 if (!function_exists('cohortDetailStatus')) {
+    /** Status of the cohort, from the single rule (DATA-001). */
     function cohortDetailStatus(array $cohort): string
     {
-        $status = $cohort['training_status'] ?? 'not_started';
-        if (in_array($status, ['cancelled', 'completed'], true)) {
-            return $status;
-        }
-
-        $today = date('Y-m-d');
-        $startDate = $cohort['start_date'] ?? null;
-        $endDate = $cohort['end_date'] ?? null;
-
-        if ($endDate && $endDate < $today) {
-            return 'completed';
-        }
-        if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
-            return 'in_progress';
-        }
-
-        return 'not_started';
+        return (string) ($cohort['effective_status'] ?? \App\Services\CohortStatus::forRow($cohort));
     }
 }
 
 $ts = cohortDetailStatus($cohort);
-[$badgeTone, $badgeLabel, $badgeIcon] = $statusMap[$ts] ?? ['info', ucfirst($ts), 'bi-info-circle'];
+$badgeTone = \App\Services\CohortStatus::tone($ts);
+$badgeLabel = \App\Services\CohortStatus::label($ts);
+$badgeIcon = \App\Services\CohortStatus::icon($ts);
 
 if (!function_exists('cohortDetailDate')) {
     function cohortDetailDate(?string $date): string
@@ -114,34 +94,9 @@ $catLabels = [
     'general' => 'General',
     'change_request' => 'Solicitud de cambio',
 ];
-$canDeleteThisCohort = (static function(array $cohort): bool {
-    // Check both stored status and effective lifecycle status
-    $storedStatus = $cohort['training_status'] ?? 'not_started';
-    $lifecycleStatus = cohortDetailStatus($cohort);
-    
-    // Block deletion if EITHER status is in_progress or completed
-    $protectedStatuses = ['in_progress', 'completed', 'En progreso', 'Completado'];
-    
-    if (in_array($storedStatus, $protectedStatuses, true)) {
-        return false;
-    }
-    
-    if (in_array($lifecycleStatus, $protectedStatuses, true)) {
-        return false;
-    }
-    
-    return in_array($lifecycleStatus, ['not_started', 'cancelled'], true);
-})($cohort);
+$canDeleteThisCohort = in_array($ts, \App\Services\CohortStatus::DELETABLE, true);
+// Manual actions only (D1): cancel and reactivate. Start/complete come from the dates.
 $workflowActionMap = [
-    'completed' => [
-        'title' => 'Marcar como completada',
-        'description' => 'Cierra la cohorte como finalizada para seguimiento operativo y reportes.',
-        'buttonClass' => 'btn-success',
-        'icon' => 'bi-check2-circle',
-        'requiresReason' => false,
-        'reasonLabel' => '',
-        'placeholder' => '',
-    ],
     'cancelled' => [
         'title' => 'Cancelar cohorte',
         'description' => 'Usa esta acción cuando la cohorte no se ejecutará y debe quedar fuera del flujo activo.',
@@ -151,9 +106,9 @@ $workflowActionMap = [
         'reasonLabel' => 'Motivo de cancelación',
         'placeholder' => 'Ej. No alcanzó estudiantes mínimos o se pausó el proyecto.',
     ],
-    'not_started' => [
-        'title' => 'Volver a no iniciado',
-        'description' => 'Usa esta acción después de actualizar fecha, coach y horario para reactivar la cohorte.',
+    'reactivate' => [
+        'title' => 'Reactivar cohorte',
+        'description' => 'Quita la cancelación; el estado vuelve a calcularse por las fechas de inicio y fin. Requiere fechas, coach y horario.',
         'buttonClass' => 'btn-secondary',
         'icon' => 'bi-arrow-counterclockwise',
         'requiresReason' => false,
@@ -214,9 +169,15 @@ $workflowActionMap = [
                 </a>
             <?php endif; ?>
             <?php if (($canDelete ?? false) && $canDeleteThisCohort): ?>
-                <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>" data-confirm="Estas seguro de que deseas eliminar esta cohorte?">
+                <form method="POST" action="/cohorts/<?= (int) $cohort['id'] ?>"
+                      data-confirm="Esta acción elimina la cohorte de forma permanente."
+                      data-confirm-title="Eliminar cohorte"
+                      data-confirm-tone="danger"
+                      data-confirm-button="Eliminar"
+                      data-confirm-code="<?= htmlspecialchars((string) ($cohort['cohort_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <?= csrf_field() ?>
                     <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="confirm_code" value="">
                     <button type="submit" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-trash me-1" aria-hidden="true"></i> Eliminar
                     </button>
@@ -455,7 +416,7 @@ $workflowActionMap = [
                 <div class="kodigo-card__header">
                     <div>
                         <h2 class="kodigo-card__title"><i class="bi bi-arrow-repeat"></i> Workflow de estado</h2>
-                        <p class="kodigo-card__subtitle">Acciones controladas para mover la cohorte entre estados permitidos.</p>
+                        <p class="kodigo-card__subtitle">El estado se calcula por las fechas de inicio y fin. Aquí solo se puede cancelar o reactivar la cohorte.</p>
                     </div>
                 </div>
 

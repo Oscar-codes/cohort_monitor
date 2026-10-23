@@ -74,7 +74,13 @@ class CohortImportService
     public const VALID_AREAS = ['academic', 'marketing', 'admissions'];
 
     /** Status text mappings (flexible input → DB value) */
+    /**
+     * Accepted status texts. DATA-001: only "Cancelado" is kept as such; any
+     * other value is stored by the date rule (CohortRepository::prepareData).
+     * Legacy synonyms stay accepted so older files still import.
+     */
     public const STATUS_MAP = [
+        'sin fechas'    => 'not_started',
         'planificado'   => 'not_started',
         'no iniciado'   => 'not_started',
         'planned'       => 'not_started',
@@ -387,7 +393,7 @@ class CohortImportService
             $errors[] = [
                 'row'     => $rowNumber,
                 'field'   => 'status',
-                'message' => "Estado no válido: \"{$data['training_status']}\". Valores permitidos: Planificado, En progreso, Completado, Cancelado, Pendiente de reprogramar.",
+                'message' => "Estado no válido: \"{$data['training_status']}\". Valores permitidos: No iniciado, En progreso, Completado, Cancelado, Sin fechas. Solo Cancelado se aplica; el resto se calcula por las fechas.",
             ];
         }
 
@@ -622,7 +628,7 @@ class CohortImportService
         $sheet->setCellValue('G2', 30);
         $sheet->setCellValue('H2', 10);
         $sheet->setCellValue('I2', 20);
-        $sheet->setCellValue('J2', 'Planificado');
+        $sheet->setCellValue('J2', 'No iniciado');
         $sheet->setCellValue('K2', 'No');
 
         // Second example
@@ -635,7 +641,7 @@ class CohortImportService
         $sheet->setCellValue('G3', 25);
         $sheet->setCellValue('H3', 5);
         $sheet->setCellValue('I3', 20);
-        $sheet->setCellValue('J3', 'En ejecución');
+        $sheet->setCellValue('J3', 'En progreso');
         $sheet->setCellValue('K3', 'Sí');
 
         // Output

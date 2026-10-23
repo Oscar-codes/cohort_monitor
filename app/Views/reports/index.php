@@ -1,6 +1,7 @@
 <!-- Reports Index -->
 <?php
 use App\Core\Auth;
+use App\Services\CohortStatus;
 
 $reportData = isset($reportData) && is_array($reportData) ? $reportData : [];
 $filters = isset($filters) && is_array($filters) ? $filters : [];
@@ -26,24 +27,18 @@ $areaKodigoTone = [
     'marketing' => 'success',
     'admissions' => 'info',
 ];
-$statusCards = [
-    ['key' => 'completed', 'label' => 'Completado', 'icon' => 'bi-check-circle', 'tone' => 'success'],
-    ['key' => 'in_progress', 'label' => 'En ejecucion', 'icon' => 'bi-play-circle', 'tone' => 'primary'],
-    ['key' => 'not_started', 'label' => 'No iniciado', 'icon' => 'bi-hourglass-split', 'tone' => 'warning'],
-    ['key' => 'cancelled', 'label' => 'Cancelado', 'icon' => 'bi-x-circle', 'tone' => 'danger'],
+// DATA-001: labels and order from CohortStatus; only the icon tones live here.
+$statusIconTone = [
+    CohortStatus::NOT_STARTED => 'warning',
+    CohortStatus::IN_PROGRESS => 'primary',
+    CohortStatus::COMPLETED   => 'success',
+    CohortStatus::CANCELLED   => 'danger',
+    CohortStatus::NO_DATES    => 'warning',
 ];
-$statusBadge = [
-    'completed' => 'bg-success-subtle text-success',
-    'in_progress' => 'bg-primary-subtle text-primary',
-    'not_started' => 'bg-warning-subtle text-warning',
-    'cancelled' => 'bg-danger-subtle text-danger',
-];
-$statusKodigoTone = [
-    'completed' => 'success',
-    'in_progress' => 'info',
-    'not_started' => 'warning',
-    'cancelled' => 'danger',
-];
+$statusCards = [];
+foreach (CohortStatus::LABELS as $statusKey => $statusLabel) {
+    $statusCards[] = ['key' => $statusKey, 'label' => $statusLabel, 'icon' => CohortStatus::icon($statusKey), 'tone' => $statusIconTone[$statusKey]];
+}
 
 $totalCohorts = count($cohorts);
 $totalRisk = 0;
@@ -166,7 +161,7 @@ if (!function_exists('reportDate')) {
     <article class="reports-kpi">
         <span class="reports-kpi__icon is-success"><i class="bi bi-check-circle"></i></span>
         <div>
-            <p>Completadas</p>
+            <p>Completado</p>
             <strong><?= $completedCount ?></strong>
             <small><?= $completionPct ?>% del reporte</small>
         </div>
@@ -297,9 +292,9 @@ if (!function_exists('reportDate')) {
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars($statusKodigoTone[$c['training_status'] ?? ''] ?? 'neutral') ?>">
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(CohortStatus::tone($c['effective_status'] ?? null)) ?>">
                                     <span class="kodigo-pill__dot" aria-hidden="true"></span>
-                                    <?= htmlspecialchars($statusLabels[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'Sin estado')) ?>
+                                    <?= htmlspecialchars(CohortStatus::label($c['effective_status'] ?? null)) ?>
                                 </span>
                             </td>
                             <td class="text-center d-none d-md-table-cell"><?= htmlspecialchars(reportDate($c['start_date'] ?? null)) ?></td>
@@ -325,9 +320,9 @@ if (!function_exists('reportDate')) {
                             <a href="/cohorts/<?= (int) $c['id'] ?>"><?= htmlspecialchars($c['cohort_code'] ?? 'N/A') ?></a>
                             <h3><?= htmlspecialchars($c['name']) ?></h3>
                         </div>
-                        <span class="kodigo-pill" data-tone="<?= htmlspecialchars($statusKodigoTone[$c['training_status'] ?? ''] ?? 'neutral') ?>">
+                        <span class="kodigo-pill" data-tone="<?= htmlspecialchars(CohortStatus::tone($c['effective_status'] ?? null)) ?>">
                             <span class="kodigo-pill__dot" aria-hidden="true"></span>
-                            <?= htmlspecialchars($statusLabels[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'Sin estado')) ?>
+                            <?= htmlspecialchars(CohortStatus::label($c['effective_status'] ?? null)) ?>
                         </span>
                     </div>
                     <div class="reports-mobile-card__meta">

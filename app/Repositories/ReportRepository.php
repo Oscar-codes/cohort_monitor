@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\CohortStatus;
 
 /**
  * ReportRepository
@@ -35,6 +36,7 @@ class ReportRepository
                    c.start_date,
                    c.end_date,
                    c.training_status,
+                   " . CohortStatus::sqlCase('c') . " AS effective_status,
                    c.area,
                    c.related_project,
                    c.assigned_coach,
@@ -91,8 +93,8 @@ class ReportRepository
                     WHERE ms.cohort_id = c.id
                       AND ms.status = 'at_risk'
                 ) THEN 1 ELSE 0 END)                                              AS at_risk,
-                SUM(CASE WHEN c.training_status = 'completed' THEN 1 ELSE 0 END)  AS completed,
-                SUM(CASE WHEN c.training_status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress
+                SUM(CASE WHEN " . CohortStatus::sqlCase('c') . " = 'completed' THEN 1 ELSE 0 END)  AS completed,
+                SUM(CASE WHEN " . CohortStatus::sqlCase('c') . " = 'in_progress' THEN 1 ELSE 0 END) AS in_progress
             FROM cohorts c
             WHERE c.area IS NOT NULL
         ";
@@ -128,24 +130,24 @@ class ReportRepository
     }
 
     /**
-     * Get global metrics by training_status, applying filters.
+     * Get global metrics by status, applying filters.
      *
-     * Mirrors CohortService::effectiveTrainingStatus(): a cohort whose
-     * end_date has passed counts as completed, one within its date range
-     * counts as in_progress, regardless of the stored training_status
-     * (unless it is explicitly cancelled or completed).
+     * DATA-001: uses the single rule in CohortStatus (cancelled is manual,
+     * everything else by dates), the same one Dashboard and Cohortes use.
      *
      * @param array $filters
-     * @return array ['completed' => int, 'in_progress' => int, 'not_started' => int, 'cancelled' => int]
+     * @return array ['completed' => int, 'in_progress' => int, 'not_started' => int, 'cancelled' => int, 'no_dates' => int]
      */
     public function getMetricsByStatus(array $filters = []): array
     {
+        $status = CohortStatus::sqlCase('c');
         $sql = "
             SELECT
-                SUM(CASE WHEN c.training_status = 'completed' OR (c.training_status NOT IN ('completed', 'cancelled') AND c.end_date IS NOT NULL AND c.end_date < CURDATE()) THEN 1 ELSE 0 END) AS completed,
-                SUM(CASE WHEN c.training_status NOT IN ('completed', 'cancelled') AND c.start_date IS NOT NULL AND c.start_date <= CURDATE() AND (c.end_date IS NULL OR c.end_date >= CURDATE()) THEN 1 ELSE 0 END) AS in_progress,
-                SUM(CASE WHEN c.training_status NOT IN ('completed', 'cancelled') AND (c.start_date IS NULL OR c.start_date > CURDATE()) THEN 1 ELSE 0 END) AS not_started,
-                SUM(CASE WHEN c.training_status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+                SUM(CASE WHEN {$status} = 'completed' THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN {$status} = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN {$status} = 'not_started' THEN 1 ELSE 0 END) AS not_started,
+                SUM(CASE WHEN {$status} = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                SUM(CASE WHEN {$status} = 'no_dates' THEN 1 ELSE 0 END) AS no_dates
             FROM cohorts c
             WHERE 1=1
         ";
@@ -167,14 +169,13 @@ class ReportRepository
             $params['date_to'] = $filters['date_to'];
         }
 
-        $rows = $this->db->query($sql, $params);
+        $row = $this->db->query($sql, $params)[0] ?? [];
 
-        return $rows[0] ?? [
-            'completed'   => 0,
-            'in_progress' => 0,
-            'not_started' => 0,
-            'cancelled'   => 0,
-        ];
+        // SUM() over an empty result is NULL: report zeros instead.
+        return array_map('intval', array_merge(
+            array_fill_keys(array_keys(CohortStatus::LABELS), 0),
+            array_filter($row, static fn($v) => $v !== null)
+        ));
     }
 
     /**

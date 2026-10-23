@@ -181,10 +181,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="training_status" class="form-label">Estado de la cohorte</label>
-                                <select class="form-select bg-light text-muted" id="training_status" name="training_status" readonly>
-                                    <option value="not_started" selected>No iniciado</option>
-                                </select>
-                                <div class="form-text">Las cohortes nuevas entran al Cohort Plan como no iniciadas.</div>
+                                <input type="text" class="form-control bg-light text-muted" id="training_status" value="Se calcula por las fechas" readonly>
+                                <div class="form-text">No iniciado antes de la fecha de inicio, En progreso entre inicio y fin, Completado después del fin; Sin fechas si falta el inicio.</div>
                             </div>
                         </div>
                     </div>

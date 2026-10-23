@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Auth;
 use App\Services\CohortService;
+use App\Services\CohortStatus;
 use App\Services\AlertService;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -102,21 +103,20 @@ class CohortController extends Controller
         
         $activeFilters = array_filter($filters, static fn($value) => $value !== '');
 
-        $totalRows = count($cohorts);
-        $totalAdmissionsTarget = 0;
-        $totalAdmissionsActual = 0;
-        $totalRevenueTarget = 0.0;
-        $totalRevenueActual = 0.0;
-        $atRiskAdmissionsCount = 0;
+        // DATA-003: totals from the shared query (same filters as the list),
+        // the same one the Dashboard uses without filters.
+        $totals = $this->cohortService->getTotals($filters);
+        $totalRows = $totals['cohorts'];
+        $totalAdmissionsTarget = $totals['target'];
+        $totalAdmissionsActual = $totals['admissions'];
+        $totalRevenueTarget = $totals['revenue_target'];
+        $totalRevenueActual = $totals['revenue_actual'];
 
+        // The loop only counts cohorts at admissions risk (below 70 % of target).
+        $atRiskAdmissionsCount = 0;
         foreach ($cohorts as $cohort) {
             $target = max(0, (int) ($cohort['total_admission_target'] ?? 0));
             $actual = max(0, (int) ($cohort['b2b_admissions'] ?? 0)) + max(0, (int) ($cohort['b2c_admissions'] ?? 0));
-
-            $totalAdmissionsTarget += $target;
-            $totalAdmissionsActual += $actual;
-            $totalRevenueTarget += max(0.0, (float) ($cohort['financial_target_revenue'] ?? 0));
-            $totalRevenueActual += max(0.0, (float) ($cohort['financial_actual_revenue'] ?? 0));
 
             if ($target > 0 && $actual < (int) floor($target * 0.7)) {
                 $atRiskAdmissionsCount++;
@@ -137,6 +137,7 @@ class CohortController extends Controller
             'totalRows'              => $totalRows,
             'totalAdmissionsTarget'  => $totalAdmissionsTarget,
             'totalAdmissionsActual'  => $totalAdmissionsActual,
+            'admissionsPct'          => CohortService::admissionPct($totalAdmissionsActual, $totalAdmissionsTarget),
             'totalRevenueTarget'     => $totalRevenueTarget,
             'totalRevenueActual'     => $totalRevenueActual,
             'atRiskAdmissionsCount'  => $atRiskAdmissionsCount,
@@ -422,7 +423,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
-            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'not_started'));
+            $statusKey = (string) $cohort['effective_status'];
             fputcsv($output, [
                 (string) ($cohort['cohort_code'] ?? ''),
                 (string) ($cohort['name'] ?? ''),
@@ -439,7 +440,7 @@ class CohortController extends Controller
                 $b2b + $b2c,
                 (float) ($cohort['financial_target_revenue'] ?? 0),
                 (float) ($cohort['financial_actual_revenue'] ?? 0),
-                CohortService::STATUS_LABELS[$statusKey] ?? $statusKey,
+                CohortStatus::label($statusKey),
                 (string) ($cohort['start_date'] ?? ''),
                 (string) ($cohort['end_date'] ?? ''),
             ]);
@@ -497,7 +498,7 @@ class CohortController extends Controller
         foreach ($cohorts as $cohort) {
             $b2b = (int) ($cohort['b2b_admissions'] ?? 0);
             $b2c = (int) ($cohort['b2c_admissions'] ?? 0);
-            $statusKey = $this->cohortService->normalizeTrainingStatus((string) ($cohort['training_status'] ?? 'not_started'));
+            $statusKey = (string) $cohort['effective_status'];
 
             $sheet->setCellValue('A' . $row, (string) ($cohort['cohort_code'] ?? ''));
             $sheet->setCellValue('B' . $row, (string) ($cohort['name'] ?? ''));
@@ -514,7 +515,7 @@ class CohortController extends Controller
             $sheet->setCellValue('M' . $row, $b2b + $b2c);
             $sheet->setCellValue('N' . $row, (float) ($cohort['financial_target_revenue'] ?? 0));
             $sheet->setCellValue('O' . $row, (float) ($cohort['financial_actual_revenue'] ?? 0));
-            $sheet->setCellValue('P' . $row, CohortService::STATUS_LABELS[$statusKey] ?? $statusKey);
+            $sheet->setCellValue('P' . $row, CohortStatus::label($statusKey));
             $sheet->setCellValue('Q' . $row, (string) ($cohort['start_date'] ?? ''));
             $sheet->setCellValue('R' . $row, (string) ($cohort['end_date'] ?? ''));
 
@@ -568,7 +569,7 @@ class CohortController extends Controller
         try {
             $data = $this->collectFormData();
             $this->cohortService->createCohort($data);
-            Auth::flash('success', 'Cohorte creada con estado Planificado.');
+            Auth::flash('success', 'Cohorte creada. Su estado se calcula por las fechas de inicio y fin.');
             $this->redirect('/cohorts');
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
@@ -710,16 +711,22 @@ class CohortController extends Controller
             return;
         }
 
-        // Check if cohort is in progress or completed - block deletion
-        $trainingStatus = $cohort['training_status'] ?? 'not_started';
-        if (in_array($trainingStatus, ['in_progress', 'completed', 'En progreso', 'Completado'], true)) {
-            Auth::flash('error', 'No se pueden eliminar cohortes En progreso o Completadas.');
+        // DATA-001: In progress / Completed (derived from dates) cannot be deleted.
+        if (!in_array($cohort['effective_status'], CohortStatus::DELETABLE, true)) {
+            Auth::flash('error', 'No se pueden eliminar cohortes en estado En progreso o Completado.');
             $this->redirect('/cohorts/' . $id);
             return;
         }
 
+        // COH-009: the service only deletes when this matches the cohort_code.
+        $confirmCode = (string) $this->input('confirm_code', '');
+
         try {
-            $this->cohortService->deleteCohort((int) $id);
+            if (!$this->cohortService->deleteCohort((int) $id, $confirmCode)) {
+                Auth::flash('error', 'Cohorte no encontrada.');
+                $this->redirect('/cohorts');
+                return;
+            }
             Auth::flash('success', 'Cohorte eliminada.');
             $this->redirect('/cohorts');
         } catch (\InvalidArgumentException $e) {
@@ -746,10 +753,8 @@ class CohortController extends Controller
         $reason = $this->normalizeTextInput($this->input('status_reason'));
 
         try {
-            $this->cohortService->transitionCohortStatus((int) $id, $targetStatus, $reason);
-            $normalizedStatus = $this->cohortService->normalizeTrainingStatus($targetStatus);
-            $label = CohortService::STATUS_LABELS[$normalizedStatus] ?? $normalizedStatus;
-            Auth::flash('success', 'Estado de cohorte actualizado a ' . $label . '.');
+            $newStatus = $this->cohortService->transitionCohortStatus((int) $id, $targetStatus, $reason);
+            Auth::flash('success', 'Estado de cohorte actualizado a ' . CohortStatus::label($newStatus) . '.');
         } catch (\InvalidArgumentException $e) {
             Auth::flash('error', $e->getMessage());
         }

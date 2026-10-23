@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\CohortStatus;
 
 /**
  * CohortRepository
@@ -234,12 +235,12 @@ class CohortRepository
         return $rows > 0;
     }
 
-    public function count(?string $trainingStatus = null): int
+    public function count(?string $status = null): int
     {
-        if ($trainingStatus) {
+        if ($status) {
             $result = $this->db->query(
-                'SELECT COUNT(*) AS total FROM cohorts WHERE training_status = :status',
-                ['status' => $trainingStatus]
+                'SELECT COUNT(*) AS total FROM cohorts c WHERE ' . CohortStatus::sqlCase('c') . ' = :status',
+                ['status' => $status]
             );
         } else {
             $result = $this->db->query('SELECT COUNT(*) AS total FROM cohorts');
@@ -248,30 +249,62 @@ class CohortRepository
         return (int) ($result[0]['total'] ?? 0);
     }
 
+    /**
+     * Cohort counts per status for the Dashboard (DATA-001 rule).
+     * Totals of admissions / target / revenue come from getTotals().
+     */
     public function getDashboardStats(): array
     {
-        $rows = $this->db->query("
+        $status = CohortStatus::sqlCase('c');
+        $row = $this->db->query("
             SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN c.training_status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
-                SUM(CASE WHEN c.training_status = 'completed' THEN 1 ELSE 0 END) AS completed,
-                SUM(CASE WHEN c.training_status = 'not_started' THEN 1 ELSE 0 END) AS not_started,
-                SUM(CASE WHEN c.training_status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
-                COALESCE(SUM(c.total_admission_target), 0) AS total_target,
-                COALESCE(SUM(c.b2b_admissions), 0) AS total_b2b,
-                COALESCE(SUM(c.b2c_admissions), 0) AS total_b2c
+                SUM(CASE WHEN {$status} = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN {$status} = 'completed' THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN {$status} = 'not_started' THEN 1 ELSE 0 END) AS not_started,
+                SUM(CASE WHEN {$status} = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                SUM(CASE WHEN {$status} = 'no_dates' THEN 1 ELSE 0 END) AS no_dates
             FROM cohorts c
-        ");
+        ")[0] ?? [];
 
-        return $rows[0] ?? [
-            'total' => 0,
-            'in_progress' => 0,
-            'completed' => 0,
-            'not_started' => 0,
-            'cancelled' => 0,
-            'total_target' => 0,
-            'total_b2b' => 0,
-            'total_b2c' => 0,
+        // SUM() over an empty table is NULL: report zeros instead.
+        return array_map('intval', $row + array_fill_keys(array_keys(CohortStatus::LABELS), 0));
+    }
+
+    /**
+     * DATA-003: the single totals query shared by Dashboard (no filters) and
+     * Plan Maestro (its filters, same buildFilters() as the row list).
+     * Cancelled cohorts and cohorts without dates or type are included.
+     *
+     * @return array{cohorts: int, target: int, b2b_admissions: int, b2c_admissions: int,
+     *               admissions: int, revenue_target: float, revenue_actual: float}
+     */
+    public function getTotals(array $filters = []): array
+    {
+        [$where, $params] = $this->buildFilters($filters);
+        $sql = 'SELECT
+                COUNT(*) AS cohorts,
+                COALESCE(SUM(c.total_admission_target), 0) AS target,
+                COALESCE(SUM(c.b2b_admissions), 0) AS b2b_admissions,
+                COALESCE(SUM(c.b2c_admissions), 0) AS b2c_admissions,
+                COALESCE(SUM(c.financial_target_revenue), 0) AS revenue_target,
+                COALESCE(SUM(c.financial_actual_revenue), 0) AS revenue_actual
+            FROM cohorts c';
+        if (!empty($where)) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $row = $this->db->query($sql, $params)[0] ?? [];
+        $b2b = (int) ($row['b2b_admissions'] ?? 0);
+        $b2c = (int) ($row['b2c_admissions'] ?? 0);
+
+        return [
+            'cohorts'        => (int) ($row['cohorts'] ?? 0),
+            'target'         => (int) ($row['target'] ?? 0),
+            'b2b_admissions' => $b2b,
+            'b2c_admissions' => $b2c,
+            'admissions'     => $b2b + $b2c,
+            'revenue_target' => (float) ($row['revenue_target'] ?? 0),
+            'revenue_actual' => (float) ($row['revenue_actual'] ?? 0),
         ];
     }
 
@@ -435,6 +468,7 @@ class CohortRepository
                 NULL AS class_days,
                 NULL AS class_time,
                 c.training_status,
+                " . CohortStatus::sqlCase('c') . " AS effective_status,
                 NULL AS training_date_50,
                 NULL AS training_date_75,
                 c.training_status AS status,
@@ -515,16 +549,9 @@ class CohortRepository
             }
         }
 
-        if (!empty($filters['cohort_status'])) {
-            $map = [
-                'not_started'    => "c.training_status = 'not_started'",
-                'in_progress'    => "c.training_status = 'in_progress'",
-                'completed'      => "c.training_status = 'completed'",
-                'cancelled'      => "c.training_status = 'cancelled'",
-            ];
-            if (isset($map[$filters['cohort_status']])) {
-                $where[] = $map[$filters['cohort_status']];
-            }
+        if (!empty($filters['cohort_status']) && CohortStatus::isValid($filters['cohort_status'])) {
+            $where[] = CohortStatus::sqlCase('c') . ' = :cohort_status';
+            $params['cohort_status'] = $filters['cohort_status'];
         }
 
         return [$where, $params];
@@ -544,13 +571,17 @@ class CohortRepository
      */
     private function prepareData(array $data): array
     {
-        $allowedStatus = ['not_started', 'in_progress', 'completed', 'cancelled'];
         $allowedArea    = ['academic', 'marketing', 'admissions'];
 
-        $status = $data['training_status'] ?? 'not_started';
-        if (!in_array($status, $allowedStatus, true)) {
-            $status = 'not_started';
-        }
+        // DATA-001: missing dates stay NULL ("Sin fechas"); only dates the user
+        // entered are written (previously NULL became today's date).
+        $startDate = $this->normalizeDate($data['start_date'] ?? null);
+        $endDate   = $this->normalizeDate($data['end_date'] ?? null);
+
+        // DATA-001: training_status is kept in sync with the date rule (Power BI
+        // reads it). Only 'cancelled' is a manual state and is never overwritten;
+        // reactivation passes any other value and gets the status by dates.
+        $status = CohortStatus::storedValue($data['training_status'] ?? null, $startDate, $endDate);
 
         $area = $data['area'] ?? null;
         if ($area !== null && !in_array($area, $allowedArea, true)) {
@@ -576,8 +607,8 @@ class CohortRepository
             'financial_target_revenue' => max(0.0, (float) ($data['financial_target_revenue'] ?? 0)),
             'financial_actual_revenue' => max(0.0, (float) ($data['financial_actual_revenue'] ?? 0)),
             'admission_deadline_date'  => $this->normalizeDate($data['admission_deadline_date'] ?? null),
-            'start_date'               => $this->normalizeDate($data['start_date'] ?? null) ?? date('Y-m-d'),
-            'end_date'                 => $this->normalizeDate($data['end_date'] ?? null) ?? ($this->normalizeDate($data['start_date'] ?? null) ?? date('Y-m-d')),
+            'start_date'               => $startDate,
+            'end_date'                 => $endDate,
             'related_project'          => $this->emptyToNull($data['related_project'] ?? null),
             'assigned_coach'           => $this->emptyToNull($data['assigned_coach'] ?? null),
             'bootcamp_type'            => $this->emptyToNull($data['bootcamp_type'] ?? null),

@@ -1,12 +1,20 @@
 <?php use App\Core\Auth; ?>
 <?php use App\Services\MarketingService; ?>
+<?php use App\Services\CohortStatus; ?>
 
 <?php
-    $statusLabels = [
-        'in_progress' => ['En progreso', 'success', '#16a34a'],
-        'completed'   => ['Completadas', 'primary', '#2563eb'],
-        'not_started' => ['No iniciadas', 'secondary', '#64748b'],
+    // DATA-001: labels come from CohortStatus; only the chart colors live here.
+    $statusColors = [
+        CohortStatus::NOT_STARTED => ['secondary', '#64748b'],
+        CohortStatus::IN_PROGRESS => ['success', '#16a34a'],
+        CohortStatus::COMPLETED   => ['primary', '#2563eb'],
+        CohortStatus::CANCELLED   => ['danger', '#dc2626'],
+        CohortStatus::NO_DATES    => ['warning', '#d97706'],
     ];
+    $statusLabels = [];
+    foreach (CohortStatus::LABELS as $statusKey => $statusLabel) {
+        $statusLabels[$statusKey] = [$statusLabel, ...$statusColors[$statusKey]];
+    }
 
     $roleLabels = [
         'admin'          => ['Admin', 'danger', 'bi-shield-check'],
@@ -28,6 +36,8 @@
     $totalB2bAdmissions = (int) ($totalB2bAdmissions ?? 0);
     $totalB2cAdmissions = (int) ($totalB2cAdmissions ?? 0);
     $admissionPct       = min(100, (float) ($admissionPct ?? 0));
+    // DATA-003: cut-off date = El Salvador business date (same "today" as CohortStatus).
+    $cutoffLabel        = date('d/m/Y', strtotime((string) ($cutoffDate ?? CohortStatus::today())));
     $remainingTarget    = max(0, $totalTarget - $totalAdmissions);
     $riskCommentCount   = count($riskComments ?? []);
     $riskStageCount     = count($atRiskStages ?? []);
@@ -35,7 +45,7 @@
     $statusBreakdown = $statusBreakdown ?? [];
     $statusChart = ['labels' => [], 'series' => [], 'colors' => []];
     foreach ($statusBreakdown as $key => $count) {
-        [$label, , $hex] = $statusLabels[$key] ?? [ucfirst((string) $key), 'secondary', '#64748b'];
+        [$label, , $hex] = $statusLabels[$key] ?? [CohortStatus::label((string) $key), 'secondary', '#64748b'];
         $statusChart['labels'][] = $label;
         $statusChart['series'][] = (int) $count;
         $statusChart['colors'][] = $hex;
@@ -83,7 +93,10 @@
             </div>
             <h2 class="dashboard-hero__title">&iexcl;Hola, <?= e(explode(' ', Auth::user()['full_name'] ?? 'Usuario')[0]) ?>!</h2>
             <p class="dashboard-hero__copy">
-                Resumen operativo de cohortes, admisiones y riesgos para <?= date('d/m/Y') ?>.
+                Resumen operativo de cohortes, admisiones y riesgos para <?= $cutoffLabel ?>.
+            </p>
+            <p class="dashboard-hero__copy small mb-0" data-dashboard-scope>
+                <i class="bi bi-funnel me-1" aria-hidden="true"></i>Todas las cohortes (incluye canceladas y sin fechas) &middot; corte <?= $cutoffLabel ?>
             </p>
         </div>
         <div class="dashboard-hero__meta">
@@ -111,8 +124,8 @@
             </div>
             <div id="kpiTotalSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
             <div class="metric-card__footer">
-                <span><?= number_format($plannedCohorts) ?> planificadas</span>
-                <span><?= number_format($activeCohorts) ?> activas</span>
+                <span>No iniciado: <?= number_format($plannedCohorts) ?></span>
+                <span>En progreso: <?= number_format($activeCohorts) ?></span>
             </div>
         </article>
     </div>
@@ -137,7 +150,7 @@
             <div class="metric-card__body">
                 <span class="metric-card__icon"><i class="bi bi-check-circle-fill"></i></span>
                 <div>
-                    <p class="metric-card__label">Completadas</p>
+                    <p class="metric-card__label">Completado</p>
                     <h3 class="metric-card__value"><?= number_format($completedCohorts) ?></h3>
                 </div>
             </div>
@@ -158,7 +171,7 @@
                 </div>
             </div>
             <div id="kpiAlertsSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
-            <div class="visually-hidden">Resumen: <?= number_format($plannedCohorts) ?> cohortes planificadas, <?= number_format($activeCohorts) ?> activas, <?= number_format($completedCohorts) ?> completadas y <?= number_format($totalAlerts) ?> alertas activas.</div>
+            <div class="visually-hidden">Resumen: No iniciado <?= number_format($plannedCohorts) ?>, En progreso <?= number_format($activeCohorts) ?>, Completado <?= number_format($completedCohorts) ?> y <?= number_format($totalAlerts) ?> alertas activas.</div>
             <div class="metric-card__footer">
                 <span><?= $riskStageCount ?> marketing</span>
                 <a href="/alerts">Revisar</a>
@@ -268,7 +281,7 @@
             <div class="dashboard-status-list">
                 <?php $statusTotal = array_sum($statusBreakdown) ?: 1; ?>
                 <?php foreach ($statusBreakdown as $key => $count): ?>
-                    <?php [$label, $color] = $statusLabels[$key] ?? [ucfirst($key), 'secondary', '#64748b']; ?>
+                    <?php [$label, $color] = $statusLabels[$key] ?? [CohortStatus::label((string) $key), 'secondary', '#64748b']; ?>
                     <div class="dashboard-status-row">
                         <span><i class="bi bi-circle-fill text-<?= $color ?>"></i><?= htmlspecialchars($label) ?></span>
                         <strong><?= (int) $count ?> <small><?= round(((int) $count / $statusTotal) * 100) ?>%</small></strong>
@@ -418,7 +431,8 @@
                             $target = (int) ($c['total_admission_target'] ?? 0);
                             $actual = (int) ($c['b2b_admissions'] ?? 0) + (int) ($c['b2c_admissions'] ?? 0);
                             $cPct   = $target > 0 ? min(100, round(($actual / $target) * 100)) : 0;
-                            [$sLabel, $sColor] = $statusLabels[$c['training_status'] ?? ''] ?? ['Sin estado', 'secondary', '#64748b'];
+                            $sStatus = (string) ($c['effective_status'] ?? CohortStatus::forRow($c));
+                            [$sLabel, $sColor] = $statusLabels[$sStatus] ?? [CohortStatus::label($sStatus), 'secondary', '#64748b'];
                         ?>
                         <tr>
                             <td>
@@ -433,7 +447,7 @@
                                 <div class="dashboard-mini-progress mx-auto mt-1"><span data-style-width="<?= $cPct ?>%"></span></div>
                             </td>
                             <td class="text-center">
-                                <span class="kodigo-pill" data-tone="<?= $sColor === 'secondary' ? 'neutral' : htmlspecialchars($sColor) ?>"><?= htmlspecialchars($sLabel) ?></span>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(CohortStatus::tone($sStatus)) ?>"><?= htmlspecialchars($sLabel) ?></span>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -464,7 +478,7 @@
     <ul>
         <li>Total cohortes: <?= number_format($totalCohorts) ?></li>
         <li>En progreso: <?= number_format($activeCohorts) ?></li>
-        <li>Completadas: <?= number_format($completedCohorts) ?></li>
+        <li>Completado: <?= number_format($completedCohorts) ?></li>
         <li>Alertas activas: <?= number_format($totalAlerts) ?></li>
         <li>Inscritos B2B: <?= number_format($totalB2bAdmissions) ?></li>
         <li>Inscritos B2C: <?= number_format($totalB2cAdmissions) ?></li>
@@ -478,7 +492,7 @@
         <thead><tr><th>Estado</th><th>Total</th></tr></thead>
         <tbody>
             <?php foreach ($statusBreakdown as $key => $count): ?>
-                <?php [$label] = $statusLabels[$key] ?? [ucfirst((string) $key), 'secondary']; ?>
+                <?php [$label] = $statusLabels[$key] ?? [CohortStatus::label((string) $key), 'secondary']; ?>
                 <tr><td><?= htmlspecialchars($label) ?></td><td><?= (int) $count ?></td></tr>
             <?php endforeach; ?>
         </tbody>

@@ -18,26 +18,14 @@ $stagesPct = (int) ($stagesPct ?? 0);
 if (!function_exists('marketingStatusLabel')) {
     function marketingStatusLabel(?string $status): string
     {
-        $labels = [
-            'not_started' => 'No iniciado',
-            'in_progress' => 'En progreso',
-            'completed' => 'Completado',
-            'cancelled' => 'Cancelado',
-        ];
-        return $labels[$status ?? ''] ?? (string) ($status ?? '—');
+        return \App\Services\CohortStatus::label($status);
     }
 }
 
 if (!function_exists('marketingStatusTone')) {
     function marketingStatusTone(?string $status): string
     {
-        $tones = [
-            'not_started' => 'neutral',
-            'in_progress' => 'info',
-            'completed'   => 'success',
-            'cancelled'   => 'danger',
-        ];
-        return $tones[$status ?? ''] ?? 'neutral';
+        return \App\Services\CohortStatus::tone($status);
     }
 }
 ?>
@@ -173,10 +161,9 @@ if (!function_exists('marketingStatusTone')) {
             <label for="cohort_status" class="form-label">Estado</label>
             <select class="form-select" id="cohort_status" name="cohort_status">
                 <option value="">Todos</option>
-                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
-                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
-                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
-                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                <?php foreach (\App\Services\CohortStatus::LABELS as $statusKey => $statusLabel): ?>
+                <option value="<?= $statusKey ?>" <?= (($filters['cohort_status'] ?? '') === $statusKey) ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-12">
@@ -259,8 +246,8 @@ if (!function_exists('marketingStatusTone')) {
                                 <div class="dashboard-mini-progress"><span data-style-width="<?= $cPct ?>%"></span></div>
                             </td>
                             <td>
-                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(marketingStatusTone($c['training_status'] ?? null)) ?>">
-                                    <?= htmlspecialchars(marketingStatusLabel($c['training_status'] ?? null)) ?>
+                                <span class="kodigo-pill" data-tone="<?= htmlspecialchars(marketingStatusTone($c['effective_status'] ?? null)) ?>">
+                                    <?= htmlspecialchars(marketingStatusLabel($c['effective_status'] ?? null)) ?>
                                 </span>
                             </td>
                             <td>

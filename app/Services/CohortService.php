@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Auth;
+use App\Core\Database;
 use App\Repositories\AuditRepository;
 use App\Repositories\CohortRepository;
 use DateTime;
@@ -21,32 +22,23 @@ class CohortService
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
 
-    public const STATUS_LABELS = [
-        self::STATUS_NOT_STARTED => 'No iniciado',
-        self::STATUS_IN_PROGRESS => 'En progreso',
-        self::STATUS_COMPLETED => 'Completado',
-        self::STATUS_CANCELLED => 'Cancelado',
-    ];
+    /** Single label set (DATA-001); kept here for existing callers. */
+    public const STATUS_LABELS = CohortStatus::LABELS;
 
-    private const DELETABLE_STATUSES = [
-        self::STATUS_NOT_STARTED,
-        self::STATUS_CANCELLED,
-    ];
+    /** Reactivating a cancelled cohort: its status goes back to the date rule. */
+    public const ACTION_REACTIVATE = 'reactivate';
 
+    /**
+     * Manual workflow (DATA-001 / D1): the only manual status is "cancelled".
+     * Every other status comes from the dates, so there is no "start" or
+     * "complete" action until EDIT-005.
+     */
     private const WORKFLOW_TRANSITIONS = [
-        self::STATUS_NOT_STARTED => [
-            self::STATUS_IN_PROGRESS,
-            self::STATUS_CANCELLED,
-            self::STATUS_COMPLETED,
-        ],
-        self::STATUS_IN_PROGRESS => [
-            self::STATUS_COMPLETED,
-            self::STATUS_CANCELLED,
-        ],
-        self::STATUS_COMPLETED => [],
-        self::STATUS_CANCELLED => [
-            self::STATUS_NOT_STARTED,
-        ],
+        CohortStatus::NOT_STARTED => [self::STATUS_CANCELLED],
+        CohortStatus::IN_PROGRESS => [self::STATUS_CANCELLED],
+        CohortStatus::NO_DATES    => [self::STATUS_CANCELLED],
+        CohortStatus::COMPLETED   => [],
+        CohortStatus::CANCELLED   => [self::ACTION_REACTIVATE],
     ];
 
     private CohortRepository $cohortRepo;
@@ -78,6 +70,28 @@ class CohortService
         $rows = $this->cohortRepo->findByFilters($normalizedFilters);
 
         return array_map(fn(array $row) => $this->enrichWithMilestones($row), $rows);
+    }
+
+    /**
+     * DATA-003: totals (cohorts, admissions, target, revenue) for the same
+     * filters getFilteredCohorts() applies, from one SQL query.
+     */
+    public function getTotals(array $filters = []): array
+    {
+        return $this->cohortRepo->getTotals($this->normalizeFilters($filters));
+    }
+
+    /**
+     * DATA-003: admissions completion %, the one formula used by Dashboard
+     * and Plan Maestro: 1 decimal, capped at 100, 0 when there is no target.
+     */
+    public static function admissionPct(int $actual, int $target): float
+    {
+        if ($target <= 0) {
+            return 0.0;
+        }
+
+        return min(100.0, round(($actual / $target) * 100, 1));
     }
 
     /**
@@ -208,103 +222,121 @@ class CohortService
     }
 
     /**
-     * Delete a cohort.
+     * Delete a cohort (physical delete).
+     *
+     * COH-009: the caller must send the cohort_code typed by the user; on
+     * mismatch nothing is deleted. The DELETE and its audit_log entry (with
+     * the full previous row) commit together, so no deletion goes unlogged.
      */
-    public function deleteCohort(int $id): bool
+    public function deleteCohort(int $id, string $confirmCode): bool
     {
-        $cohort = $this->getCohortById($id);
-        if (!$cohort) {
+        $previous = $this->cohortRepo->findById($id);
+        if (!$previous) {
             return false;
         }
+        $cohort = $this->enrichWithMilestones($previous);
 
-        // Validate both stored status and effective status
-        $storedStatus = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED));
-        $effectiveStatus = $this->effectiveTrainingStatus($cohort);
-        
-        // Block deletion if EITHER stored OR effective status is in_progress or completed
-        $protectedStatuses = [self::STATUS_IN_PROGRESS, self::STATUS_COMPLETED];
-        if (in_array($storedStatus, $protectedStatuses, true) || in_array($effectiveStatus, $protectedStatuses, true)) {
-            throw new \InvalidArgumentException('No se pueden eliminar cohortes En progreso o Completadas.');
+        // DATA-001: only the derived status counts (In progress / Completed are protected).
+        if (!in_array($this->effectiveTrainingStatus($cohort), CohortStatus::DELETABLE, true)) {
+            throw new \InvalidArgumentException('No se pueden eliminar cohortes en estado En progreso o Completado.');
         }
 
-        return $this->cohortRepo->delete($id);
+        $cohortCode = trim((string) ($previous['cohort_code'] ?? ''));
+        if ($cohortCode === '' || !hash_equals($cohortCode, trim($confirmCode))) {
+            throw new \InvalidArgumentException('El código escrito no coincide con el de la cohorte. No se eliminó.');
+        }
+
+        $db = Database::getInstance();
+        $db->beginTransaction();
+        try {
+            if (!$this->cohortRepo->delete($id)) {
+                $db->rollBack();
+                return false;
+            }
+
+            $this->auditRepo->log([
+                'user_id'     => Auth::id(),
+                'action'      => 'delete_cohort',
+                'entity_type' => 'cohort',
+                'entity_id'   => $id,
+                'old_values'  => $previous,
+                'new_values'  => ['cohort_code' => $cohortCode, 'deleted' => true],
+            ]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        return true;
     }
 
-    public function transitionCohortStatus(int $id, string $targetStatus, ?string $reason = null): bool
+    /**
+     * Manual status action: cancel (reason required) or reactivate a
+     * cancelled cohort. Returns the cohort's status after the action.
+     */
+    public function transitionCohortStatus(int $id, string $action, ?string $reason = null): string
     {
         $cohort = $this->getCohortById($id);
         if (!$cohort) {
             throw new \InvalidArgumentException('Cohorte no encontrada.');
         }
 
-        $targetStatus = $this->normalizeTrainingStatus($targetStatus);
+        $action = $action === self::ACTION_REACTIVATE ? $action : $this->normalizeTrainingStatus($action);
         $currentStatus = $this->effectiveTrainingStatus($cohort);
-        $allowedTransitions = $this->getAllowedStatusTransitions($cohort);
         $reason = trim((string) ($reason ?? ''));
 
-        if (!isset(self::STATUS_LABELS[$targetStatus])) {
-            throw new \InvalidArgumentException('Estado de workflow no válido.');
+        if (!in_array($action, [self::STATUS_CANCELLED, self::ACTION_REACTIVATE], true)) {
+            throw new \InvalidArgumentException('El estado se calcula por las fechas de inicio y fin; ajústalas en Editar. Solo se puede cancelar o reactivar una cohorte.');
         }
 
-        if ($currentStatus === $targetStatus) {
-            throw new \InvalidArgumentException('La cohorte ya se encuentra en ese estado.');
+        if (!in_array($action, $this->getAllowedStatusTransitions($cohort), true)) {
+            throw new \InvalidArgumentException('La acción solicitada no está permitida para esta cohorte en estado ' . CohortStatus::label($currentStatus) . '.');
         }
 
-        if (!in_array($targetStatus, $allowedTransitions, true)) {
-            throw new \InvalidArgumentException('La transición de estado solicitada no está permitida para esta cohorte.');
-        }
-
-        if ($targetStatus === self::STATUS_CANCELLED && $reason === '') {
+        if ($action === self::STATUS_CANCELLED && $reason === '') {
             throw new \InvalidArgumentException('Debes ingresar un motivo para cancelar la cohorte.');
         }
 
-        if ($targetStatus === self::STATUS_NOT_STARTED) {
+        if ($action === self::ACTION_REACTIVATE) {
             $this->assertPlanningDataReadyForPlanned($cohort);
         }
 
-        $updated = $this->cohortRepo->updatePartial($id, ['training_status' => $targetStatus]);
-
-        if ($updated) {
-            $this->auditRepo->log([
-                'user_id'     => Auth::id(),
-                'action'      => 'transition_cohort_status',
-                'entity_type' => 'cohort',
-                'entity_id'   => $id,
-                'old_values'  => [
-                    'effective_status' => $currentStatus,
-                    'stored_status' => $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED)),
-                ],
-                'new_values'  => [
-                    'training_status' => $targetStatus,
-                    'reason' => $reason !== '' ? $reason : null,
-                ],
-            ]);
+        // Reactivation stores any non-cancelled value; the repository then
+        // derives the stored status from the dates.
+        $stored = $action === self::STATUS_CANCELLED ? self::STATUS_CANCELLED : self::STATUS_NOT_STARTED;
+        if (!$this->cohortRepo->updatePartial($id, ['training_status' => $stored])) {
+            throw new \InvalidArgumentException('No se pudo actualizar el estado de la cohorte.');
         }
 
-        return $updated;
+        $after = $this->cohortRepo->findById($id) ?? [];
+        $newStatus = CohortStatus::forRow($after);
+
+        $this->auditRepo->log([
+            'user_id'     => Auth::id(),
+            'action'      => 'transition_cohort_status',
+            'entity_type' => 'cohort',
+            'entity_id'   => $id,
+            'old_values'  => [
+                'effective_status' => $currentStatus,
+                'stored_status' => (string) ($cohort['training_status'] ?? ''),
+            ],
+            'new_values'  => [
+                'action' => $action,
+                'effective_status' => $newStatus,
+                'training_status' => (string) ($after['training_status'] ?? ''),
+                'reason' => $reason !== '' ? $reason : null,
+            ],
+        ]);
+
+        return $newStatus;
     }
 
+    /** Status shown everywhere: the single rule in CohortStatus. */
     public function effectiveTrainingStatus(array $cohort): string
     {
-        $status = $this->normalizeTrainingStatus((string) ($cohort['training_status'] ?? self::STATUS_NOT_STARTED));
-
-        if (in_array($status, [self::STATUS_CANCELLED, self::STATUS_COMPLETED], true)) {
-            return $status;
-        }
-
-        $today = date('Y-m-d');
-        $startDate = $cohort['start_date'] ?? null;
-        $endDate = $cohort['end_date'] ?? null;
-
-        if ($endDate && $endDate < $today) {
-            return self::STATUS_COMPLETED;
-        }
-
-        if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
-            return self::STATUS_IN_PROGRESS;
-        }
-
-        return self::STATUS_NOT_STARTED;
+        return CohortStatus::forRow($cohort);
     }
 
     public function normalizeTrainingStatus(string $status): string
@@ -372,7 +404,11 @@ class CohortService
             $row['end_date'] ?? null,
         );
 
-        return array_merge($row, $milestones);
+        $row = array_merge($row, $milestones);
+        // Same value baseSelect() computes in SQL; derived here when absent.
+        $row['effective_status'] ??= CohortStatus::forRow($row);
+
+        return $row;
     }
 
     private function normalizeCohortData(array $data): array
@@ -566,15 +602,9 @@ class CohortService
             $normalized['business_model'] = $filters['business_model'];
         }
 
-        $validStatuses = [
-            self::STATUS_NOT_STARTED,
-            self::STATUS_IN_PROGRESS,
-            self::STATUS_COMPLETED,
-            self::STATUS_CANCELLED,
-            'upcoming',
-        ];
-        if (!empty($filters['cohort_status']) && in_array($filters['cohort_status'], $validStatuses, true)) {
-            $normalized['cohort_status'] = $this->normalizeTrainingStatus((string) $filters['cohort_status']);
+        // DATA-001: the filter matches the derived status (CohortStatus keys).
+        if (!empty($filters['cohort_status']) && CohortStatus::isValid((string) $filters['cohort_status'])) {
+            $normalized['cohort_status'] = (string) $filters['cohort_status'];
         }
 
         return $normalized;
@@ -605,7 +635,7 @@ class CohortService
         }
 
         if ($missing !== []) {
-            throw new \InvalidArgumentException('Antes de volver a Planificado debes completar: ' . implode(', ', $missing) . '.');
+            throw new \InvalidArgumentException('Antes de reactivar la cohorte debes completar: ' . implode(', ', $missing) . '.');
         }
     }
 

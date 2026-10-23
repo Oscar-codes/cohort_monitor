@@ -79,7 +79,7 @@
                             <li class="mb-1"><code>start_date</code> â€” Fecha inicio <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>end_date</code> â€” Fecha fin <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>meta_total</code>, <code>meta_b2b</code>, <code>admissions_b2c</code></li>
-                            <li class="mb-1"><code>status</code> â€” Completado | En ejecuciÃ³n | Pendiente | Cancelado</li>
+                            <li class="mb-1"><code>status</code> — No iniciado | En progreso | Completado | Cancelado | Sin fechas (solo Cancelado se aplica; el resto se calcula por las fechas)</li>
                             <li><code>at_risk</code> â€” SÃ­ / No</li>
                         </ul>
                     </div>

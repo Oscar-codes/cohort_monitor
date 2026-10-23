@@ -335,12 +335,12 @@ class Auth
     }
 
     /**
-     * Check if the current user can manage cohort status (transitions).
-     * Only admin and finance roles can change cohort status.
+     * Check if the current user can cancel / reactivate a cohort.
+     * Only admin (DATA-001 / D1): finance can no longer change the status.
      */
     public static function canManageCohortStatus(): bool
     {
-        return self::hasRole(['admin', 'finance']);
+        return self::isAdmin();
     }
 
     /**

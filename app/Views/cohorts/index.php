@@ -1,5 +1,6 @@
 <?php
 use App\Core\Auth;
+use App\Services\CohortStatus;
 
 /**
  * Cohorts Index View
@@ -32,61 +33,35 @@ function formatMonthLabel(int $timestamp): string
     return ucfirst(strtolower(date('M Y', $timestamp)));
 }
 
-/** Helper: derive lifecycle status based on dates */
+/** Helper: status of a cohort, from the single rule (DATA-001). */
 function cohortLifecycleStatus(array $cohort): string
 {
-    $storedStatus = $cohort['training_status'] ?? 'not_started';
-    if (in_array($storedStatus, ['cancelled', 'completed'], true)) {
-        return $storedStatus;
-    }
-
-    $today = date('Y-m-d');
-    $startDate = $cohort['start_date'] ?? null;
-    $endDate = $cohort['end_date'] ?? null;
-
-    if ($startDate && $startDate > $today) {
-        return 'not_started';
-    }
-
-    if ($startDate && $startDate <= $today && (!$endDate || $endDate >= $today)) {
-        return 'in_progress';
-    }
-
-    if ($endDate && $endDate < $today) {
-        return 'completed';
-    }
-
-    return 'not_started';
+    return (string) ($cohort['effective_status'] ?? CohortStatus::forRow($cohort));
 }
 
 function cohortStatusLabel(string $status): string
 {
-    $labels = [
-        'not_started' => 'No iniciado',
-        'in_progress' => 'En progreso',
-        'completed' => 'Completado',
-        'cancelled' => 'Cancelado',
-    ];
-
-    return $labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
+    return CohortStatus::label($status);
 }
 
 function cohortCanDelete(array $cohort): bool
 {
-    $storedStatus = $cohort['training_status'] ?? 'not_started';
-    $lifecycleStatus = cohortLifecycleStatus($cohort);
+    return in_array(cohortLifecycleStatus($cohort), CohortStatus::DELETABLE, true);
+}
 
-    $protectedStatuses = ['in_progress', 'completed', 'En progreso', 'Completado'];
+/**
+ * data-* attributes for the delete form: app.js asks the user to type the
+ * cohort_code in a SweetAlert2 prompt (COH-009). The server re-checks it.
+ */
+function cohortDeleteConfirmAttrs(array $cohort): string
+{
+    $code = htmlspecialchars((string) ($cohort['cohort_code'] ?? ''), ENT_QUOTES, 'UTF-8');
 
-    if (in_array($storedStatus, $protectedStatuses, true)) {
-        return false;
-    }
-
-    if (in_array($lifecycleStatus, $protectedStatuses, true)) {
-        return false;
-    }
-
-    return in_array($lifecycleStatus, ['not_started', 'cancelled'], true);
+    return ' data-confirm="Esta acción elimina la cohorte de forma permanente."'
+        . ' data-confirm-title="Eliminar cohorte"'
+        . ' data-confirm-tone="danger"'
+        . ' data-confirm-button="Eliminar"'
+        . ' data-confirm-code="' . $code . '"';
 }
 
 /** Helper: render lifecycle pill (Kodigo) */
@@ -94,18 +69,9 @@ function lifecycleBadge(array $cohort): string
 {
     $status = cohortLifecycleStatus($cohort);
 
-    $map = [
-        'not_started' => ['neutral',  'No iniciado'],
-        'in_progress' => ['info',     'En progreso'],
-        'completed'   => ['success',  'Completado'],
-        'cancelled'   => ['danger',   'Cancelado'],
-    ];
-
-    [$tone, $label] = $map[$status] ?? ['neutral', ucfirst($status)];
-
-    return '<span class="kodigo-pill" data-tone="' . $tone . '">'
+    return '<span class="kodigo-pill" data-tone="' . CohortStatus::tone($status) . '">'
          . '<span class="kodigo-pill__dot" aria-hidden="true"></span>'
-         . htmlspecialchars($label)
+         . htmlspecialchars(CohortStatus::label($status))
          . '</span>';
 }
 
@@ -175,9 +141,10 @@ function renderCohortRow(array $cohort, string $querySuffix, bool $canEdit, bool
 
     $deleteBtn = '';
     if ($canDelete && cohortCanDelete($cohort)) {
-        $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
+        $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline"' . cohortDeleteConfirmAttrs($cohort) . '>'
             . csrf_field()
             . '<input type="hidden" name="_method" value="DELETE">'
+            . '<input type="hidden" name="confirm_code" value="">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar" aria-label="Eliminar cohorte"><i class="bi bi-trash" aria-hidden="true"></i></button>'
             . '</form>';
     }
@@ -232,9 +199,10 @@ function renderCohortMobileCard(array $cohort, string $querySuffix, bool $canEdi
 
     $deleteBtn = '';
     if ($canDelete && cohortCanDelete($cohort)) {
-        $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline" data-confirm="¿Estás seguro de que deseas eliminar esta cohorte?">'
+        $deleteBtn = '<form method="POST" action="/cohorts/' . $id . '" class="d-inline"' . cohortDeleteConfirmAttrs($cohort) . '>'
             . csrf_field()
             . '<input type="hidden" name="_method" value="DELETE">'
+            . '<input type="hidden" name="confirm_code" value="">'
             . '<button type="submit" class="btn btn-icon btn-sm btn-outline-danger" aria-label="Eliminar"><i class="bi bi-trash"></i></button>'
             . '</form>';
     }
@@ -279,14 +247,16 @@ $canEditVal = $canEdit ?? false;
 $canDeleteVal = $canDelete ?? false;
 
 // Group cohorts by lifecycle status
-$grouped = ['not_started' => [], 'in_progress' => [], 'completed' => [], 'cancelled' => []];
+$grouped = array_fill_keys(array_keys(CohortStatus::LABELS), []);
 foreach ($cohorts as $c) {
     $grouped[cohortLifecycleStatus($c)][] = $c;
 }
-$upcomingCount   = count($grouped['not_started']);
-$inProgressCount = count($grouped['in_progress']);
-$completedCount  = count($grouped['completed']);
-$cancelledCount  = count($grouped['cancelled']);
+$statusCounts    = array_map('count', $grouped);
+$upcomingCount   = $statusCounts[CohortStatus::NOT_STARTED];
+$inProgressCount = $statusCounts[CohortStatus::IN_PROGRESS];
+$completedCount  = $statusCounts[CohortStatus::COMPLETED];
+$cancelledCount  = $statusCounts[CohortStatus::CANCELLED];
+$noDatesCount    = $statusCounts[CohortStatus::NO_DATES];
 
 // Upcoming cohorts starting within 60 days (for Gantt view)
 $today60 = date('Y-m-d', strtotime('+60 days'));
@@ -313,11 +283,15 @@ $ganttSpanDays = max(1, (int) round(($ganttEndTs - $ganttStartTs) / 86400));
 
 // Status config for accordion
 $statusConfig = [
-    'not_started' => ['label' => 'No iniciado',   'color' => '#6c757d', 'icon' => 'bi-clock',          'defaultOpen' => true],
-    'in_progress' => ['label' => 'En progreso', 'color' => '#0d6efd', 'icon' => 'bi-play-circle',    'defaultOpen' => false],
-    'completed'   => ['label' => 'Completado',   'color' => '#198754', 'icon' => 'bi-check-circle',   'defaultOpen' => false],
-    'cancelled'   => ['label' => 'Cancelado',   'color' => '#dc3545', 'icon' => 'bi-x-circle',   'defaultOpen' => false],
+    CohortStatus::NOT_STARTED => ['color' => '#6c757d', 'defaultOpen' => true],
+    CohortStatus::IN_PROGRESS => ['color' => '#0d6efd', 'defaultOpen' => false],
+    CohortStatus::COMPLETED   => ['color' => '#198754', 'defaultOpen' => false],
+    CohortStatus::CANCELLED   => ['color' => '#dc3545', 'defaultOpen' => false],
+    CohortStatus::NO_DATES    => ['color' => '#d97706', 'defaultOpen' => false],
 ];
+foreach ($statusConfig as $statusKey => $cfg) {
+    $statusConfig[$statusKey] += ['label' => CohortStatus::label($statusKey), 'icon' => CohortStatus::icon($statusKey)];
+}
 ?>
 
 <?php if ($msg = Auth::getFlash('success')): ?>
@@ -443,10 +417,9 @@ $statusConfig = [
                 <label for="cohort_status" class="form-label">Estado</label>
                 <select class="form-select" id="cohort_status" name="cohort_status">
                     <option value="">Todos</option>
-                    <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
-                    <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
-                    <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
-                    <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                    <?php foreach (CohortStatus::LABELS as $statusKey => $statusLabel): ?>
+                    <option value="<?= $statusKey ?>" <?= (($filters['cohort_status'] ?? '') === $statusKey) ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -458,58 +431,42 @@ $statusConfig = [
             </div>
         </form>
 
-        <?php if (!empty($activeFilters)): ?>
-        <div class="active-filter-row">
-            <span class="active-filter-label">Filtros activos</span>
-            <?php foreach ($activeFilters as $filterKey => $filterValue): ?>
-                <span class="active-filter-chip">
-                    <?= htmlspecialchars(str_replace('_', ' ', (string) $filterKey)) ?>:
-                    <strong><?= htmlspecialchars((string) $filterValue) ?></strong>
-                </span>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+        <?php require APP_ROOT . '/app/Views/partials/active-filters.php'; ?>
     </div>
 </section>
 
 <!-- ── Summary cards ───────────────────────────────────── -->
+<?php
+// DATA-001: one card per status (same rule as the filter); they add up to "Resultados".
+$statusCardTone = [
+    CohortStatus::NOT_STARTED => 'secondary',
+    CohortStatus::IN_PROGRESS => 'info',
+    CohortStatus::COMPLETED   => 'success',
+    CohortStatus::CANCELLED   => 'danger',
+    CohortStatus::NO_DATES    => 'warning',
+];
+?>
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="cohort-summary-card cohort-summary-card--primary" data-kodigo-reveal>
             <span><i class="bi bi-search"></i></span>
             <div>
-                <strong><?= count($cohorts) ?></strong>
+                <strong data-status-card="total"><?= count($cohorts) ?></strong>
                 <small>Resultados</small>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--secondary" data-kodigo-reveal>
-            <span><i class="bi bi-clock"></i></span>
+    <?php foreach ($statusCounts as $statusKey => $statusCount): ?>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="cohort-summary-card cohort-summary-card--<?= $statusCardTone[$statusKey] ?>" data-kodigo-reveal>
+            <span><i class="bi <?= CohortStatus::icon($statusKey) ?>"></i></span>
             <div>
-                <strong><?= $upcomingCount ?></strong>
-                <small>Planificado</small>
+                <strong data-status-card="<?= $statusKey ?>"><?= $statusCount ?></strong>
+                <small><?= htmlspecialchars(CohortStatus::label($statusKey)) ?></small>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--info" data-kodigo-reveal>
-            <span><i class="bi bi-play-circle"></i></span>
-            <div>
-                <strong><?= $inProgressCount ?></strong>
-                <small>En progreso</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="cohort-summary-card cohort-summary-card--success" data-kodigo-reveal>
-            <span><i class="bi bi-check-circle"></i></span>
-            <div>
-                <strong><?= $completedCount ?></strong>
-                <small>Completado</small>
-            </div>
-        </div>
-    </div>
+    <?php endforeach; ?>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
@@ -518,7 +475,7 @@ $statusConfig = [
 <div id="view-list">
 <?php if (!empty($cohorts)): ?>
 
-    <?php foreach (['not_started' => $upcomingCount, 'in_progress' => $inProgressCount, 'completed' => $completedCount, 'cancelled' => $cancelledCount] as $status => $count): ?>
+    <?php foreach ($statusCounts as $status => $count): ?>
         <?php if ($count === 0) continue; ?>
         <?php
             $cfg = $statusConfig[$status];
@@ -589,12 +546,12 @@ $statusConfig = [
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     VIEW 2: Gantt Timeline (Planificado — next 60 days)
+     VIEW 2: Gantt Timeline (No iniciado — next 60 days)
      ════════════════════════════════════════════════════════ -->
 <div id="view-gantt" class="d-none">
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Timeline planificado — proximos 60 dias</h6>
+            <h6 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Timeline de cohortes No iniciado — proximos 60 dias</h6>
             <small class="text-muted"><?= count($ganttCohorts) ?> cohortes</small>
         </div>
         <div class="card-body p-0">

@@ -21,13 +21,8 @@ class ReportService
 {
     private ReportRepository $reportRepo;
 
-    /** Human-readable labels for training statuses */
-    public const STATUS_LABELS = [
-        'completed'   => 'Completado',
-        'in_progress' => 'En progreso',
-        'not_started' => 'No iniciado',
-        'cancelled'   => 'Cancelado',
-    ];
+    /** Status labels: the single set from CohortStatus (DATA-001). */
+    public const STATUS_LABELS = CohortStatus::LABELS;
 
     public function __construct()
     {
@@ -202,7 +197,7 @@ class ReportService
         foreach ($cohorts as $c) {
             $sheet->setCellValue('A' . $row, $c['name']);
             $sheet->setCellValue('B' . $row, $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? 'â€”'));
-            $sheet->setCellValue('C' . $row, self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'â€”'));
+            $sheet->setCellValue('C' . $row, CohortStatus::label($c['effective_status'] ?? null));
             $sheet->setCellValue('D' . $row, $c['start_date'] ?? 'â€”');
             $sheet->setCellValue('E' . $row, $c['end_date']   ?? 'â€”');
             $sheet->setCellValue('F' . $row, ($c['at_risk'] ?? 0) ? 'SÃ­' : 'No');
@@ -331,7 +326,7 @@ class ReportService
         $cohortRowsHtml = '';
         foreach ($cohorts as $c) {
             $areaLabel  = $areaLabels[$c['area'] ?? ''] ?? ($c['area'] ?? 'â€”');
-            $statusLabel = self::STATUS_LABELS[$c['training_status'] ?? ''] ?? ($c['training_status'] ?? 'â€”');
+            $statusLabel = CohortStatus::label($c['effective_status'] ?? null);
             $riskLabel  = ($c['at_risk'] ?? 0) ? '<span style="color:#dc3545;font-weight:bold">SÃ­</span>' : 'No';
             $riskBg     = ($c['at_risk'] ?? 0) ? 'background-color:#fff3cd;' : '';
 
@@ -393,8 +388,8 @@ class ReportService
                 <th>Ãrea</th>
                 <th>Total</th>
                 <th>En Riesgo</th>
-                <th>Completadas</th>
-                <th>En EjecuciÃ³n</th>
+                <th>Completado</th>
+                <th>En progreso</th>
             </tr>
         </thead>
         <tbody>
@@ -408,9 +403,10 @@ class ReportService
             <thead>
                 <tr>
                     <th>Completado</th>
-                    <th>En EjecuciÃ³n</th>
+                    <th>En progreso</th>
                     <th>No iniciado</th>
                     <th>Cancelado</th>
+                    <th>Sin fechas</th>
                 </tr>
             </thead>
             <tbody>
@@ -419,6 +415,7 @@ class ReportService
                     <td><strong>{$byStatus['in_progress']}</strong></td>
                     <td><strong>{$byStatus['not_started']}</strong></td>
                     <td><strong>{$byStatus['cancelled']}</strong></td>
+                    <td><strong>{$byStatus['no_dates']}</strong></td>
                 </tr>
             </tbody>
         </table>

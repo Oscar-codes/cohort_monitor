@@ -190,10 +190,9 @@ $spanishMonths = [
             <label for="cohort_status" class="form-label">Estado</label>
             <select class="form-select" id="cohort_status" name="cohort_status">
                 <option value="">Todos</option>
-                <option value="not_started" <?= (($filters['cohort_status'] ?? '') === 'not_started') ? 'selected' : '' ?>>No iniciado</option>
-                <option value="in_progress" <?= (($filters['cohort_status'] ?? '') === 'in_progress') ? 'selected' : '' ?>>En progreso</option>
-                <option value="completed" <?= (($filters['cohort_status'] ?? '') === 'completed') ? 'selected' : '' ?>>Completado</option>
-                <option value="cancelled" <?= (($filters['cohort_status'] ?? '') === 'cancelled') ? 'selected' : '' ?>>Cancelado</option>
+                <?php foreach (\App\Services\CohortStatus::LABELS as $statusKey => $statusLabel): ?>
+                <option value="<?= $statusKey ?>" <?= (($filters['cohort_status'] ?? '') === $statusKey) ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-12 col-lg-4">
@@ -218,6 +217,9 @@ $spanishMonths = [
                             $mn = substr($displayValue, 5, 2);
                             $yr = substr($displayValue, 0, 4);
                             $displayValue = ($spanishMonths[$mn] ?? $mn) . ' ' . $yr;
+                        }
+                        if ($key === 'cohort_status') {
+                            $displayValue = \App\Services\CohortStatus::label($displayValue);
                         }
                         $filterLabels = [
                             'search'          => 'Busqueda',
