@@ -1,4 +1,4 @@
-﻿<!-- User Create View (Admin) -->
+<!-- User Create View (Admin) -->
 <?php use App\Core\Auth; ?>
 
 <?php if ($msg = Auth::getFlash('error')): ?>

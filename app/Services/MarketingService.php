@@ -20,10 +20,10 @@ class MarketingService
         'strategy'      => 'Estrategia',
         'content'       => 'Contenido',
         'ads'           => 'Paid Ads',
-        'organic'       => 'OrgÃ¡nico',
+        'organic'       => 'Orgánico',
         'events'        => 'Eventos',
         'partnerships'  => 'Partnerships',
-        'analytics'     => 'AnalÃ­tica',
+        'analytics'     => 'Analítica',
     ];
 
     public const STATUS_LABELS = [
@@ -59,10 +59,10 @@ class MarketingService
         $validStatuses = ['active', 'completed'];
 
         if (!in_array($stageName, $validStages, true)) {
-            throw new \InvalidArgumentException('Etapa de marketing no vÃ¡lida.');
+            throw new \InvalidArgumentException('Etapa de marketing no válida.');
         }
         if (!in_array($status, $validStatuses, true)) {
-            throw new \InvalidArgumentException('Estado no vÃ¡lido.');
+            throw new \InvalidArgumentException('Estado no válido.');
         }
         // Get old state for audit
         $old = $this->stageRepo->findByCohort($cohortId);

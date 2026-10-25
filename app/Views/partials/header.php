@@ -1,4 +1,4 @@
-﻿<!-- Top Header Bar -->
+<!-- Top Header Bar -->
 <?php use App\Core\Auth; ?>
 <?php
     $roleBadges = [

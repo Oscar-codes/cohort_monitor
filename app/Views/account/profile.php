@@ -1,4 +1,4 @@
-﻿<!-- Account Profile View -->
+<!-- Account Profile View -->
 <?php
 use App\Core\Auth;
 

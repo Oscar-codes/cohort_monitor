@@ -1,4 +1,4 @@
-﻿<!-- Cohorts Import View â€” Upload Form + Results -->
+<!-- Cohorts Import View — Upload Form + Results -->
 <?php use App\Core\Auth; ?>
 
 <?php if (!empty($error)): ?>
@@ -43,7 +43,7 @@
 </section>
 
 <?php if (empty($summary)): ?>
-<!-- â”€â”€â”€ UPLOAD FORM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ─── UPLOAD FORM ─────────────────────────────────────────── -->
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <!-- Instructions Card -->
@@ -62,7 +62,7 @@
                         </h6>
                         <ul class="list-unstyled small text-muted mb-0">
                             <li class="mb-1"><i class="bi bi-check text-success me-1"></i> Formatos: <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.csv</strong></li>
-                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i> TamaÃ±o mÃ¡ximo: <strong>5 MB</strong></li>
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i> Tamaño máximo: <strong>5 MB</strong></li>
                             <li class="mb-1"><i class="bi bi-check text-success me-1"></i> La primera fila debe ser el encabezado</li>
                             <li><i class="bi bi-check text-success me-1"></i> Fechas en formato <strong>YYYY-MM-DD</strong></li>
                         </ul>
@@ -72,15 +72,15 @@
                             <i class="bi bi-2-circle me-1"></i> Columnas Requeridas
                         </h6>
                         <ul class="list-unstyled small text-muted mb-0">
-                            <li class="mb-1"><code>name</code> â€” Nombre del cohort <span class="text-danger">*</span></li>
-                            <li class="mb-1"><code>area</code> â€” Academic | Marketing | Admissions</li>
-                            <li class="mb-1"><code>type</code> â€” Tipo de cohorte</li>
-                            <li class="mb-1"><code>project</code> â€” Proyecto relacionado</li>
-                            <li class="mb-1"><code>start_date</code> â€” Fecha inicio <span class="text-danger">*</span></li>
-                            <li class="mb-1"><code>end_date</code> â€” Fecha fin <span class="text-danger">*</span></li>
+                            <li class="mb-1"><code>name</code> — Nombre del cohort <span class="text-danger">*</span></li>
+                            <li class="mb-1"><code>area</code> — Academic | Marketing | Admissions</li>
+                            <li class="mb-1"><code>type</code> — Tipo de cohorte</li>
+                            <li class="mb-1"><code>project</code> — Proyecto relacionado</li>
+                            <li class="mb-1"><code>start_date</code> — Fecha inicio <span class="text-danger">*</span></li>
+                            <li class="mb-1"><code>end_date</code> — Fecha fin <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>meta_total</code>, <code>meta_b2b</code>, <code>admissions_b2c</code></li>
                             <li class="mb-1"><code>status</code> — No iniciado | En progreso | Completado | Cancelado | Sin fechas (solo Cancelado se aplica; el resto se calcula por las fechas)</li>
-                            <li><code>at_risk</code> â€” SÃ­ / No</li>
+                            <li><code>at_risk</code> — Sí / No</li>
                         </ul>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                         <div class="upload-zone-icon mb-3">
                             <i class="bi bi-cloud-arrow-up"></i>
                         </div>
-                        <h6 class="fw-semibold mb-1">Arrastra tu archivo aquÃ­</h6>
+                        <h6 class="fw-semibold mb-1">Arrastra tu archivo aquí</h6>
                         <p class="text-muted small mb-3">o haz clic para seleccionar</p>
 
                         <input type="file" class="d-none" id="importFile" name="import_file"
@@ -139,7 +139,7 @@
 </div>
 
 <?php else: ?>
-<!-- â”€â”€â”€ IMPORT RESULTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ─── IMPORT RESULTS ──────────────────────────────────────── -->
 <?php $s = $summary; ?>
 
 <!-- Summary Cards -->
@@ -187,7 +187,7 @@
     <div class="alert alert-success d-flex align-items-center" role="alert">
         <i class="bi bi-check-circle-fill me-2 fs-5"></i>
         <div>
-            <strong>ImportaciÃ³n completada.</strong>
+            <strong>Importación completada.</strong>
             Se insertaron <strong><?= $s['inserted_ok'] ?></strong> cohorte(s) correctamente.
             <?php if ($s['failed'] > 0): ?>
                 <span class="text-danger">(<?= $s['failed'] ?> fila(s) con errores)</span>
