@@ -38,6 +38,14 @@
     $admissionPct       = min(100, (float) ($admissionPct ?? 0));
     // DATA-003: cut-off date = El Salvador business date (same "today" as CohortStatus).
     $cutoffLabel        = date('d/m/Y', strtotime((string) ($cutoffDate ?? CohortStatus::today())));
+    // DASH-004: "Completado" card = completed with end_date in the current year.
+    $closedYear         = (string) ($closedYear ?? substr(CohortStatus::today(), 0, 4));
+    $closedThisYear     = (int) ($closedThisYear ?? 0);
+    // DASH-012: starts in (today, today + N]; the link uses the same filter.
+    $upcomingDays       = (int) ($upcomingDays ?? 30);
+    $upcomingCount      = (int) ($upcomingCount ?? 0);
+    $upcomingUntilLabel = date('d/m/Y', strtotime((string) ($upcomingUntil ?? CohortStatus::todayPlus($upcomingDays))));
+    $monthsEs           = [1 => 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     $remainingTarget    = max(0, $totalTarget - $totalAdmissions);
     $riskCommentCount   = count($riskComments ?? []);
     $riskStageCount     = count($atRiskStages ?? []);
@@ -135,12 +143,12 @@
                 <span class="metric-card__icon"><i class="bi bi-play-circle-fill"></i></span>
                 <div>
                     <p class="metric-card__label">En progreso</p>
-                    <h3 class="metric-card__value"><?= number_format($activeCohorts) ?></h3>
+                    <h3 class="metric-card__value" data-dashboard-card="in_progress"><?= number_format($activeCohorts) ?></h3>
                 </div>
             </div>
             <div id="kpiActiveSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
             <div class="metric-card__footer">
-                <span>Operacion activa</span>
+                <span>Corte <?= $cutoffLabel ?></span>
                 <a href="/cohorts?cohort_status=in_progress">Ver cohortes</a>
             </div>
         </article>
@@ -151,13 +159,13 @@
                 <span class="metric-card__icon"><i class="bi bi-check-circle-fill"></i></span>
                 <div>
                     <p class="metric-card__label">Completado</p>
-                    <h3 class="metric-card__value"><?= number_format($completedCohorts) ?></h3>
+                    <h3 class="metric-card__value" data-dashboard-card="closed_year"><?= number_format($closedThisYear) ?></h3>
                 </div>
             </div>
             <div id="kpiCompletedSparkline" class="metric-card__sparkline" aria-hidden="true"></div>
             <div class="metric-card__footer">
-                <span>Ciclos cerrados</span>
-                <a href="/cohorts?cohort_status=completed">Ver historial</a>
+                <span>Cerradas en <?= htmlspecialchars($closedYear) ?></span>
+                <a href="/cohorts?closed_year=<?= urlencode($closedYear) ?>">Ver historial</a>
             </div>
         </article>
     </div>
@@ -321,22 +329,23 @@
             <div class="kodigo-card__header">
                 <div>
                     <h3 class="kodigo-card__title"><i class="bi bi-calendar-event text-primary"></i> Proximos inicios</h3>
-                    <p class="kodigo-card__subtitle">Cohortes que inician en los proximos 30 dias.</p>
+                    <p class="kodigo-card__subtitle"><span data-dashboard-card="upcoming"><?= number_format($upcomingCount) ?></span> cohortes inician despues de hoy y hasta el <?= $upcomingUntilLabel ?>.</p>
                 </div>
-                <a href="/cohorts?cohort_status=planned" class="btn btn-sm btn-outline-primary">Ver agenda</a>
+                <a href="/cohorts?upcoming_days=<?= $upcomingDays ?>" class="btn btn-sm btn-outline-primary">Ver agenda</a>
             </div>
             <div class="kodigo-card__body">
                 <?php if (!empty($upcomingCohorts)): ?>
                 <div class="dashboard-upcoming-list">
                     <?php foreach (array_slice($upcomingCohorts, 0, 5) as $uc): ?>
                     <?php
+                        // Days left against the El Salvador business date (same "today" as the rule).
                         $startTs = strtotime($uc['start_date']);
-                        $daysLeft = $startTs ? max(0, (int) ceil(($startTs - strtotime('today')) / 86400)) : null;
+                        $daysLeft = $startTs ? (new DateTimeImmutable(CohortStatus::today()))->diff(new DateTimeImmutable(substr((string) $uc['start_date'], 0, 10)))->days : null;
                     ?>
-                    <a href="/cohorts/<?= (int) $uc['id'] ?>" class="dashboard-upcoming-item">
+                    <a href="/cohorts/<?= (int) $uc['id'] ?>" class="dashboard-upcoming-item" data-upcoming-code="<?= htmlspecialchars($uc['cohort_code']) ?>">
                         <span class="dashboard-date-chip">
                             <strong><?= $startTs ? date('d', $startTs) : '--' ?></strong>
-                            <small><?= $startTs ? date('M', $startTs) : '--' ?></small>
+                            <small><?= $startTs ? $monthsEs[(int) date('n', $startTs)] : '--' ?></small>
                         </span>
                         <span class="dashboard-upcoming-main">
                             <strong><?= htmlspecialchars($uc['cohort_code']) ?></strong>
@@ -478,7 +487,7 @@
     <ul>
         <li>Total cohortes: <?= number_format($totalCohorts) ?></li>
         <li>En progreso: <?= number_format($activeCohorts) ?></li>
-        <li>Completado: <?= number_format($completedCohorts) ?></li>
+        <li>Completado (cerradas en <?= htmlspecialchars($closedYear) ?>): <?= number_format($closedThisYear) ?></li>
         <li>Alertas activas: <?= number_format($totalAlerts) ?></li>
         <li>Inscritos B2B: <?= number_format($totalB2bAdmissions) ?></li>
         <li>Inscritos B2C: <?= number_format($totalB2cAdmissions) ?></li>

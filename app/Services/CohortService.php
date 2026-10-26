@@ -535,6 +535,8 @@ class CohortService
             'year'            => null,
             'target_min'      => null,
             'target_max'      => null,
+            'closed_year'     => null,
+            'upcoming_days'   => null,
         ];
 
         if (!empty($filters['search'])) {
@@ -605,6 +607,14 @@ class CohortService
         // DATA-001: the filter matches the derived status (CohortStatus keys).
         if (!empty($filters['cohort_status']) && CohortStatus::isValid((string) $filters['cohort_status'])) {
             $normalized['cohort_status'] = (string) $filters['cohort_status'];
+        }
+
+        // DASH-004 / DASH-012: Dashboard link filters, independent of the date range.
+        if (!empty($filters['closed_year']) && CohortRepository::isValidClosedYear((string) $filters['closed_year'])) {
+            $normalized['closed_year'] = (string) $filters['closed_year'];
+        }
+        if (!empty($filters['upcoming_days']) && CohortRepository::isValidUpcomingDays((string) $filters['upcoming_days'])) {
+            $normalized['upcoming_days'] = (string) (int) $filters['upcoming_days'];
         }
 
         return $normalized;

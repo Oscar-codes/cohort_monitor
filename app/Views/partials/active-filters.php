@@ -17,10 +17,13 @@ $chipLabels = [
     'end_date'        => 'Hasta',
     'business_model'  => 'Población',
     'cohort_status'   => 'Estado',
+    'closed_year'     => 'Cerradas en',
+    'upcoming_days'   => 'Inician en',
 ];
 $chipValueFor = static function (string $key, string $value): string {
     return match ($key) {
         'cohort_status'  => \App\Services\CohortStatus::label($value),
+        'upcoming_days'  => 'próximos ' . (int) $value . ' días',
         'business_model' => strtoupper($value),
         default          => $value,
     };

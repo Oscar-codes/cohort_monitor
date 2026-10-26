@@ -360,6 +360,11 @@ foreach ($statusConfig as $statusKey => $cfg) {
     </div>
     <div class="kodigo-card__body">
         <form method="GET" action="/cohorts" class="row g-3">
+            <?php foreach (['closed_year', 'upcoming_days'] as $windowKey): ?>
+                <?php if (($filters[$windowKey] ?? '') !== ''): ?>
+                <input type="hidden" name="<?= $windowKey ?>" value="<?= htmlspecialchars((string) $filters[$windowKey]) ?>">
+                <?php endif; ?>
+            <?php endforeach; ?>
             <div class="col-12 col-xl-4">
                 <label for="search" class="form-label">Busqueda</label>
                 <div class="input-group">

@@ -159,6 +159,51 @@ final class CohortStatus
         return $status === self::NO_DATES ? self::NOT_STARTED : $status;
     }
 
+    /**
+     * Training progress by dates (DET-001), same "today" as the status rule:
+     * 0 if today <= start, 100 if today >= end, otherwise elapsed / total days
+     * rounded to 1 decimal. Null when start or end is missing.
+     */
+    public static function trainingProgress(?string $startDate, ?string $endDate, ?string $today = null): ?float
+    {
+        $start = self::dateOnly($startDate);
+        $end = self::dateOnly($endDate);
+        if ($start === null || $end === null) {
+            return null;
+        }
+
+        $today ??= self::today();
+        if ($today <= $start) {
+            return 0.0;
+        }
+        if ($today >= $end) {
+            return 100.0;
+        }
+
+        $startDay = new DateTimeImmutable($start);
+        $elapsed = $startDay->diff(new DateTimeImmutable($today))->days;
+        $total = $startDay->diff(new DateTimeImmutable($end))->days;
+
+        return round($elapsed / $total * 100, 1);
+    }
+
+    /** trainingProgress() as shown in Detalle: "9.4 %", "Sin fecha de fin" or "Sin fechas". */
+    public static function trainingProgressLabel(?string $startDate, ?string $endDate, ?string $today = null): string
+    {
+        if (self::dateOnly($startDate) === null) {
+            return 'Sin fechas';
+        }
+        $progress = self::trainingProgress($startDate, $endDate, $today);
+
+        return $progress === null ? 'Sin fecha de fin' : number_format($progress, 1, '.', '') . ' %';
+    }
+
+    /** today() + $days as Y-m-d (windows such as "next 30 days"). */
+    public static function todayPlus(int $days, ?string $today = null): string
+    {
+        return (new DateTimeImmutable($today ?? self::today()))->modify(sprintf('%+d days', $days))->format('Y-m-d');
+    }
+
     public static function label(?string $status): string
     {
         return self::LABELS[$status ?? ''] ?? '—';

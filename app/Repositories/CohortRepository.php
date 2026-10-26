@@ -308,16 +308,22 @@ class CohortRepository
         ];
     }
 
+    /**
+     * DASH-012: cohorts starting in (today, today + $days], cancelled excluded.
+     * Same filter as /cohorts?upcoming_days=N, so the list and its link agree.
+     */
     public function findUpcoming(int $days = 30, int $limit = 10): array
     {
+        [$where, $params] = $this->buildFilters(['upcoming_days' => $days]);
+        if ($where === []) {
+            return [];
+        }
+
         return $this->db->query(
-            $this->baseSelect() . '
-             WHERE c.start_date IS NOT NULL
-               AND c.start_date >= CURDATE()
-               AND c.start_date <= DATE_ADD(CURDATE(), INTERVAL :days DAY)
-             ORDER BY c.start_date ASC
+            $this->baseSelect() . ' WHERE ' . implode(' AND ', $where) . '
+             ORDER BY c.start_date ASC, c.cohort_code ASC
              LIMIT ' . (int) $limit,
-            ['days' => $days]
+            $params
         );
     }
 
@@ -554,7 +560,34 @@ class CohortRepository
             $params['cohort_status'] = $filters['cohort_status'];
         }
 
+        // DASH-004: "Completado" with end_date inside the calendar year.
+        // Independent of the start_date / end_date range filter.
+        if (!empty($filters['closed_year']) && self::isValidClosedYear((string) $filters['closed_year'])) {
+            $where[] = CohortStatus::sqlCase('c') . " = 'completed'";
+            $where[] = 'c.end_date >= :closed_from AND c.end_date <= :closed_to';
+            $params['closed_from'] = $filters['closed_year'] . '-01-01';
+            $params['closed_to'] = $filters['closed_year'] . '-12-31';
+        }
+
+        // DASH-012: start_date in (today, today + N]; "No iniciado" already
+        // means start_date > today and not cancelled.
+        if (!empty($filters['upcoming_days']) && self::isValidUpcomingDays((string) $filters['upcoming_days'])) {
+            $where[] = CohortStatus::sqlCase('c') . " = 'not_started'";
+            $where[] = 'c.start_date <= :upcoming_to';
+            $params['upcoming_to'] = CohortStatus::todayPlus((int) $filters['upcoming_days']);
+        }
+
         return [$where, $params];
+    }
+
+    public static function isValidClosedYear(string $value): bool
+    {
+        return preg_match('/^(19|20)\d{2}$/', $value) === 1;
+    }
+
+    public static function isValidUpcomingDays(string $value): bool
+    {
+        return preg_match('/^\d{1,3}$/', $value) === 1 && (int) $value >= 1 && (int) $value <= 365;
     }
 
     private function escapeLike(string $value): string

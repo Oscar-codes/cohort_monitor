@@ -145,6 +145,11 @@ if (!function_exists('masterStatusTone')) {
     </div>
     <div class="kodigo-card__body">
         <form method="GET" action="/cohorts/master" class="row g-3">
+        <?php foreach (['closed_year', 'upcoming_days'] as $windowKey): ?>
+            <?php if (($filters[$windowKey] ?? '') !== ''): ?>
+            <input type="hidden" name="<?= $windowKey ?>" value="<?= htmlspecialchars((string) $filters[$windowKey]) ?>">
+            <?php endif; ?>
+        <?php endforeach; ?>
         <div class="col-12 col-xl-4">
             <label for="search" class="form-label">Busqueda</label>
             <input type="search" class="form-control" id="search" name="search" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>" placeholder="Codigo, cohorte, coach, proyecto...">

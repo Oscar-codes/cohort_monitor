@@ -12,6 +12,9 @@ use App\Repositories\CommentRepository;
  */
 class DashboardService
 {
+    /** "Próximos inicios" window in days (DASH-012). */
+    public const UPCOMING_DAYS = 30;
+
     private CohortRepository  $cohortRepo;
     private CommentRepository $commentRepo;
     private MarketingService  $marketingService;
@@ -44,8 +47,15 @@ class DashboardService
         $atRiskStages = $this->marketingService->getAtRiskStages(5);
         $totalAlerts  = $this->commentRepo->countAllRisks() + $this->marketingService->countAtRiskStages();
 
-        // Upcoming cohorts (next 30 days) — dedicated query with LIMIT
-        $upcoming = $this->cohortRepo->findUpcoming(30, 10);
+        // DASH-012: upcoming starts in (today, today + 30]; the count uses the
+        // same filter as the "Ver agenda" link (/cohorts?upcoming_days=30).
+        $upcoming      = $this->cohortRepo->findUpcoming(self::UPCOMING_DAYS, 10);
+        $upcomingCount = $this->cohortRepo->getTotals(['upcoming_days' => self::UPCOMING_DAYS])['cohorts'];
+
+        // DASH-004: completed cohorts whose end_date falls in the current year,
+        // same filter as the "Ver historial" link (/cohorts?closed_year=YYYY).
+        $closedYear      = substr(CohortStatus::today(), 0, 4);
+        $closedThisYear  = $this->cohortRepo->getTotals(['closed_year' => $closedYear])['cohorts'];
 
         // Recent 5 cohorts
         $recentCohorts = $this->cohortRepo->findFirst(5);
@@ -83,6 +93,11 @@ class DashboardService
             'riskComments'      => $riskComments,
             'atRiskStages'      => $atRiskStages,
             'upcomingCohorts'   => $upcoming,
+            'upcomingCount'     => $upcomingCount,
+            'upcomingDays'      => self::UPCOMING_DAYS,
+            'upcomingUntil'     => CohortStatus::todayPlus(self::UPCOMING_DAYS),
+            'closedYear'        => $closedYear,
+            'closedThisYear'    => $closedThisYear,
             'recentCohorts'     => $recentCohorts,
             'byType'            => $byType,
             'statusBreakdown'   => $statusBreakdown,

@@ -51,15 +51,11 @@ $targetRevenue = max(0.0, (float) ($cohort['financial_target_revenue'] ?? 0));
 $actualRevenue = max(0.0, (float) ($cohort['financial_actual_revenue'] ?? 0));
 $revenuePct = $targetRevenue > 0 ? min(100, (int) round(($actualRevenue / $targetRevenue) * 100)) : 0;
 
-$trainingProgressPct = 0;
-if (!empty($cohort['start_date']) && !empty($cohort['end_date'])) {
-    $startTs = strtotime((string) $cohort['start_date']);
-    $endTs = strtotime((string) $cohort['end_date']);
-    $todayTs = strtotime(date('Y-m-d'));
-    $duration = max(1, (int) floor(($endTs - $startTs) / 86400));
-    $elapsed = max(0, min($duration, (int) floor(($todayTs - $startTs) / 86400)));
-    $trainingProgressPct = (int) round(($elapsed / $duration) * 100);
-}
+// DET-001: progress by dates in the status layer, recalculated on every request.
+$trainingProgressLabel = \App\Services\CohortStatus::trainingProgressLabel(
+    $cohort['start_date'] ?? null,
+    $cohort['end_date'] ?? null,
+);
 
 $classDaysLabel = trim((string) ($cohort['class_days'] ?? ''));
 $classDaysLabel = $classDaysLabel !== '' ? $classDaysLabel : 'Sin definir';
@@ -208,7 +204,7 @@ $workflowActionMap = [
         <span class="cohort-detail-kpi__icon is-success"><i class="bi bi-calendar-check"></i></span>
         <div>
             <p>Progreso training</p>
-            <strong><?= $trainingProgressPct ?>%</strong>
+            <strong data-training-progress><?= htmlspecialchars($trainingProgressLabel) ?></strong>
             <small><?= htmlspecialchars($classDaysLabel) ?> | <?= htmlspecialchars($classTimeLabel) ?></small>
         </div>
     </article>

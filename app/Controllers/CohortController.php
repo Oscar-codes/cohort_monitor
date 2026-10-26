@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Auth;
+use App\Repositories\CohortRepository;
 use App\Services\CohortService;
 use App\Services\CohortStatus;
 use App\Services\AlertService;
@@ -45,7 +46,7 @@ class CohortController extends Controller
             'end_date'        => (string) $this->input('end_date', ''),
             'business_model'  => (string) $this->input('business_model', ''),
             'cohort_status'   => (string) $this->input('cohort_status', ''),
-        ];
+        ] + $this->windowFilters();
 
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
         $bootcampTypes = $this->cohortService->getBootcampTypes();
@@ -90,7 +91,7 @@ class CohortController extends Controller
             'end_date'        => (string) $this->input('end_date', ''),
             'business_model'  => (string) $this->input('business_model', ''),
             'cohort_status'   => (string) $this->input('cohort_status', ''),
-        ];
+        ] + $this->windowFilters();
 
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
         $bootcampTypes = $this->cohortService->getBootcampTypes();
@@ -348,6 +349,21 @@ class CohortController extends Controller
         return $prefs;
     }
 
+    /**
+     * Dashboard link filters (DASH-004 closed_year, DASH-012 upcoming_days).
+     * Invalid values become '' so they never show up as an active chip.
+     */
+    private function windowFilters(): array
+    {
+        $closedYear = trim((string) $this->input('closed_year', ''));
+        $upcomingDays = trim((string) $this->input('upcoming_days', ''));
+
+        return [
+            'closed_year'   => CohortRepository::isValidClosedYear($closedYear) ? $closedYear : '',
+            'upcoming_days' => CohortRepository::isValidUpcomingDays($upcomingDays) ? (string) (int) $upcomingDays : '',
+        ];
+    }
+
     private function sanitizeTopN(mixed $value): int
     {
         $allowed = [5, 10, 15];
@@ -399,7 +415,7 @@ class CohortController extends Controller
             'end_date'        => (string) $this->input('end_date', ''),
             'business_model'  => (string) $this->input('business_model', ''),
             'cohort_status'   => (string) $this->input('cohort_status', ''),
-        ];
+        ] + $this->windowFilters();
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
 
         header('Content-Type: text/csv; charset=UTF-8');
@@ -464,7 +480,7 @@ class CohortController extends Controller
             'end_date'        => (string) $this->input('end_date', ''),
             'business_model'  => (string) $this->input('business_model', ''),
             'cohort_status'   => (string) $this->input('cohort_status', ''),
-        ];
+        ] + $this->windowFilters();
         $cohorts = $this->cohortService->getFilteredCohorts($filters);
 
         $spreadsheet = new Spreadsheet();
