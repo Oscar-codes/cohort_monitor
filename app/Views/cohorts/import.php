@@ -75,7 +75,7 @@
                             <li class="mb-1"><code>name</code> — Nombre del cohort <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>area</code> — Academic | Marketing | Admissions</li>
                             <li class="mb-1"><code>type</code> — Tipo de cohorte</li>
-                            <li class="mb-1"><code>project</code> — Proyecto relacionado</li>
+                            <li class="mb-1"><code>project</code> — Proyecto relacionado <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>start_date</code> — Fecha inicio <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>end_date</code> — Fecha fin <span class="text-danger">*</span></li>
                             <li class="mb-1"><code>meta_total</code>, <code>meta_b2b</code>, <code>admissions_b2c</code></li>

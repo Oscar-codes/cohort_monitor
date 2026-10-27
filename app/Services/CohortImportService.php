@@ -67,8 +67,8 @@ class CohortImportService
         'en_riesgo'      => 'at_risk',
     ];
 
-    /** Required DB fields (must be present after mapping) */
-    public const REQUIRED_FIELDS = ['name', 'start_date', 'end_date'];
+    /** Required DB fields (must be present after mapping); DATA-002: same list as the form */
+    public const REQUIRED_FIELDS = ['name', 'related_project', 'start_date', 'end_date'];
 
     /** Valid area values */
     public const VALID_AREAS = ['academic', 'marketing', 'admissions'];
@@ -346,9 +346,14 @@ class CohortImportService
     {
         $errors = [];
 
-        // Required: name
-        if (empty($data['name'])) {
-            $errors[] = ['row' => $rowNumber, 'field' => 'name', 'message' => 'El nombre es obligatorio.'];
+        // Required values (DATA-002): name, project, start and end date
+        $missing = CohortService::missingRequiredFields($data);
+        if ($missing !== []) {
+            $errors[] = [
+                'row'     => $rowNumber,
+                'field'   => implode(', ', array_keys($missing)),
+                'message' => 'Faltan campos obligatorios: ' . implode(', ', $missing) . '.',
+            ];
         }
 
         // Validate dates

@@ -25,6 +25,18 @@ class CohortService
     /** Single label set (DATA-001); kept here for existing callers. */
     public const STATUS_LABELS = CohortStatus::LABELS;
 
+    /**
+     * DATA-002: fields a cohort must have when it is created, edited by admin
+     * or imported (field => label for the error message). bootcamp_type is
+     * left out until the official bootcamp list exists.
+     */
+    public const REQUIRED_FIELDS = [
+        'name'            => 'nombre',
+        'related_project' => 'proyecto',
+        'start_date'      => 'fecha de inicio',
+        'end_date'        => 'fecha de fin',
+    ];
+
     /** Reactivating a cancelled cohort: its status goes back to the date rule. */
     public const ACTION_REACTIVATE = 'reactivate';
 
@@ -183,6 +195,7 @@ class CohortService
     {
         $data = $this->normalizeCohortData($data);
         $data['training_status'] = self::STATUS_NOT_STARTED;
+        $this->assertRequiredFields($data);
         $this->validate($data);
         return $this->cohortRepo->create($data);
     }
@@ -212,6 +225,17 @@ class CohortService
         // Validate only the fields that are being updated
         $data = $this->normalizeCohortData($data);
         $this->validatePartial($data);
+
+        // DATA-002: an edit that sends a required field (the admin form) must
+        // leave the cohort complete. Limited roles never send them. Cancelled
+        // cohorts are exempt, except the name (NOT NULL in the table).
+        if ($old !== null && array_intersect_key($data, self::REQUIRED_FIELDS) !== []) {
+            $fields = $this->effectiveTrainingStatus($old) === CohortStatus::CANCELLED
+                ? array_intersect_key(self::REQUIRED_FIELDS, ['name' => true])
+                : self::REQUIRED_FIELDS;
+            $this->assertRequiredFields(array_merge($old, $data), $fields);
+        }
+
         $updated = $this->cohortRepo->updatePartial($id, $data);
 
         if ($updated && $old !== null) {
@@ -627,22 +651,44 @@ class CohortService
         }
     }
 
-    private function assertPlanningDataReadyForPlanned(array $cohort): void
+    /**
+     * Labels of the required fields that are empty in $row, keyed by field
+     * (DATA-002). Shared with CohortImportService.
+     *
+     * @param array<string, string>|null $fields field => label, default REQUIRED_FIELDS
+     * @return array<string, string>
+     */
+    public static function missingRequiredFields(array $row, ?array $fields = null): array
     {
-        $requiredFields = [
-            'start_date' => 'fecha de inicio',
-            'end_date' => 'fecha de fin',
-            'assigned_coach' => 'coach asignado',
-            'assigned_class_schedule' => 'horario asignado',
-        ];
-
         $missing = [];
-        foreach ($requiredFields as $field => $label) {
-            $value = trim((string) ($cohort[$field] ?? ''));
-            if ($value === '') {
-                $missing[] = $label;
+        foreach ($fields ?? self::REQUIRED_FIELDS as $field => $label) {
+            if (trim((string) ($row[$field] ?? '')) === '') {
+                $missing[$field] = $label;
             }
         }
+
+        return $missing;
+    }
+
+    /**
+     * @param array<string, string>|null $fields field => label, default REQUIRED_FIELDS
+     * @throws \InvalidArgumentException listing only the missing fields
+     */
+    private function assertRequiredFields(array $row, ?array $fields = null): void
+    {
+        $missing = self::missingRequiredFields($row, $fields);
+        if ($missing !== []) {
+            throw new \InvalidArgumentException('Faltan campos obligatorios: ' . implode(', ', $missing) . '.');
+        }
+    }
+
+    private function assertPlanningDataReadyForPlanned(array $cohort): void
+    {
+        // DATA-002: everything required to create the cohort, plus planning data.
+        $missing = self::missingRequiredFields($cohort, self::REQUIRED_FIELDS + [
+            'assigned_coach' => 'coach asignado',
+            'assigned_class_schedule' => 'horario asignado',
+        ]);
 
         if ($missing !== []) {
             throw new \InvalidArgumentException('Antes de reactivar la cohorte debes completar: ' . implode(', ', $missing) . '.');

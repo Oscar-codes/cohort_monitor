@@ -79,6 +79,7 @@
                                        min="0" value="0">
                             </div>
                         </div>
+                        <?php require APP_ROOT . '/app/Views/partials/admissions-source-help.php'; ?>
                         <div class="row g-3 mt-1">
                             <div class="col-sm-6 col-md-4">
                                 <label for="admission_deadline_date" class="form-label">Límite Admisión</label>
@@ -121,12 +122,14 @@
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-sm-6">
-                                <label for="start_date" class="form-label">Fecha de Inicio</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date">
+                                <label for="start_date" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                <div class="invalid-feedback">La fecha de inicio es requerida.</div>
                             </div>
                             <div class="col-sm-6">
-                                <label for="end_date" class="form-label">Fecha de Fin</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date">
+                                <label for="end_date" class="form-label">Fecha de Fin <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                <div class="invalid-feedback">La fecha de fin es requerida.</div>
                             </div>
                         </div>
                         <div class="alert alert-light border small mb-0">
@@ -142,9 +145,10 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="related_project" class="form-label">Proyecto Relacionado</label>
-                                <input type="text" class="form-control" id="related_project" name="related_project"
+                                <label for="related_project" class="form-label">Proyecto Relacionado <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="related_project" name="related_project" required
                                        placeholder="ej. Proyecto Formación Tech 2026">
+                                <div class="invalid-feedback">El proyecto es requerido.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="assigned_coach" class="form-label">Coach Asignado</label>

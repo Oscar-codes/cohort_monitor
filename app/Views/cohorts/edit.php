@@ -22,6 +22,11 @@ if (!$isMarketingBlocked) {
     $disabled   = fn(string $field): string => $canEdit($field) ? '' : 'disabled readonly';
     $fieldClass = fn(string $field): string => $canEdit($field) ? 'form-control' : 'form-control bg-light text-muted';
 }
+
+// DATA-002: project and dates are required for whoever can edit them, except
+// on cancelled cohorts (same rule as CohortService::updateCohortPartial).
+$isCancelledCohort = \App\Services\CohortStatus::forRow($cohort) === \App\Services\CohortStatus::CANCELLED;
+$isRequired = fn(string $field): bool => $canEdit($field) && !$isCancelledCohort;
 ?>
 
 <?php if ($isMarketingBlocked): ?>
@@ -225,6 +230,7 @@ if (!$isMarketingBlocked) {
                                        value="<?= htmlspecialchars((string) ($cohort['incaf_b2c'] ?? '')) ?>">
                             </div>
                         </div>
+                        <?php require APP_ROOT . '/app/Views/partials/admissions-source-help.php'; ?>
                         <div class="row g-3 mt-1">
                             <div class="col-sm-6 col-md-4">
                                 <label for="admission_deadline_date" class="form-label">Límite Admisión</label>
@@ -300,16 +306,30 @@ if (!$isMarketingBlocked) {
                         </div>
                         <div class="row g-3 mb-3">
                             <div class="col-sm-6">
-                                <label for="start_date" class="form-label">Fecha de Inicio</label>
+                                <label for="start_date" class="form-label">
+                                    Fecha de Inicio
+                                    <?php if ($isRequired('start_date')): ?><span class="text-danger">*</span><?php endif; ?>
+                                </label>
                                 <input type="date" class="<?= $fieldClass('start_date') ?>" id="start_date" name="start_date"
+                                       <?= $isRequired('start_date') ? 'required' : '' ?>
                                        <?= $disabled('start_date') ?>
                                        value="<?= htmlspecialchars($cohort['start_date'] ?? '') ?>">
+                                <?php if ($isRequired('start_date')): ?>
+                                <div class="invalid-feedback">La fecha de inicio es requerida.</div>
+                                <?php endif; ?>
                             </div>
                             <div class="col-sm-6">
-                                <label for="end_date" class="form-label">Fecha de Fin</label>
+                                <label for="end_date" class="form-label">
+                                    Fecha de Fin
+                                    <?php if ($isRequired('end_date')): ?><span class="text-danger">*</span><?php endif; ?>
+                                </label>
                                 <input type="date" class="<?= $fieldClass('end_date') ?>" id="end_date" name="end_date"
+                                       <?= $isRequired('end_date') ? 'required' : '' ?>
                                        <?= $disabled('end_date') ?>
                                        value="<?= htmlspecialchars($cohort['end_date'] ?? '') ?>">
+                                <?php if ($isRequired('end_date')): ?>
+                                <div class="invalid-feedback">La fecha de fin es requerida.</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php if (!empty($cohort['training_date_50']) || !empty($cohort['training_date_75'])): ?>
@@ -336,10 +356,17 @@ if (!$isMarketingBlocked) {
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="related_project" class="form-label">Proyecto Relacionado</label>
+                                <label for="related_project" class="form-label">
+                                    Proyecto Relacionado
+                                    <?php if ($isRequired('related_project')): ?><span class="text-danger">*</span><?php endif; ?>
+                                </label>
                                 <input type="text" class="<?= $fieldClass('related_project') ?>" id="related_project" name="related_project"
+                                       <?= $isRequired('related_project') ? 'required' : '' ?>
                                        <?= $disabled('related_project') ?>
                                        value="<?= htmlspecialchars($cohort['related_project'] ?? '') ?>">
+                                <?php if ($isRequired('related_project')): ?>
+                                <div class="invalid-feedback">El proyecto es requerido.</div>
+                                <?php endif; ?>
                             </div>
                             <div class="col-md-6">
                                 <label for="assigned_coach" class="form-label">Coach Asignado</label>

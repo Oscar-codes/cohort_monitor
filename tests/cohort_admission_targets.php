@@ -62,7 +62,7 @@ App\Core\SafeLog::$disabled = true;
 
 $service = new App\Services\CohortService();
 $repo = new App\Repositories\CohortRepository();
-$base = ['name' => 'Cohorte prueba', 'start_date' => '2026-01-10', 'end_date' => '2026-03-10'];
+$base = ['name' => 'Cohorte prueba', 'related_project' => 'KODIGO', 'start_date' => '2026-01-10', 'end_date' => '2026-03-10'];
 $targets = static function (int $id) use ($repo): array {
     $row = $repo->findById($id);
     return [(int) $row['total_admission_target'], (int) $row['b2b_admission_target'], (int) $row['b2b_admissions']];
@@ -91,7 +91,7 @@ check($targets($okId) === [30, 12, 5], 'Edit back to a regular cohort must be sa
 $import = (new ReflectionClass(App\Services\CohortImportService::class))->newInstanceWithoutConstructor();
 $validateRow = new ReflectionMethod($import, 'validateRow');
 $normalizeRow = new ReflectionMethod($import, 'normalizeRow');
-$importRow = ['name' => 'Import', 'start_date' => '2026-01-10', 'end_date' => '2026-03-10',
+$importRow = ['name' => 'Import', 'related_project' => 'KODIGO', 'start_date' => '2026-01-10', 'end_date' => '2026-03-10',
               'total_admission_target' => '15', 'b2b_admission_target' => '16', 'b2c_admissions' => '20'];
 check($validateRow->invoke($import, $importRow, 2) === [], 'Import must accept b2b target > total target');
 check($validateRow->invoke($import, ['total_admission_target' => '', 'b2b_admission_target' => '5'] + $importRow, 2) === [], 'Import must accept b2b target with empty total');
