@@ -177,11 +177,11 @@ if (!function_exists('masterStatusTone')) {
             </select>
         </div>
         <div class="col-6 col-xl-2">
-            <label for="start_date" class="form-label">Desde</label>
+            <label for="start_date" class="form-label">Inicio desde</label>
             <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars((string) ($filters['start_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-xl-2">
-            <label for="end_date" class="form-label">Hasta</label>
+            <label for="end_date" class="form-label">Inicio hasta</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-xl-2">

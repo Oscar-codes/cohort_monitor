@@ -171,11 +171,11 @@ $spanishMonths = [
             <input type="number" min="0" step="0.01" class="form-control" id="target_max" name="target_max" value="<?= htmlspecialchars((string) ($filters['target_max'] ?? '')) ?>" placeholder="Ej. 50">
         </div>
         <div class="col-6 col-md-3 col-lg-2">
-            <label for="start_date" class="form-label">Desde</label>
+            <label for="start_date" class="form-label">Inicio desde</label>
             <input type="date" class="form-control" id="start_date" name="start_date" value="<?= htmlspecialchars((string) ($filters['start_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-md-3 col-lg-2">
-            <label for="end_date" class="form-label">Hasta</label>
+            <label for="end_date" class="form-label">Inicio hasta</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-md-3 col-lg-2">
@@ -218,6 +218,9 @@ $spanishMonths = [
                             $yr = substr($displayValue, 0, 4);
                             $displayValue = ($spanishMonths[$mn] ?? $mn) . ' ' . $yr;
                         }
+                        if (($key === 'start_date' || $key === 'end_date') && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $displayValue, $d) === 1) {
+                            $displayValue = "{$d[3]}/{$d[2]}/{$d[1]}";
+                        }
                         if ($key === 'cohort_status') {
                             $displayValue = \App\Services\CohortStatus::label($displayValue);
                         }
@@ -229,8 +232,8 @@ $spanishMonths = [
                             'year'            => 'Año',
                             'target_min'      => 'Meta min',
                             'target_max'      => 'Meta max',
-                            'start_date'      => 'Desde',
-                            'end_date'        => 'Hasta',
+                            'start_date'      => 'Inicio desde',
+                            'end_date'        => 'Inicio hasta',
                             'business_model'  => 'Poblacion',
                             'cohort_status'   => 'Estado',
                         ];

@@ -534,13 +534,18 @@ class CohortRepository
             $params['target_max'] = (float) $filters['target_max'];
         }
 
+        // COH-003 / PM-003: the Desde/Hasta range applies to the START date only
+        // (inclusive bounds, either side optional). A NULL start_date never
+        // satisfies the comparison, so with any bound set cohorts without dates
+        // are excluded; without a range they still show up as "Sin fechas".
+        // Single rule for Cohortes, Plan Maestro, Finanzas, Marketing and exports.
         if (!empty($filters['start_date'])) {
-            $where[] = '(c.end_date IS NULL OR c.end_date >= :start_date)';
+            $where[] = 'c.start_date >= :start_date';
             $params['start_date'] = $filters['start_date'];
         }
 
         if (!empty($filters['end_date'])) {
-            $where[] = '(c.start_date IS NULL OR c.start_date <= :end_date)';
+            $where[] = 'c.start_date <= :end_date';
             $params['end_date'] = $filters['end_date'];
         }
 

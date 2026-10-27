@@ -13,8 +13,8 @@ $chipLabels = [
     'search'          => 'Búsqueda',
     'bootcamp_type'   => 'Bootcamp',
     'related_project' => 'Proyecto',
-    'start_date'      => 'Desde',
-    'end_date'        => 'Hasta',
+    'start_date'      => 'Inicio desde',
+    'end_date'        => 'Inicio hasta',
     'business_model'  => 'Población',
     'cohort_status'   => 'Estado',
     'closed_year'     => 'Cerradas en',
@@ -25,6 +25,8 @@ $chipValueFor = static function (string $key, string $value): string {
         'cohort_status'  => \App\Services\CohortStatus::label($value),
         'upcoming_days'  => 'próximos ' . (int) $value . ' días',
         'business_model' => strtoupper($value),
+        // COH-003: range on the start date, shown as dd/mm/yyyy.
+        'start_date', 'end_date' => preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $d) === 1 ? "{$d[3]}/{$d[2]}/{$d[1]}" : $value,
         default          => $value,
     };
 };
