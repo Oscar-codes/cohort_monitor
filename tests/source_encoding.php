@@ -8,9 +8,13 @@ declare(strict_types=1);
 //  - No U+FFFD replacement characters and no invalid UTF-8.
 // Scans app/, public/ and database/. The only allowed exceptions are files that
 // contain mojibake on purpose, as the patterns they repair.
+// COH-008: the population filter/column is "Población"; no "sub canal" (any
+// spelling: "subcanal", "sub-canal", "Sub Canal") may remain in app/ or public/.
 // Run: php tests/source_encoding.php
 
 const SCANNED_DIRS = ['app', 'public', 'database'];
+const RETIRED_LABEL_DIRS = ['app', 'public'];
+const RETIRED_LABEL = '/sub[\s_-]*canal/iu';
 const TEXT_EXTENSIONS = ['php', 'js', 'css', 'html', 'sql', 'json', 'md', 'csv', 'txt', 'htaccess'];
 const ALLOWED_MOJIBAKE = [
     'app/Controllers/CohortController.php',              // normalizeText() repair map
@@ -34,6 +38,12 @@ foreach (['CÃ³digo', 'IdentificaciÃ³n', "Ã\u{0081}rea", 'â€”', 'BDPCâ
 }
 foreach (['Código', 'Identificación', 'Área', 'Límite Admisión', 'Número', 'año', '—', '™', '®', '───'] as $clean) {
     check(preg_match(MOJIBAKE, $clean) === 0, "detector flags clean text {$clean}");
+}
+foreach (['Poblacion o sub canal', 'Población o Sub Canal', 'subcanal', 'sub-canal', 'SUB_CANAL'] as $retired) {
+    check(preg_match(RETIRED_LABEL, $retired) === 1, "retired label detector misses {$retired}");
+}
+foreach (['Población', 'canal B2B', 'canales de medición'] as $allowed) {
+    check(preg_match(RETIRED_LABEL, $allowed) === 0, "retired label detector flags {$allowed}");
 }
 
 $root = dirname(__DIR__);
@@ -60,6 +70,13 @@ foreach (SCANNED_DIRS as $dir) {
         if (str_contains($content, "\u{FFFD}")) {
             $problems[] = "{$relative}: U+FFFD replacement character";
         }
+        if (in_array($dir, RETIRED_LABEL_DIRS, true)) {
+            foreach (preg_split('/\R/', $content) as $index => $line) {
+                if (preg_match(RETIRED_LABEL, $line, $match) === 1) {
+                    $problems[] = sprintf('%s:%d: retired label "%s" (COH-008: use "Población")', $relative, $index + 1, $match[0]);
+                }
+            }
+        }
         if (!in_array($relative, ALLOWED_MOJIBAKE, true)) {
             foreach (preg_split('/\R/', $content) as $index => $line) {
                 if (preg_match(MOJIBAKE, $line, $match) === 1) {
@@ -73,4 +90,4 @@ foreach (SCANNED_DIRS as $dir) {
 check($scanned > 0, 'no files scanned');
 check($problems === [], count($problems) . " encoding problem(s):\n  " . implode("\n  ", $problems));
 
-echo "PASS: {$scanned} files in app/, public/, database/ are UTF-8 without BOM, double encoding or U+FFFD (allowed: " . implode(', ', ALLOWED_MOJIBAKE) . ").\n";
+echo "PASS: {$scanned} files in app/, public/, database/ are UTF-8 without BOM, double encoding or U+FFFD (allowed: " . implode(', ', ALLOWED_MOJIBAKE) . "); no \"sub canal\" in app/ or public/.\n";

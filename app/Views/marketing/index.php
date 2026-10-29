@@ -150,7 +150,7 @@ if (!function_exists('marketingStatusTone')) {
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-xl-2">
-            <label for="business_model" class="form-label">Población o sub canal</label>
+            <label for="business_model" class="form-label">Población</label>
             <select class="form-select" id="business_model" name="business_model">
                 <option value="">Todos</option>
                 <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>

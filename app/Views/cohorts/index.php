@@ -355,7 +355,7 @@ foreach ($statusConfig as $statusKey => $cfg) {
     <div class="kodigo-card__header">
         <div>
             <h3 class="kodigo-card__title"><i class="bi bi-funnel text-primary"></i> Filtros</h3>
-            <p class="kodigo-card__subtitle">Combina busqueda, fechas, tipo, proyecto, modelo y estado.</p>
+            <p class="kodigo-card__subtitle">Combina busqueda, fechas, tipo, proyecto, población y estado.</p>
         </div>
     </div>
     <div class="kodigo-card__body">
@@ -410,7 +410,7 @@ foreach ($statusConfig as $statusKey => $cfg) {
             </div>
 
             <div class="col-12 col-md-6 col-xl-2">
-                <label for="business_model" class="form-label">Poblacion o sub canal</label>
+                <label for="business_model" class="form-label">Población</label>
                 <select class="form-select" id="business_model" name="business_model">
                     <option value="">Todos</option>
                     <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
@@ -520,7 +520,7 @@ $statusCardTone = [
                                     <th class="d-none d-xl-table-cell">Horario</th>
                                     <th class="d-none d-xl-table-cell">Dias</th>
                                     <th class="d-none d-xl-table-cell text-center">Inscritos B2B/B2C</th>
-                                    <th class="d-none d-lg-table-cell text-center">Poblacion o sub canal</th>
+                                    <th class="d-none d-lg-table-cell text-center">Población</th>
                                     <th class="text-end cohort-col-actions">Acciones</th>
                                 </tr>
                             </thead>

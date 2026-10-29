@@ -179,7 +179,7 @@ $spanishMonths = [
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars((string) ($filters['end_date'] ?? '')) ?>">
         </div>
         <div class="col-6 col-md-3 col-lg-2">
-            <label for="business_model" class="form-label">Poblacion</label>
+            <label for="business_model" class="form-label">Población</label>
             <select class="form-select" id="business_model" name="business_model">
                 <option value="">Todos</option>
                 <option value="b2b" <?= (($filters['business_model'] ?? '') === 'b2b') ? 'selected' : '' ?>>B2B</option>
@@ -234,7 +234,7 @@ $spanishMonths = [
                             'target_max'      => 'Meta max',
                             'start_date'      => 'Inicio desde',
                             'end_date'        => 'Inicio hasta',
-                            'business_model'  => 'Poblacion',
+                            'business_model'  => 'Población',
                             'cohort_status'   => 'Estado',
                         ];
                         $label = $filterLabels[$key] ?? $key;
