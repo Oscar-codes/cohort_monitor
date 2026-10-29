@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 // DATA-003 regression: Dashboard and Plan Maestro totals come from one query
 // (CohortRepository::getTotals) and one percentage formula (CohortService::admissionPct).
-//  - Without filters both screens show the same cohorts, admissions, target and % (1 decimal).
+//  - Without filters both screens show the same cohorts; since DASH-007 the Dashboard
+//    admissions block is the current start year, equal to Plan Maestro filtered by a
+//    start range on that whole year (same admissions, target and %, 1 decimal).
 //  - With a Plan Maestro filter (status, bootcamp type) its cards change, match the sum of
 //    the rows it lists, and the filter is visible as a chip; with none it says so.
 //  - The Dashboard states its scope and cut-off date (El Salvador business date).
@@ -116,8 +118,11 @@ $sum = static fn(array $rows): array => [
 ];
 $all = $sum($fx);
 $all['pct'] = round($all['admissions'] / $all['target'] * 100, 1);
+// DASH-007: the admissions block counts cohorts that start in 2026 (current year).
+$year = $sum(array_filter($fx, static fn($r) => str_starts_with((string) $r[1], '2026')));
+$year['pct'] = round($year['admissions'] / $year['target'] * 100, 1);
 
-// ─── 2. Without filters: Dashboard = Plan Maestro ────────────────────────
+// ─── 2. Without filters: same cohorts; admissions block = Plan Maestro 2026 ─
 $dash = page('/')['body'];
 preg_match('/Total cohortes<\/p>\s*<h3 class="metric-card__value">([\d,]+)<\/h3>/', $dash, $dTotal);
 preg_match('/Actuales<\/span>\s*<strong>([\d,]+)<\/strong>/', $dash, $dAdm);
@@ -125,15 +130,19 @@ preg_match('/Meta<\/span>\s*<strong>([\d,]+)<\/strong>/', $dash, $dTarget);
 preg_match('/Progreso de admisiones.*?kodigo-pill__dot" aria-hidden="true"><\/span>([\d.]+)%<\/span>/s', $dash, $dPct);
 check(isset($dTotal[1], $dAdm[1], $dTarget[1], $dPct[1]), 'Dashboard numbers not found');
 $dashboard = ['cohorts' => num($dTotal[1]), 'admissions' => num($dAdm[1]), 'target' => num($dTarget[1]), 'pct' => (float) $dPct[1]];
-check($dashboard === $all, 'Dashboard ' . json_encode($dashboard) . ' vs fixture ' . json_encode($all));
+check($dashboard === ['cohorts' => $all['cohorts']] + array_diff_key($year, ['cohorts' => 0]), 'Dashboard ' . json_encode($dashboard) . ' vs fixture ' . json_encode(['all' => $all, '2026' => $year]));
 
 $m = master();
-check($m['cards'] === $dashboard, 'Plan Maestro ' . json_encode($m['cards']) . ' vs Dashboard ' . json_encode($dashboard));
+check($m['cards'] === $all, 'Plan Maestro ' . json_encode($m['cards']) . ' vs fixture ' . json_encode($all));
+check($m['cards']['cohorts'] === $dashboard['cohorts'], 'Plan Maestro cohorts = Dashboard Total cohortes');
 check($m['rows'] === array_diff_key($m['cards'], ['pct' => 0]), 'Plan Maestro cards = sum of its rows');
 check($m['chips'] === ['count' => 0, 'text' => 'Sin filtros: todas las cohortes'], 'Plan Maestro says it has no filters');
+$m2026 = master('?start_date=2026-01-01&end_date=2026-12-31');
+check($m2026['cards'] === $year, 'Plan Maestro 2026 ' . json_encode($m2026['cards']) . ' vs fixture ' . json_encode($year));
+check(array_diff_key($m2026['cards'], ['cohorts' => 0]) === array_diff_key($dashboard, ['cohorts' => 0]), 'Dashboard admissions block = Plan Maestro 2026');
 
 // Dashboard scope line with the El Salvador cut-off date.
-check(preg_match('/data-dashboard-scope>.*?Todas las cohortes \(incluye canceladas y sin fechas\) &middot; corte ' . preg_quote(CUTOFF, '/') . '/s', $dash) === 1, 'Dashboard scope + cut-off ' . CUTOFF);
+check(preg_match('/data-dashboard-scope>.*?Totales y estados: todas las cohortes \(incluye canceladas y sin fechas\), corte ' . preg_quote(CUTOFF, '/') . ' &middot; Admisiones: cohortes que inician en 2026/s', $dash) === 1, 'Dashboard scope + cut-off ' . CUTOFF);
 check(!str_contains($dash, '06/10/2026'), 'Dashboard must not show the UTC date');
 
 // ─── 3. With filters: Plan Maestro changes, matches its rows, shows the filter ─
@@ -155,7 +164,7 @@ foreach ($cases as $query => [$rows, $chip]) {
 $list = page('/cohorts?cohort_status=cancelled')['body'];
 check(preg_match('/data-active-filters="1">.*?Estado:\s*<strong>Cancelado<\/strong>/s', $list) === 1, '/cohorts shows the same chip');
 
-echo 'Sin filtros: ' . json_encode($dashboard) . " (Dashboard = Plan Maestro)\n";
+echo 'Sin filtros: ' . json_encode($all) . ', inicio en 2026: ' . json_encode($year) . " (Dashboard = Plan Maestro)\n";
 echo "PASS: one totals query + one % formula (1 decimal) for Dashboard and Plan Maestro, filtered totals = listed rows, visible filters/scope (synthetic SQLite).\n";
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -166,6 +175,9 @@ function runPage(array $spec): void
     $pdo = new SqlitePdo('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
     $pdo->sqliteCreateFunction('NOW', static fn(): string => date('Y-m-d H:i:s'), 0);
     $pdo->sqliteCreateFunction('CURDATE', static fn(): string => '2026-10-05', 0);
+    $pdo->sqliteCreateFunction('DATE_FORMAT', static function (?string $date, string $format): ?string {
+        return $date === null ? null : date(strtr($format, ['%Y' => 'Y', '%m' => 'm', '%b' => 'M']), strtotime($date));
+    }, 2);
     $pdo->exec("CREATE TABLE cohorts (
         id INTEGER PRIMARY KEY AUTOINCREMENT, cohort_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
         correlative_number INTEGER NOT NULL DEFAULT 0,

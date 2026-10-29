@@ -47,6 +47,26 @@
     $upcomingUntilLabel = date('d/m/Y', strtotime((string) ($upcomingUntil ?? CohortStatus::todayPlus($upcomingDays))));
     $monthsEs           = [1 => 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     $remainingTarget    = max(0, $totalTarget - $totalAdmissions);
+    // DASH-007: admissions block by calendar year of start_date (default: current year).
+    $admissionsYear     = (string) ($admissionsYear ?? substr(CohortStatus::today(), 0, 4));
+    $admissionsYears    = $admissionsYears ?? [$admissionsYear];
+    $admissionsCohorts  = (int) ($admissionsCohorts ?? 0);
+    $withoutStartDate   = (int) ($withoutStartDate ?? 0);
+    $admissionShares    = $admissionShares ?? \App\Services\CohortService::admissionShares($totalB2bAdmissions, $totalB2cAdmissions, $totalTarget);
+    $admissionsEmpty    = $admissionShares['base'] === 0;
+    $admissionsOverTarget = (int) ($admissionsOverTarget ?? 0);
+    $admissionBars      = [];
+    foreach (['b2b' => 'B2B', 'b2c' => 'B2C', 'pending' => 'Pendiente'] as $barKey => $barLabel) {
+        $barPct = (float) $admissionShares['pct'][$barKey];
+        $barCount = (int) $admissionShares['counts'][$barKey];
+        $admissionBars[] = [
+            'key'   => $barKey,
+            'label' => $barLabel,
+            'pct'   => $barPct,
+            'count' => $barCount,
+            'text'  => number_format($barPct, 1) . ' % (' . number_format($barCount) . ')',
+        ];
+    }
     $riskCommentCount   = count($riskComments ?? []);
     $riskStageCount     = count($atRiskStages ?? []);
 
@@ -73,6 +93,9 @@
             'b2b'       => $totalB2bAdmissions,
             'b2c'       => $totalB2cAdmissions,
             'remaining' => $remainingTarget,
+            'year'      => $admissionsYear,
+            'empty'     => $admissionsEmpty,
+            'bars'      => $admissionBars,
         ],
         'status' => $statusChart,
         'types' => $typeChart,
@@ -104,7 +127,7 @@
                 Resumen operativo de cohortes, admisiones y riesgos para <?= $cutoffLabel ?>.
             </p>
             <p class="dashboard-hero__copy small mb-0" data-dashboard-scope>
-                <i class="bi bi-funnel me-1" aria-hidden="true"></i>Todas las cohortes (incluye canceladas y sin fechas) &middot; corte <?= $cutoffLabel ?>
+                <i class="bi bi-funnel me-1" aria-hidden="true"></i>Totales y estados: todas las cohortes (incluye canceladas y sin fechas), corte <?= $cutoffLabel ?> &middot; Admisiones: cohortes que inician en <?= htmlspecialchars($admissionsYear) ?>
             </p>
         </div>
         <div class="dashboard-hero__meta">
@@ -242,11 +265,34 @@
             <div class="kodigo-card__header">
                 <div>
                     <h3 class="kodigo-card__title"><i class="bi bi-graph-up-arrow text-primary"></i> Progreso de admisiones</h3>
-                    <p class="kodigo-card__subtitle">Avance global contra la meta total.</p>
+                    <p class="kodigo-card__subtitle">Avance contra la meta de las cohortes que inician en <?= htmlspecialchars($admissionsYear) ?>.</p>
                 </div>
-                <span class="kodigo-pill" data-tone="info"><span class="kodigo-pill__dot" aria-hidden="true"></span><?= number_format($admissionPct, 1) ?>%</span>
+                <div class="dashboard-year-filter">
+                    <form method="get" action="/" class="dashboard-year-filter__form" data-dashboard-year-form>
+                        <label for="admissionsYear" class="visually-hidden">Año de inicio</label>
+                        <select class="form-select form-select-sm" id="admissionsYear" name="year" aria-label="Año de inicio de las cohortes">
+                            <?php foreach ($admissionsYears as $yearOption): ?>
+                                <option value="<?= htmlspecialchars((string) $yearOption) ?>" <?= (string) $yearOption === $admissionsYear ? 'selected' : '' ?>><?= htmlspecialchars((string) $yearOption) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" data-dashboard-year-submit>Ver</button>
+                    </form>
+                    <span class="kodigo-pill" data-tone="info" data-dashboard-admissions-pct><span class="kodigo-pill__dot" aria-hidden="true"></span><?= number_format($admissionPct, 1) ?>%<?= $admissionsOverTarget > 0 ? ' &middot; +' . number_format($admissionsOverTarget) . ' sobre la meta' : '' ?></span>
+                </div>
             </div>
             <div class="kodigo-card__body">
+                <?php if ($admissionsEmpty): ?>
+                <div class="kodigo-empty py-4" data-dashboard-admissions-empty>
+                    <i class="bi bi-bar-chart kodigo-empty__icon" aria-hidden="true"></i>
+                    <?php if ($admissionsCohorts === 0): ?>
+                        <h4 class="kodigo-empty__title">Sin cohortes en <?= htmlspecialchars($admissionsYear) ?></h4>
+                        <p class="kodigo-empty__text">Ninguna cohorte inicia en <?= htmlspecialchars($admissionsYear) ?>. Elige otro año.</p>
+                    <?php else: ?>
+                        <h4 class="kodigo-empty__title">Sin meta de admisiones en <?= htmlspecialchars($admissionsYear) ?></h4>
+                        <p class="kodigo-empty__text"><?= number_format($admissionsCohorts) ?> cohortes inician en <?= htmlspecialchars($admissionsYear) ?> sin meta de admisiones (<?= number_format($totalAdmissions) ?> inscritos); no hay porcentajes que calcular.</p>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
                 <div class="dashboard-admissions-grid">
                 <div>
                     <div class="dashboard-number-row">
@@ -267,12 +313,21 @@
                         <span data-style-width="<?= $admissionPct ?>%"></span>
                     </div>
                     <div class="dashboard-segments mt-3">
-                        <span><i class="bi bi-square-fill text-primary"></i> Inscritos B2B <?= number_format($totalB2bAdmissions) ?></span>
-                        <span><i class="bi bi-square-fill text-info"></i> Inscritos B2C <?= number_format($totalB2cAdmissions) ?></span>
+                        <?php $barIcons = ['b2b' => 'text-primary', 'b2c' => 'text-info', 'pending' => 'text-secondary']; ?>
+                        <?php foreach ($admissionBars as $bar): ?>
+                            <span data-admissions-bar="<?= $bar['key'] ?>"><i class="bi bi-square-fill <?= $barIcons[$bar['key']] ?>"></i> <?= $bar['label'] ?> <?= htmlspecialchars($bar['text']) ?></span>
+                        <?php endforeach; ?>
                     </div>
+                    <?php if ($admissionShares['over_admitted']): ?>
+                        <p class="small text-muted mt-2 mb-0" data-dashboard-over-admitted>Los inscritos superan la meta (<?= number_format($totalAdmissions) ?> de <?= number_format($totalTarget) ?>): Pendiente es 0 y los porcentajes se calculan sobre los inscritos.</p>
+                    <?php endif; ?>
                 </div>
-                <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions" role="img" aria-label="Grafica de progreso de admisiones: meta vs actuales vs pendiente"></div>
+                <div id="dashboardAdmissionsChart" class="dashboard-chart dashboard-chart--admissions" role="img" aria-label="Grafica de admisiones <?= htmlspecialchars($admissionsYear) ?>: <?= htmlspecialchars(implode(', ', array_map(static fn(array $b): string => $b['label'] . ' ' . $b['text'], $admissionBars))) ?>"></div>
                 </div>
+                <?php endif; ?>
+                <?php if ($withoutStartDate > 0): ?>
+                    <p class="small text-muted mt-3 mb-0" data-dashboard-no-start><i class="bi bi-info-circle me-1" aria-hidden="true"></i><?= number_format($withoutStartDate) ?> <?= $withoutStartDate === 1 ? 'cohorte sin fecha de inicio no se incluye' : 'cohortes sin fecha de inicio no se incluyen' ?>.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -489,9 +544,10 @@
         <li>En progreso: <?= number_format($activeCohorts) ?></li>
         <li>Completado (cerradas en <?= htmlspecialchars($closedYear) ?>): <?= number_format($closedThisYear) ?></li>
         <li>Alertas activas: <?= number_format($totalAlerts) ?></li>
-        <li>Inscritos B2B: <?= number_format($totalB2bAdmissions) ?></li>
-        <li>Inscritos B2C: <?= number_format($totalB2cAdmissions) ?></li>
-        <li>Cumplimiento: <?= number_format($admissionPct, 1) ?>%</li>
+        <?php foreach ($admissionBars as $bar): ?>
+            <li><?= $bar['label'] ?> (inicio en <?= htmlspecialchars($admissionsYear) ?>): <?= htmlspecialchars($admissionsEmpty ? number_format($bar['count']) : $bar['text']) ?></li>
+        <?php endforeach; ?>
+        <li>Cumplimiento <?= htmlspecialchars($admissionsYear) ?>: <?= number_format($admissionPct, 1) ?>%</li>
     </ul>
 </details>
 <details class="visually-hidden">

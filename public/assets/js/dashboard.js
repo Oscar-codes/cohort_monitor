@@ -82,7 +82,12 @@
     function renderAdmissionsChart() {
         const el = document.getElementById('dashboardAdmissionsChart');
         const admissions = data.admissions || {};
-        if (!el || !hasApex()) return;
+        if (!el || !hasApex() || admissions.empty) return;
+
+        // DASH-007: bars are % of the target (they add up to 100); each label
+        // ("43.2 % (1,602)") comes from the server, so the page and the chart agree.
+        const bars = Array.isArray(admissions.bars) ? admissions.bars : [];
+        if (!bars.length) return;
 
         const chart = new ApexCharts(el, {
             chart: {
@@ -93,30 +98,35 @@
                 animations: chartAnimations()
             },
             series: [{
-                name: 'Estudiantes',
-                data: [
-                    Number(admissions.b2b || 0),
-                    Number(admissions.b2c || 0),
-                    Number(admissions.remaining || 0)
-                ]
+                name: 'Porcentaje de la meta',
+                data: bars.map(bar => Number(bar.pct || 0))
             }],
             colors: [palette.primary, palette.info, '#cbd5e1'],
             plotOptions: {
                 bar: {
                     borderRadius: 8,
                     distributed: true,
-                    columnWidth: '48%'
+                    columnWidth: '48%',
+                    dataLabels: { position: 'top' }
                 }
             },
-            dataLabels: { enabled: false },
+            dataLabels: {
+                enabled: true,
+                offsetY: -22,
+                style: { fontSize: '12px', colors: ['#334155'] },
+                formatter: (value, opts) => (bars[opts.dataPointIndex] || {}).text || ''
+            },
             xaxis: {
-                categories: ['B2B', 'B2C', 'Pendiente'],
+                categories: bars.map(bar => bar.label),
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
             yaxis: {
+                min: 0,
+                max: 100,
+                tickAmount: 4,
                 labels: {
-                    formatter: value => formatNumber(value)
+                    formatter: value => `${Math.round(value)} %`
                 }
             },
             grid: {
@@ -125,7 +135,7 @@
             },
             tooltip: {
                 y: {
-                    formatter: value => `${formatNumber(value)} estudiantes`
+                    formatter: (value, opts) => (bars[opts.dataPointIndex] || {}).text || ''
                 }
             },
             legend: { show: false }
@@ -246,9 +256,26 @@
         window.setTimeout(updateClock, 1000);
     }
 
+    // DASH-007: the year selector reloads the dashboard on change; the
+    // "Ver" button stays only for browsers without JavaScript.
+    function bindYearFilter() {
+        const form = document.querySelector('[data-dashboard-year-form]');
+        if (!form) return;
+
+        const select = form.querySelector('select[name="year"]');
+        const button = form.querySelector('[data-dashboard-year-submit]');
+        if (button) {
+            button.classList.add('d-none');
+        }
+        if (select) {
+            select.addEventListener('change', () => form.submit());
+        }
+    }
+
     function init() {
         const sparklines = data.sparklines || {};
 
+        bindYearFilter();
         renderSparkline('kpiTotalSparkline', sparklines.total, palette.primary);
         renderSparkline('kpiActiveSparkline', sparklines.active, palette.success);
         renderSparkline('kpiCompletedSparkline', sparklines.completed, palette.info);

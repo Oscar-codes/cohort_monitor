@@ -132,6 +132,12 @@ class CohortRepository
         ));
     }
 
+    /** DASH-007: cohorts without start date, which belong to no year. */
+    public function countWithoutStartDate(): int
+    {
+        return (int) ($this->db->query('SELECT COUNT(*) AS total FROM cohorts c WHERE c.start_date IS NULL')[0]['total'] ?? 0);
+    }
+
     public function findCoachNames(): array
     {
         $rows = $this->db->query(

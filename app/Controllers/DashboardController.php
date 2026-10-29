@@ -31,7 +31,8 @@ class DashboardController extends Controller
     public function index(): void
     {
         try {
-            $stats = $this->dashboardService->getSummaryStats();
+            // DASH-007: ?year= of the admissions block, validated by the service.
+            $stats = $this->dashboardService->getSummaryStats($this->input('year'));
         } catch (\Throwable $e) {
             $this->logException($e, 'DashboardController@index');
             http_response_code(500);
@@ -48,6 +49,9 @@ class DashboardController extends Controller
                 'totalB2bAdmissions'=> 0,
                 'totalB2cAdmissions'=> 0,
                 'admissionPct'      => 0,
+                'admissionShares'   => \App\Services\CohortService::admissionShares(0, 0, 0),
+                'admissionsCohorts' => 0,
+                'withoutStartDate'  => 0,
                 'totalAlerts'       => 0,
                 'riskComments'      => [],
                 'atRiskStages'      => [],

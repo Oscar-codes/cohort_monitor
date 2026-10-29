@@ -1602,6 +1602,20 @@ body {
     min-height: 220px;
 }
 
+/* DASH-007: year selector next to the admissions badge. */
+.dashboard-year-filter,
+.dashboard-year-filter__form {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.dashboard-year-filter .form-select {
+    min-width: 6.5rem;
+    width: auto;
+}
+
 .dashboard-status-list {
     display: grid;
     gap: 0.55rem;

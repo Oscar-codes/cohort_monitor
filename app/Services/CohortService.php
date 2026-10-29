@@ -107,6 +107,53 @@ class CohortService
     }
 
     /**
+     * DASH-007: B2B / B2C / Pendiente as shares of the admissions target,
+     * 1 decimal, always adding up to exactly 100.0 (largest remainder method,
+     * computed in tenths of a percent with integer arithmetic).
+     * Over-admission (admissions > target): Pendiente = 0 and the base is the
+     * admissions, so the shares still add up to 100. Target 0: no shares
+     * ('base' = 0), the view shows an empty state instead of dividing by zero.
+     *
+     * @return array{base: int, over_admitted: bool,
+     *               counts: array{b2b: int, b2c: int, pending: int},
+     *               pct: array{b2b: float, b2c: float, pending: float}}
+     */
+    public static function admissionShares(int $b2b, int $b2c, int $target): array
+    {
+        $b2b = max(0, $b2b);
+        $b2c = max(0, $b2c);
+        $target = max(0, $target);
+        $admissions = $b2b + $b2c;
+        $counts = ['b2b' => $b2b, 'b2c' => $b2c, 'pending' => max(0, $target - $admissions)];
+        $base = $target > 0 ? max($target, $admissions) : 0;
+
+        if ($base === 0) {
+            return ['base' => 0, 'over_admitted' => false, 'counts' => $counts, 'pct' => ['b2b' => 0.0, 'b2c' => 0.0, 'pending' => 0.0]];
+        }
+
+        $tenths = [];
+        $remainders = [];
+        foreach ($counts as $key => $count) {
+            $tenths[$key] = intdiv($count * 1000, $base);
+            $remainders[$key] = ($count * 1000) % $base;
+        }
+        // Hand the missing tenths to the largest remainders (ties: display order).
+        $order = array_keys($counts);
+        uksort($remainders, static fn(string $a, string $b): int => [$remainders[$b], array_search($a, $order, true)] <=> [$remainders[$a], array_search($b, $order, true)]);
+        $missing = 1000 - array_sum($tenths);
+        foreach (array_slice(array_keys($remainders), 0, $missing) as $key) {
+            $tenths[$key]++;
+        }
+
+        return [
+            'base'          => $base,
+            'over_admitted' => $admissions > $target,
+            'counts'        => $counts,
+            'pct'           => array_map(static fn(int $t): float => $t / 10, $tenths),
+        ];
+    }
+
+    /**
      * Get all available bootcamp types for filter dropdown.
      *
      * @return string[]
